@@ -1,20 +1,19 @@
-import { Container, Image, Input, Text } from "@chakra-ui/react"
+import { Container, Image, Input, Text } from "@chakra-ui/react";
 import {
-  Link as RouterLink,
   createFileRoute,
   redirect,
-} from "@tanstack/react-router"
-import { type SubmitHandler, useForm } from "react-hook-form"
-import { FiLock, FiMail } from "react-icons/fi"
+} from "@tanstack/react-router";
+import { type SubmitHandler, useForm } from "react-hook-form";
+import { FiLock, FiMail } from "react-icons/fi";
 
-import type { Body_login_login_access_token as AccessToken } from "@/client"
-import { Button } from "@/components/ui/button"
-import { Field } from "@/components/ui/field"
-import { InputGroup } from "@/components/ui/input-group"
-import { PasswordInput } from "@/components/ui/password-input"
-import useAuth, { isLoggedIn } from "@/hooks/useAuth"
-import Logo from "/assets/images/fastapi-logo.svg"
-import { emailPattern, passwordRules } from "../utils"
+import type { Body_login_login_access_token as AccessToken } from "@/client";
+import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { InputGroup } from "@/components/ui/input-group";
+import { PasswordInput } from "@/components/ui/password-input";
+import useAuth, { isLoggedIn } from "@/hooks/useAuth";
+import Logo from "/assets/images/fastapi-logo.svg";
+import { emailPattern, passwordRules } from "../utils";
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -22,13 +21,13 @@ export const Route = createFileRoute("/login")({
     if (isLoggedIn()) {
       throw redirect({
         to: "/",
-      })
+      });
     }
   },
-})
+});
 
 function Login() {
-  const { loginMutation, error, resetError } = useAuth()
+  const { loginMutation, error, resetError } = useAuth();
   const {
     register,
     handleSubmit,
@@ -40,19 +39,19 @@ function Login() {
       username: "",
       password: "",
     },
-  })
+  });
 
   const onSubmit: SubmitHandler<AccessToken> = async (data) => {
-    if (isSubmitting) return
+    if (isSubmitting) return;
 
-    resetError()
+    resetError();
 
     try {
-      await loginMutation.mutateAsync(data)
+      await loginMutation.mutateAsync(data);
     } catch {
       // error is handled by useAuth hook
     }
-  }
+  };
 
   return (
     <>
@@ -97,19 +96,10 @@ function Login() {
           placeholder="Password"
           errors={errors}
         />
-        <RouterLink to="/recover-password" className="main-link">
-          Forgot Password?
-        </RouterLink>
         <Button variant="solid" type="submit" loading={isSubmitting} size="md">
           Log In
         </Button>
-        <Text>
-          Don't have an account?{" "}
-          <RouterLink to="/signup" className="main-link">
-            Sign Up
-          </RouterLink>
-        </Text>
       </Container>
     </>
-  )
+  );
 }
