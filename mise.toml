@@ -1,0 +1,173 @@
+[tools]
+python = "3.11.12"
+node = "20"
+uv = "latest"
+
+[env]
+# Python/FastAPI Backend Environment
+PYTHONPATH = "./backend"
+PYTHONDONTWRITEBYTECODE = "1"
+PYTHONUNBUFFERED = "1"
+
+# Node.js/React Frontend Environment
+NODE_ENV = "development"
+
+# Project paths
+BACKEND_DIR = "./backend"
+FRONTEND_DIR = "./frontend"
+
+[tasks.install]
+description = "Install all dependencies for both backend and frontend"
+run = [
+    "echo 'Installing backend dependencies...'",
+    "cd backend && uv sync",
+    "echo 'Installing frontend dependencies...'",
+    "cd frontend && npm install",
+]
+
+[tasks.dev]
+description = "Start development servers for both backend and frontend"
+run = [
+    "echo 'Starting backend and frontend development servers...'",
+    "cd backend && uv run fastapi dev app/main.py --host 0.0.0.0 --port 8000 &",
+    "cd frontend && npm run dev",
+]
+
+[tasks.backend]
+description = "Start FastAPI backend development server"
+run = "cd backend && uv run fastapi dev app/main.py --host 0.0.0.0 --port 8000"
+
+[tasks.frontend]
+description = "Start React frontend development server"
+run = "cd frontend && npm run dev"
+
+[tasks.test]
+description = "Run tests for both backend and frontend"
+run = [
+    "echo 'Running backend tests...'",
+    "cd backend && uv run pytest",
+    "echo 'Running frontend tests...'",
+    "cd frontend && npm run test",
+]
+
+[tasks.test-backend]
+description = "Run backend tests"
+run = "cd backend && uv run pytest"
+
+[tasks.test-frontend]
+description = "Run frontend tests"
+run = "cd frontend && npm run test"
+
+[tasks.lint]
+description = "Lint both backend and frontend code"
+run = [
+    "echo 'Linting backend...'",
+    "cd backend && uv run ruff check .",
+    "cd backend && uv run mypy .",
+    "echo 'Linting frontend...'",
+    "cd frontend && npm run lint",
+]
+
+[tasks.lint-backend]
+description = "Lint backend Python code"
+run = ["cd backend && uv run ruff check .", "cd backend && uv run mypy ."]
+
+[tasks.lint-frontend]
+description = "Lint frontend TypeScript/React code"
+run = "cd frontend && npm run lint"
+
+[tasks.format]
+description = "Format code for both backend and frontend"
+run = [
+    "echo 'Formatting backend...'",
+    "cd backend && uv run ruff format .",
+    "echo 'Formatting frontend...'",
+    "cd frontend && npm run lint",
+]
+
+[tasks.build]
+description = "Build both backend and frontend for production"
+run = [
+    "echo 'Building frontend...'",
+    "cd frontend && npm run build",
+    "echo 'Frontend built successfully!'",
+]
+
+[tasks.build-frontend]
+description = "Build React frontend for production"
+run = "cd frontend && npm run build"
+
+[tasks.generate-client]
+description = "Generate API client from OpenAPI schema"
+run = "cd frontend && npm run generate-client"
+
+[tasks.clean]
+description = "Clean build artifacts and dependencies"
+run = [
+    "echo 'Cleaning backend...'",
+    "cd backend && rm -rf .venv __pycache__ .pytest_cache .mypy_cache .coverage",
+    "echo 'Cleaning frontend...'",
+    "cd frontend && rm -rf node_modules dist .vite",
+]
+
+[tasks.docker-build]
+description = "Build Docker images for both services"
+run = [
+    "echo 'Building backend Docker image...'",
+    "cd backend && docker build -t kubestats-backend .",
+    "echo 'Building frontend Docker image...'",
+    "cd frontend && docker build -t kubestats-frontend .",
+]
+
+[tasks.db-start]
+description = "Start PostgreSQL database using Docker"
+run = "docker run --name kubestats-postgres -e POSTGRES_PASSWORD=changethis -e POSTGRES_DB=app -p 5432:5432 -d postgres:13"
+
+[tasks.db-stop]
+description = "Stop PostgreSQL database"
+run = "docker stop kubestats-postgres && docker rm kubestats-postgres"
+
+[tasks.db-migrate]
+description = "Run database migrations"
+run = "cd backend && uv run alembic upgrade head"
+
+[tasks.db-reset]
+description = "Reset database and run migrations"
+run = [
+    "cd backend && uv run alembic downgrade base",
+    "cd backend && uv run alembic upgrade head",
+    "cd backend && uv run python app/initial_data.py",
+]
+
+[tasks.prestart]
+description = "Run backend pre-start script (DB setup and migrations)"
+run = "cd backend && bash scripts/prestart.sh"
+
+[tasks.setup]
+description = "Complete project setup - install dependencies and setup database"
+run = [
+    "echo 'Setting up kubestats project...'",
+    "mise install",
+    "echo 'Installing backend dependencies...'",
+    "cd backend && uv sync",
+    "echo 'Installing frontend dependencies...'",
+    "cd frontend && npm install",
+    "echo 'Setup complete! Run mise dev to start development servers.'",
+]
+
+[tasks.check]
+description = "Run all checks (lint, type check, tests)"
+run = [
+    "echo 'Running all checks...'",
+    "mise run lint",
+    "mise run test",
+    "echo 'All checks passed!'",
+]
+
+[tasks.docker-dev]
+description = "Start development environment with Docker Compose"
+run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build"
+
+[tasks.docker-db]
+description = "Start development environment with Docker Compose"
+run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build -d db adminer mailcatcher"
