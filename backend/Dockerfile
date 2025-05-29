@@ -1,43 +1,72 @@
-FROM python:3.10
+# ==============================================================================
+# Multi-stage build for minimal Python FastAPI application
+# Stage 1: Builder (python:3.11-slim)
+# Stage 2: Runtime (gcr.io/distroless/python3-debian12)
+# ==============================================================================
 
-ENV PYTHONUNBUFFERED=1
+# Stage 1: Builder stage
+FROM python:3.11-slim AS builder
 
-WORKDIR /app/
+# Set all environment variables in one layer
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_CACHE_DIR=/root/.cache/uv
 
-# Install uv
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+WORKDIR /app
+
+# Install system dependencies and uv in one layer
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /uvx /bin/
 
-# Place executables in the environment at the front of the path
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
-ENV PATH="/app/.venv/bin:$PATH"
-
-# Compile bytecode
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
-
-# uv Cache
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#caching
-ENV UV_LINK_MODE=copy
-
-# Install dependencies
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+# Copy all source files and install dependencies in one optimized sequence
+COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project
+    uv sync --frozen --no-install-project --no-dev
 
-ENV PYTHONPATH=/app
-
-COPY ./scripts /app/scripts
-
-COPY ./pyproject.toml ./uv.lock ./alembic.ini /app/
-
-COPY ./app /app/app
-
-# Sync the project
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+COPY ./app /app/app 
+COPY ./scripts /app/scripts 
+COPY ./alembic.ini ./gunicorn.conf.py /app/
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync
+    uv sync --frozen --no-dev && \
+    mkdir -p /runtime/site-packages && \
+    mkdir -p /runtime/tmp && \
+    chmod 777 /runtime/tmp && \
+    cp -r /app/.venv/lib/python*/site-packages/* /runtime/site-packages/ && \
+    cp -r /app/app /runtime/ && \
+    cp -r /app/scripts /runtime/ && \
+    cp /app/alembic.ini /runtime/ && \
+    cp /app/gunicorn.conf.py /runtime/
 
-CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
+# ==============================================================================
+# Stage 2: Runtime stage using distroless
+FROM gcr.io/distroless/python3-debian12
+
+# Copy all runtime files and set environment variables in minimal layers
+COPY --from=builder /runtime/site-packages /app/site-packages
+COPY --from=builder /runtime/ /app/
+COPY --from=builder /runtime/tmp /tmp/
+
+# Create a writable directory for Celery Beat schedule file
+# Note: We can't use mkdir in distroless, so we create it in the builder stage
+# Set all environment variables and configurations in one layer
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/site-packages
+
+WORKDIR /app
+USER nonroot
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD ["python", "-c", "import requests; requests.get('http://localhost:8000/api/v1/utils/health-check/', timeout=10)"]
+
+# Run the application
+ENTRYPOINT ["python", "-m", "gunicorn"]
+CMD ["-c", "gunicorn.conf.py", "app.main:app"]

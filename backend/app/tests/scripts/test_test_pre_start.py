@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 
 from app.tests_pre_start import init, logger
 
@@ -23,6 +23,6 @@ def test_init_successful_connection() -> None:
 
         # Verify the session was created with the engine
         session_mock.__enter__.assert_called_once()
-        
+
         # Verify the exec method was called once (select(1) creates different instances)
         session_mock.exec.assert_called_once()

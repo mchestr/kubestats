@@ -8,6 +8,7 @@ uv = "latest"
 PYTHONPATH = "./backend"
 PYTHONDONTWRITEBYTECODE = "1"
 PYTHONUNBUFFERED = "1"
+_.python.venv = { path = "./backend/.venv", create = true }
 
 # Node.js/React Frontend Environment
 NODE_ENV = "development"
@@ -168,4 +169,8 @@ run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --
 
 [tasks.docker-db]
 description = "Start development environment with Docker Compose"
-run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build -d db adminer mailcatcher"
+run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build -d db adminer redis"
+
+[tasks.docker-celery]
+description = "Start celery environment with Docker Compose"
+run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build -d celery-worker celery-beat"

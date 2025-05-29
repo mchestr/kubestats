@@ -23,6 +23,6 @@ def test_init_successful_connection() -> None:
 
         # Verify the session was created with the engine
         session_mock.__enter__.assert_called_once()
-        
+
         # Verify the exec method was called once
         session_mock.exec.assert_called_once()
