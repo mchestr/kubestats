@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, TasksTriggerLogTaskData, TasksTriggerLogTaskResponse, TasksTriggerHealthCheckResponse, TasksGetTaskStatusData, TasksGetTaskStatusResponse, TasksListTasksResponse, TasksGetWorkerStatusResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, TasksTriggerLogTaskData, TasksTriggerLogTaskResponse, TasksTriggerHealthCheckResponse, TasksGetTaskStatusData, TasksGetTaskStatusResponse, TasksGetWorkerStatsData, TasksGetWorkerStatsResponse, TasksGetWorkerStatusResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class ItemsService {
     /**
@@ -209,15 +209,24 @@ export class TasksService {
     }
     
     /**
-     * List Tasks
-     * List recent tasks (superuser only).
-     * @returns TaskStatusResponse Successful Response
+     * Get Worker Stats
+     * Get Celery worker statistics for a specific worker (superuser only).
+     * Returns comprehensive worker stats including uptime, memory usage, and task counts.
+     * @param data The data for the request.
+     * @param data.workerId
+     * @returns WorkerStatsResponse Successful Response
      * @throws ApiError
      */
-    public static listTasks(): CancelablePromise<TasksListTasksResponse> {
+    public static getWorkerStats(data: TasksGetWorkerStatsData): CancelablePromise<TasksGetWorkerStatsResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/tasks/list'
+            url: '/api/v1/tasks/workers/{worker_id}',
+            path: {
+                worker_id: data.workerId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     

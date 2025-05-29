@@ -112,6 +112,28 @@ export type ValidationError = {
     type: string;
 };
 
+export type WorkerStatsResponse = {
+    worker_id: string;
+    worker_name: string;
+    status: string;
+    uptime?: (number | null);
+    pid?: (number | null);
+    clock?: (number | null);
+    prefetch_count?: (number | null);
+    pool?: ({
+    [key: string]: unknown;
+} | null);
+    broker?: ({
+    [key: string]: unknown;
+} | null);
+    total_tasks?: ({
+    [key: string]: unknown;
+} | null);
+    rusage?: ({
+    [key: string]: unknown;
+} | null);
+};
+
 export type ItemsReadItemsData = {
     limit?: number;
     skip?: number;
@@ -166,7 +188,11 @@ export type TasksGetTaskStatusData = {
 
 export type TasksGetTaskStatusResponse = (TaskStatusResponse);
 
-export type TasksListTasksResponse = (Array<TaskStatusResponse>);
+export type TasksGetWorkerStatsData = {
+    workerId: string;
+};
+
+export type TasksGetWorkerStatsResponse = (WorkerStatsResponse);
 
 export type TasksGetWorkerStatusResponse = ({
     [key: string]: unknown;

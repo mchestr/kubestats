@@ -120,50 +120,70 @@ def test_get_task_status_success(
     mock_async_result.assert_called_once_with(task_id)
 
 
-@patch('app.api.routes.tasks.get_task_status_from_db')
-def test_list_tasks_success(
-    mock_get_tasks, client: TestClient, superuser_token_headers: dict[str, str]
+@patch('app.api.routes.tasks.get_worker_stats_by_id')
+def test_get_worker_stats_success(
+    mock_get_worker_stats, client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
-    """Test successful task listing."""
-    # Mock task data
-    mock_tasks = [
-        {
-            "task_id": "task-1",
-            "status": "SUCCESS",
-            "result": {"message": "Task 1 completed"},
-            "traceback": None,
-            "date_done": "2024-01-01T00:00:00",
-            "name": "app.tasks.basic_tasks.create_log_entry",
-            "worker": "worker-1",
-            "retries": 0
-        },
-        {
-            "task_id": "task-2",
-            "status": "PENDING",
-            "result": None,
-            "traceback": None,
-            "date_done": None,
-            "name": "app.tasks.basic_tasks.system_health_check",
-            "worker": None,
-            "retries": 0
-        }
-    ]
-    mock_get_tasks.return_value = mock_tasks
+    """Test successful worker statistics retrieval for a specific worker."""
+    # Mock worker stats data for a single worker
+    mock_worker_stats = {
+        "worker_id": "worker-1",
+        "worker_name": "celery@worker-1",
+        "status": "ONLINE",
+        "uptime": 3600,
+        "pid": 1234,
+        "clock": 100,
+        "prefetch_count": 4,
+        "pool": {"max-concurrency": 4, "processes": [1234]},
+        "broker": {"hostname": "redis://localhost:6379"},
+        "total_tasks": {"app.tasks.basic_tasks.create_log_entry": 5},
+        "rusage": {"utime": 1.5, "stime": 0.8}
+    }
+    mock_get_worker_stats.return_value = mock_worker_stats
 
     # Make request
+    worker_id = "worker-1"
     response = client.get(
-        f"{settings.API_V1_STR}/tasks/list",
+        f"{settings.API_V1_STR}/tasks/workers/{worker_id}",
         headers=superuser_token_headers,
     )
 
     # Assertions
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["task_id"] == "task-1"
-    assert data[0]["status"] == "SUCCESS"
-    assert data[1]["task_id"] == "task-2"
-    assert data[1]["status"] == "PENDING"
+    assert data["worker_id"] == "worker-1"
+    assert data["worker_name"] == "celery@worker-1"
+    assert data["status"] == "ONLINE"
+    assert data["uptime"] == 3600
+    assert data["pid"] == 1234
+    assert data["pool"] == {"max-concurrency": 4, "processes": [1234]}
+    
+    # Verify function was called with correct parameters
+    mock_get_worker_stats.assert_called_once_with(db=mock_get_worker_stats.call_args[1]['db'], worker_id=worker_id)
+
+
+@patch('app.api.routes.tasks.get_worker_stats_by_id')
+def test_get_worker_stats_not_found(
+    mock_get_worker_stats, client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    """Test worker statistics retrieval when worker is not found."""
+    # Mock function to return None (worker not found)
+    mock_get_worker_stats.return_value = None
+
+    # Make request
+    worker_id = "nonexistent-worker"
+    response = client.get(
+        f"{settings.API_V1_STR}/tasks/workers/{worker_id}",
+        headers=superuser_token_headers,
+    )
+
+    # Assertions
+    assert response.status_code == 404
+    data = response.json()
+    assert "Worker with ID 'nonexistent-worker' not found" in data["detail"]
+    
+    # Verify function was called with correct parameters
+    mock_get_worker_stats.assert_called_once_with(db=mock_get_worker_stats.call_args[1]['db'], worker_id=worker_id)
 
 
 @patch('app.api.routes.tasks.celery_app.control.inspect')
@@ -205,7 +225,7 @@ def test_task_routes_require_superuser(
         ("POST", f"{settings.API_V1_STR}/tasks/trigger", {"message": "test"}),
         ("POST", f"{settings.API_V1_STR}/tasks/health-check", {}),
         ("GET", f"{settings.API_V1_STR}/tasks/status/test-id", {}),
-        ("GET", f"{settings.API_V1_STR}/tasks/list", {}),
+        ("GET", f"{settings.API_V1_STR}/tasks/workers/test-worker-id", {}),
         ("GET", f"{settings.API_V1_STR}/tasks/workers", {}),
     ]
 
@@ -397,3 +417,43 @@ def test_task_status_response_exception_serialization() -> None:
     assert parsed["result"] == "ValueError: Invalid input data"
     assert parsed["task_id"] == "exception-test"
     assert parsed["status"] == "FAILURE"
+
+
+def test_worker_stats_response_model() -> None:
+    """Test WorkerStatsResponse model."""
+    from app.api.routes.tasks import WorkerStatsResponse
+
+    # With all fields
+    response = WorkerStatsResponse(
+        worker_id="worker-1",
+        worker_name="celery@worker-1",
+        status="ONLINE",
+        uptime=3600,
+        pid=1234,
+        clock=100,
+        prefetch_count=4,
+        pool={"max-concurrency": 4},
+        broker={"hostname": "redis://localhost:6379"},
+        total_tasks={"task.name": 5},
+        rusage={"utime": 1.5, "stime": 0.8}
+    )
+
+    assert response.worker_id == "worker-1"
+    assert response.worker_name == "celery@worker-1"
+    assert response.status == "ONLINE"
+    assert response.uptime == 3600
+    assert response.pid == 1234
+    assert response.pool == {"max-concurrency": 4}
+
+    # With minimal required fields
+    minimal_response = WorkerStatsResponse(
+        worker_id="worker-2",
+        worker_name="celery@worker-2",
+        status="OFFLINE"
+    )
+
+    assert minimal_response.worker_id == "worker-2"
+    assert minimal_response.worker_name == "celery@worker-2"
+    assert minimal_response.status == "OFFLINE"
+    assert minimal_response.uptime is None
+    assert minimal_response.pid is None

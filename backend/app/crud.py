@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlmodel import Session, select
+from sqlmodel import Session, select, text
 
 from app.core.security import get_password_hash, verify_password
 from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
@@ -55,15 +55,60 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     return db_item
 
 
-def get_task_status_from_db(*, _db: Session, _limit: int = 20) -> list[dict]:
+def get_worker_stats_by_id(*, db: Session, worker_id: str) -> dict | None:
     """
-    Retrieves task statuses from Celery backend.
-    Since we don't have a TaskResult model, this returns an empty list for now.
-    In a real implementation, you would query the Celery result backend directly.
+    Retrieves Celery worker statistics for a specific worker.
+    Returns comprehensive worker stats including uptime, memory usage, and task counts.
     """
-    # For now, return empty list since we don't have task storage in the database
-    # In production, you might want to:
-    # 1. Query Redis/message broker directly
-    # 2. Create a TaskResult model and store task results
-    # 3. Use Celery's built-in result backend
-    return []
+    from app.celery_app import celery_app
+    
+    try:
+        # Get inspection interface
+        i = celery_app.control.inspect()
+        
+        # Get worker statistics
+        stats_data = i.stats() or {}
+        
+        # Look for the specific worker
+        for worker_name, worker_info in stats_data.items():
+            if worker_name == worker_id or worker_name.endswith(f"@{worker_id}"):
+                # Extract key statistics from worker info and return in the new format
+                return {
+                    "worker_id": worker_id,
+                    "worker_name": worker_name,
+                    "status": "ONLINE",  # Worker is online if we can get stats
+                    "uptime": worker_info.get("uptime", 0),
+                    "pid": worker_info.get("pid"),
+                    "clock": worker_info.get("clock", 0),
+                    "prefetch_count": worker_info.get("prefetch_count", 0),
+                    "pool": worker_info.get("pool", {}),
+                    "broker": worker_info.get("broker", {}),
+                    "total_tasks": worker_info.get("total", {}),
+                    "rusage": worker_info.get("rusage", {}),
+                }
+        
+        # If not found in stats, try to ping the specific worker
+        ping_data = i.ping() or {}
+        for worker_name, ping_response in ping_data.items():
+            if (worker_name == worker_id or worker_name.endswith(f"@{worker_id}")) and ping_response.get("ok") == "pong":
+                return {
+                    "worker_id": worker_id,
+                    "worker_name": worker_name,
+                    "status": "ONLINE",
+                    "uptime": None,
+                    "pid": None,
+                    "clock": None,
+                    "prefetch_count": None,
+                    "pool": None,
+                    "broker": None,
+                    "total_tasks": None,
+                    "rusage": None,
+                }
+        
+        # Worker not found
+        return None
+        
+    except Exception as e:
+        print(f"Error retrieving worker stats from Celery for {worker_id}: {e}")
+        # Return None if there's an error
+        return None

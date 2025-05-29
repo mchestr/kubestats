@@ -6,7 +6,7 @@ from pydantic import BaseModel, field_validator
 
 from app.api.deps import SessionDep, get_current_active_superuser
 from app.celery_app import celery_app
-from app.crud import get_task_status_from_db
+from app.crud import get_worker_stats_by_id
 from app.models import User
 from app.tasks.basic_tasks import create_log_entry, system_health_check
 
@@ -43,6 +43,20 @@ class TaskStatusResponse(BaseModel):
         if isinstance(v, Exception):
             return f"{type(v).__name__}: {str(v)}"
         return v
+
+
+class WorkerStatsResponse(BaseModel):
+    worker_id: str
+    worker_name: str
+    status: str
+    uptime: int | None = None
+    pid: int | None = None
+    clock: int | None = None
+    prefetch_count: int | None = None
+    pool: dict[str, Any] | None = None
+    broker: dict[str, Any] | None = None
+    total_tasks: dict[str, Any] | None = None
+    rusage: dict[str, Any] | None = None
 
 
 @router.post("/trigger", response_model=TaskResponse)
@@ -128,35 +142,45 @@ def get_task_status(
 
 
 @router.get(
-    "/list",
+    "/workers/{worker_id}",
     dependencies=[Depends(get_current_active_superuser)],
-    response_model=list[TaskStatusResponse],
+    response_model=WorkerStatsResponse,
 )
-def list_tasks(
+def get_worker_stats(
+    worker_id: str,
     session: SessionDep,
-) -> list[TaskStatusResponse]:
+) -> WorkerStatsResponse:
     """
-    List recent tasks (superuser only).
+    Get Celery worker statistics for a specific worker (superuser only).
+    Returns comprehensive worker stats including uptime, memory usage, and task counts.
     """
     try:
-        tasks = get_task_status_from_db(db=session)
-
-        return [
-            TaskStatusResponse(
-                task_id=task["task_id"],
-                status=task["status"],
-                result=task["result"],
-                traceback=task["traceback"],
-                date_done=task["date_done"],
-                name=task["name"],
-                worker=task["worker"],
-                retries=task["retries"],
+        worker_stats = get_worker_stats_by_id(db=session, worker_id=worker_id)
+        
+        if not worker_stats:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Worker with ID '{worker_id}' not found"
             )
-            for task in tasks
-        ]
+
+        return WorkerStatsResponse(
+            worker_id=worker_stats["worker_id"],
+            worker_name=worker_stats["worker_name"],
+            status=worker_stats["status"],
+            uptime=worker_stats.get("uptime"),
+            pid=worker_stats.get("pid"),
+            clock=worker_stats.get("clock"),
+            prefetch_count=worker_stats.get("prefetch_count"),
+            pool=worker_stats.get("pool"),
+            broker=worker_stats.get("broker"),
+            total_tasks=worker_stats.get("total_tasks"),
+            rusage=worker_stats.get("rusage"),
+        )
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error listing tasks: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to list tasks: {str(e)}")
+        logger.error(f"Error getting worker stats for {worker_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get worker stats: {str(e)}")
 
 
 @router.get("/workers", dependencies=[Depends(get_current_active_superuser)])
