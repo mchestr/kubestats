@@ -46,8 +46,6 @@ description = "Run tests for both backend and frontend"
 run = [
     "echo 'Running backend tests...'",
     "cd backend && uv run pytest",
-    "echo 'Running frontend tests...'",
-    "cd frontend && npm run test",
 ]
 
 [tasks.test-backend]

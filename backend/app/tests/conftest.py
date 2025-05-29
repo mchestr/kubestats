@@ -18,9 +18,9 @@ def db() -> Generator[Session, None, None]:
         init_db(session)
         yield session
         statement = delete(Item)
-        session.execute(statement)
+        session.exec(statement)
         statement = delete(User)
-        session.execute(statement)
+        session.exec(statement)
         session.commit()
 
 
@@ -38,5 +38,5 @@ def superuser_token_headers(client: TestClient) -> dict[str, str]:
 @pytest.fixture(scope="module")
 def normal_user_token_headers(client: TestClient, db: Session) -> dict[str, str]:
     return authentication_token_from_email(
-        client=client, email=settings.EMAIL_TEST_USER, db=db
+        client=client, email='test@example.com', db=db
     )
