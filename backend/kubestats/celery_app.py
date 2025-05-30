@@ -29,5 +29,13 @@ celery_app.conf.update(
             "task": "kubestats.tasks.discover_repositories.run",
             "schedule": 30.0,
         },
+        "system-health-check": {
+            "task": "kubestats.tasks.basic_tasks.system_health_check",
+            "schedule": crontab(minute="*/5"),  # Every 5 minutes
+        },
+        "cleanup-old-logs": {
+            "task": "kubestats.tasks.basic_tasks.cleanup_old_logs",
+            "schedule": crontab(hour=2, minute=0),  # Daily at 2:00 AM
+        },
     },
 )

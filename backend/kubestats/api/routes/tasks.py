@@ -59,6 +59,17 @@ class WorkerStatsResponse(BaseModel):
     rusage: dict[str, Any] | None = None
 
 
+class PeriodicTaskResponse(BaseModel):
+    name: str
+    task: str
+    schedule: str
+    enabled: bool = True
+    last_run_at: str | None = None
+    total_run_count: int | None = None
+    args: list[Any] | None = None
+    kwargs: dict[str, Any] | None = None
+
+
 @router.post("/trigger", response_model=TaskResponse)
 def trigger_log_task(
     task_request: TaskTriggerRequest,
@@ -200,4 +211,63 @@ def get_worker_status() -> dict[str, Any]:
         logger.error(f"Error getting worker status: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get worker status: {str(e)}"
+        )
+
+
+@router.get("/periodic-tasks", dependencies=[Depends(get_current_active_superuser)])
+def get_periodic_tasks() -> list[PeriodicTaskResponse]:
+    """
+    Get Celery beat periodic tasks configuration (superuser only).
+    """
+    try:
+        beat_schedule = celery_app.conf.beat_schedule
+        periodic_tasks = []
+
+        for name, task_config in beat_schedule.items():
+            # Format schedule for display
+            schedule = task_config.get("schedule")
+            if isinstance(schedule, int | float):
+                schedule_str = f"Every {schedule} seconds"
+            elif hasattr(schedule, "human_readable"):
+                schedule_str = schedule.human_readable
+            elif str(type(schedule).__name__) == "crontab":
+                # Handle celery crontab schedules
+                parts = []
+                if hasattr(schedule, "minute") and schedule.minute != "*":
+                    parts.append(f"minute={schedule.minute}")
+                if hasattr(schedule, "hour") and schedule.hour != "*":
+                    parts.append(f"hour={schedule.hour}")
+                if hasattr(schedule, "day_of_week") and schedule.day_of_week != "*":
+                    parts.append(f"day_of_week={schedule.day_of_week}")
+                if hasattr(schedule, "day_of_month") and schedule.day_of_month != "*":
+                    parts.append(f"day_of_month={schedule.day_of_month}")
+                if hasattr(schedule, "month_of_year") and schedule.month_of_year != "*":
+                    parts.append(f"month_of_year={schedule.month_of_year}")
+
+                if parts:
+                    schedule_str = f"Crontab: {', '.join(parts)}"
+                else:
+                    schedule_str = "Crontab: every minute"
+            else:
+                schedule_str = str(schedule)
+
+            periodic_task = PeriodicTaskResponse(
+                name=name,
+                task=task_config.get("task", ""),
+                schedule=schedule_str,
+                enabled=task_config.get("enabled", True),
+                args=task_config.get("args", []),
+                kwargs=task_config.get("kwargs", {}),
+                # Note: last_run_at and total_run_count would require celery-beat database integration
+                # For now, we'll leave these as None since we're using file-based beat schedule
+                last_run_at=None,
+                total_run_count=None,
+            )
+            periodic_tasks.append(periodic_task)
+
+        return periodic_tasks
+    except Exception as e:
+        logger.error(f"Error getting periodic tasks: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get periodic tasks: {str(e)}"
         )

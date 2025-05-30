@@ -3,9 +3,9 @@ import { useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 
 import {
-  type Body_login_login_access_token as AccessToken,
-  type ApiError,
+  type BodyLoginLoginAccessToken as AccessToken,
   LoginService,
+  type Token,
   type UserPublic,
   UsersService,
 } from "@/client"
@@ -20,15 +20,19 @@ const useAuth = () => {
   const navigate = useNavigate()
   const { data: user } = useQuery<UserPublic | null, Error>({
     queryKey: ["currentUser"],
-    queryFn: UsersService.readUserMe,
+    queryFn: async () => {
+      const response = await UsersService.usersReadUserMe()
+      return response.data as unknown as UserPublic
+    },
     enabled: isLoggedIn(),
   })
 
   const login = async (data: AccessToken) => {
-    const response = await LoginService.loginAccessToken({
-      formData: data,
+    const response = await LoginService.loginLoginAccessToken({
+      body: data,
     })
-    localStorage.setItem("access_token", response.access_token)
+    const tokenData = response.data as unknown as Token
+    localStorage.setItem("access_token", tokenData.access_token)
   }
 
   const loginMutation = useMutation({
@@ -36,7 +40,7 @@ const useAuth = () => {
     onSuccess: () => {
       navigate({ to: "/" })
     },
-    onError: (err: ApiError) => {
+    onError: (err: any) => {
       handleError(err)
     },
   })

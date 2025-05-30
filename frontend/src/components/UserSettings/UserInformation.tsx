@@ -11,12 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import {
-  type ApiError,
-  type UserPublic,
-  type UserUpdateMe,
-  UsersService,
-} from "@/client"
+import { type UserPublic, type UserUpdateMe, UsersService } from "@/client"
 import useAuth from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, handleError } from "@/utils"
@@ -48,11 +43,11 @@ const UserInformation = () => {
 
   const mutation = useMutation({
     mutationFn: (data: UserUpdateMe) =>
-      UsersService.updateUserMe({ requestBody: data }),
+      UsersService.usersUpdateUserMe({ body: data }),
     onSuccess: () => {
       showSuccessToast("User updated successfully.")
     },
-    onError: (err: ApiError) => {
+    onError: (err: any) => {
       handleError(err)
     },
     onSettled: () => {

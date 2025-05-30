@@ -16,9 +16,15 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
-import { FiActivity, FiPlay, FiRefreshCw, FiUsers } from "react-icons/fi"
+import {
+  FiActivity,
+  FiClock,
+  FiPlay,
+  FiRefreshCw,
+  FiUsers,
+} from "react-icons/fi"
 
-import { type ApiError, type TaskTriggerRequest, TasksService } from "@/client"
+import { type TaskTriggerRequest, TasksService } from "@/client"
 import { Field } from "@/components/ui/field"
 import useCustomToast from "@/hooks/useCustomToast"
 
@@ -40,13 +46,13 @@ function Tasks() {
   // Trigger task mutation
   const triggerTaskMutation = useMutation({
     mutationFn: (data: TaskTriggerRequest) =>
-      TasksService.triggerLogTask({ requestBody: data }),
+      TasksService.tasksTriggerLogTask({ body: data }),
     onSuccess: (data: any) => {
       showSuccessToast(`Task ${data.task_id} triggered successfully`)
       setSelectedTaskId(data.task_id)
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
-    onError: (err: ApiError) => {
+    onError: (err: any) => {
       const errDetail = (err.body as any)?.detail
       showErrorToast(`${errDetail}`)
     },
@@ -54,13 +60,13 @@ function Tasks() {
 
   // Health check mutation
   const healthCheckMutation = useMutation({
-    mutationFn: () => TasksService.triggerHealthCheck(),
+    mutationFn: () => TasksService.tasksTriggerHealthCheck(),
     onSuccess: (data: any) => {
       showSuccessToast(`Health check ${data.task_id} started`)
       setSelectedTaskId(data.task_id)
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
-    onError: (err: ApiError) => {
+    onError: (err: any) => {
       const errDetail = (err.body as any)?.detail
       showErrorToast(`${errDetail}`)
     },
@@ -69,20 +75,26 @@ function Tasks() {
   // Get worker stats for selected worker
   const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
     queryKey: ["workerStats", selectedWorkerId],
-    queryFn: () =>
-      selectedWorkerId
-        ? TasksService.getWorkerStats({ workerId: selectedWorkerId })
-        : null,
+    queryFn: async () => {
+      if (!selectedWorkerId) return null
+      const response = await TasksService.tasksGetWorkerStats({
+        path: { worker_id: selectedWorkerId },
+      })
+      return response.data as any
+    },
     enabled: !!selectedWorkerId,
   })
 
   // Get task status for selected task
   const { data: taskStatus, isLoading: statusLoading } = useQuery({
     queryKey: ["taskStatus", selectedTaskId],
-    queryFn: () =>
-      selectedTaskId
-        ? TasksService.getTaskStatus({ taskId: selectedTaskId })
-        : null,
+    queryFn: async () => {
+      if (!selectedTaskId) return null
+      const response = await TasksService.tasksGetTaskStatus({
+        path: { task_id: selectedTaskId },
+      })
+      return response.data as any
+    },
     enabled: !!selectedTaskId,
     refetchInterval: 2000, // Refetch every 2 seconds
   })
@@ -90,8 +102,21 @@ function Tasks() {
   // Get worker status
   const { data: workerStatus, isLoading: workersLoading } = useQuery({
     queryKey: ["workers"],
-    queryFn: () => TasksService.getWorkerStatus(),
+    queryFn: async () => {
+      const response = await TasksService.tasksGetWorkerStatus()
+      return response.data as any
+    },
     refetchInterval: 10000, // Refetch every 10 seconds
+  })
+
+  // Get periodic tasks
+  const { data: periodicTasks, isLoading: periodicTasksLoading } = useQuery({
+    queryKey: ["periodicTasks"],
+    queryFn: async () => {
+      const response = await TasksService.tasksGetPeriodicTasks()
+      return response.data as any
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
   })
 
   const handleTriggerTask = () => {
@@ -303,7 +328,7 @@ function Tasks() {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {Object.entries(workerStatus.active || {}).map(
+                {Object.entries(workerStatus.data?.active || {}).map(
                   ([workerName, tasks]) => (
                     <Table.Row key={workerName}>
                       <Table.Cell>{workerName}</Table.Cell>
@@ -339,6 +364,87 @@ function Tasks() {
               <Text color="orange.700">
                 No workers found. Make sure Celery workers are running.
               </Text>
+            </Box>
+          )}
+        </Box>
+
+        {/* Periodic Tasks */}
+        <Box bg="white" p={6} borderRadius="lg" shadow="sm" borderWidth="1px">
+          <HStack justify="space-between" mb={4}>
+            <Heading size="md">
+              <HStack>
+                <FiClock />
+                <Text>Periodic Tasks</Text>
+              </HStack>
+            </Heading>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                queryClient.invalidateQueries({ queryKey: ["periodicTasks"] })
+              }
+              loading={periodicTasksLoading}
+            >
+              <FiRefreshCw />
+              Refresh
+            </Button>
+          </HStack>
+
+          {periodicTasksLoading ? (
+            <Flex justify="center">
+              <Spinner />
+            </Flex>
+          ) : periodicTasks && periodicTasks.length > 0 ? (
+            <Table.Root variant="outline">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader>Task Name</Table.ColumnHeader>
+                  <Table.ColumnHeader>Schedule</Table.ColumnHeader>
+                  <Table.ColumnHeader>Status</Table.ColumnHeader>
+                  <Table.ColumnHeader>Last Run</Table.ColumnHeader>
+                  <Table.ColumnHeader>Run Count</Table.ColumnHeader>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {periodicTasks.map((task: any) => (
+                  <Table.Row key={task.name}>
+                    <Table.Cell>
+                      <VStack align="start" gap={1}>
+                        <Text fontWeight="medium">{task.name}</Text>
+                        <Text fontSize="sm" color="gray.500">
+                          {task.task}
+                        </Text>
+                      </VStack>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text fontSize="sm">{task.schedule}</Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge colorPalette={task.enabled ? "green" : "gray"}>
+                        {task.enabled ? "enabled" : "disabled"}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text fontSize="sm" color="gray.500">
+                        {task.last_run_at || "Never"}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text fontSize="sm">{task.total_run_count || 0}</Text>
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Root>
+          ) : (
+            <Box
+              p={3}
+              bg="blue.50"
+              borderRadius="md"
+              borderLeftWidth="4px"
+              borderLeftColor="blue.500"
+            >
+              <Text color="blue.700">No periodic tasks configured.</Text>
             </Box>
           )}
         </Box>

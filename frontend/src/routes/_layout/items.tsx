@@ -11,7 +11,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { FiSearch } from "react-icons/fi"
 import { z } from "zod"
 
-import { ItemsService } from "@/client"
+import { type ItemPublic, type ItemsPublic, ItemsService } from "@/client"
 import { ItemActionsMenu } from "@/components/Common/ItemActionsMenu"
 import AddItem from "@/components/Items/AddItem"
 import PendingItems from "@/components/Pending/PendingItems"
@@ -30,8 +30,12 @@ const PER_PAGE = 5
 
 function getItemsQueryOptions({ page }: { page: number }) {
   return {
-    queryFn: () =>
-      ItemsService.readItems({ skip: (page - 1) * PER_PAGE, limit: PER_PAGE }),
+    queryFn: async () => {
+      const response = await ItemsService.itemsReadItems({
+        query: { skip: (page - 1) * PER_PAGE, limit: PER_PAGE },
+      })
+      return response.data as unknown as ItemsPublic
+    },
     queryKey: ["items", { page }],
   }
 }
@@ -93,7 +97,7 @@ function ItemsTable() {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {items?.map((item) => (
+          {items?.map((item: ItemPublic) => (
             <Table.Row key={item.id} opacity={isPlaceholderData ? 0.5 : 1}>
               <Table.Cell truncate maxW="sm">
                 {item.id}

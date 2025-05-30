@@ -34,7 +34,7 @@ description = "Install all dependencies for both backend and frontend"
 [tasks.backend]
 description = "Start FastAPI backend development server"
 dir = "{{ config_root }}/backend"
-run = "uv run fastapi dev app/main.py --host 0.0.0.0 --port 8000"
+run = "uv run fastapi dev kubestats/main.py --host 0.0.0.0 --port 8000"
 
 [tasks.frontend]
 description = "Start React frontend development server"

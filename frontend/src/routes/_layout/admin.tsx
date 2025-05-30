@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { z } from "zod"
 
-import { type UserPublic, UsersService } from "@/client"
+import { type UserPublic, type UsersPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { UserActionsMenu } from "@/components/Common/UserActionsMenu"
 import PendingUsers from "@/components/Pending/PendingUsers"
@@ -22,8 +22,12 @@ const PER_PAGE = 5
 
 function getUsersQueryOptions({ page }: { page: number }) {
   return {
-    queryFn: () =>
-      UsersService.readUsers({ skip: (page - 1) * PER_PAGE, limit: PER_PAGE }),
+    queryFn: async () => {
+      const response = await UsersService.usersReadUsers({
+        query: { skip: (page - 1) * PER_PAGE, limit: PER_PAGE },
+      })
+      return response.data as unknown as UsersPublic
+    },
     queryKey: ["users", { page }],
   }
 }
@@ -70,7 +74,7 @@ function UsersTable() {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {users?.map((user) => (
+          {users?.map((user: UserPublic) => (
             <Table.Row key={user.id} opacity={isPlaceholderData ? 0.5 : 1}>
               <Table.Cell color={!user.full_name ? "gray" : "inherit"}>
                 {user.full_name || "N/A"}
