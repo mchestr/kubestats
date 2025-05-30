@@ -5,7 +5,7 @@
 # ==============================================================================
 
 # Stage 1: Builder stage
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 
 # Set all environment variables in one layer
 ENV PYTHONUNBUFFERED=1 \
