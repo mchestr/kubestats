@@ -6,8 +6,6 @@ services:
     networks:
       - public
       - default
-    profiles:
-      - public
 
   db:
     image: postgres:17
@@ -25,8 +23,6 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
-    profiles:
-      - db
 
   redis:
     image: redis:8-alpine
@@ -40,8 +36,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    profiles:
-      - db
 
   adminer:
     image: adminer
@@ -53,8 +47,6 @@ services:
       - db
     environment:
       - ADMINER_DESIGN=pepa-linha-dark
-    profiles:
-      - db
 
   backend:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
@@ -66,8 +58,6 @@ services:
       db:
         condition: service_healthy
         restart: true
-      prestart:
-        condition: service_completed_successfully
     environment:
       - DOMAIN=${DOMAIN}
       - PROJECT_NAME=${PROJECT_NAME?Variable not set}
@@ -84,8 +74,6 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-    profiles:
-      - app
 
     healthcheck:
       test: ["CMD", "/app/.venv/bin/python", "-c", "import requests; requests.get('http://localhost:8000/api/v1/utils/health-check/', timeout=10)"]
@@ -127,8 +115,6 @@ services:
       - REDIS_PORT=6379
     build:
       context: ./backend
-    profiles:
-      - db
 
   celery-beat:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
@@ -160,8 +146,6 @@ services:
       - REDIS_PORT=6379
     build:
       context: ./backend
-    profiles:
-      - db
 
   frontend:
     image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
@@ -174,8 +158,6 @@ services:
       args:
         - VITE_API_URL=https://api.${DOMAIN?Variable not set}
         - NODE_ENV=production
-    profiles:
-      - app
 
 volumes:
   app-db-data:

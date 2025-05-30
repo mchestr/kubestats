@@ -5,7 +5,7 @@
 # ==============================================================================
 
 # Stage 1: Builder stage
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 
 # Set all environment variables in one layer
 ENV PYTHONUNBUFFERED=1 \
@@ -49,24 +49,29 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     chmod +x /runtime/docker-entrypoint.sh
 
 # ==============================================================================
-# Stage 2: Runtime stage using distroless
-FROM gcr.io/distroless/python3-debian12
+# Stage 2: Runtime stage using slim Python image
+FROM python:3.13-slim
+
+# Install minimal runtime dependencies
+RUN apt-get update && apt-get install -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy all runtime files and set environment variables in minimal layers
-COPY --from=builder /runtime/site-packages /app/site-packages
 COPY --from=builder /runtime/ /app/
 COPY --from=builder /runtime/tmp /tmp/
 
-# Create a writable directory for Celery Beat schedule file
-# Note: We can't use mkdir in distroless, so we create it in the builder stage
 # Set all environment variables and configurations in one layer
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/app/site-packages
 
+# Create non-root user
+RUN groupadd --gid 1000 appuser && \
+    useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser
+
 WORKDIR /app
-USER nonroot
+USER appuser
 EXPOSE 8000
 
-# Run the application
-ENTRYPOINT ["docker-entrypoint.sh"]
+# Run the application using the bash entrypoint
+ENTRYPOINT ["./docker-entrypoint.sh"]
