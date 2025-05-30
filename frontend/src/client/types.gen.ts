@@ -1014,5 +1014,5 @@ export type TasksGetPeriodicTasksResponses = {
 export type TasksGetPeriodicTasksResponse = TasksGetPeriodicTasksResponses[keyof TasksGetPeriodicTasksResponses];
 
 export type ClientOptions = {
-    baseUrl: `${string}://${string}` | (string & {});
+    baseUrl: 'http://localhost:8000' | (string & {});
 };
