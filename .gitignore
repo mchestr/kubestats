@@ -376,7 +376,6 @@ Temporary Items
 .nfs*
 
 # Docker
-.dockerignore
 docker-compose.override.yml
 
 # mise
