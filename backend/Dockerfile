@@ -63,10 +63,6 @@ WORKDIR /app
 USER nonroot
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import requests; requests.get('http://localhost:8000/api/v1/utils/health-check/', timeout=10)"]
-
 # Run the application
 ENTRYPOINT ["python", "-m", "gunicorn"]
 CMD ["-c", "gunicorn.conf.py", "app.main:app"]
