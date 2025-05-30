@@ -57,15 +57,21 @@ export const getQueryString = (params: Record<string, unknown>): string => {
     if (value instanceof Date) {
       append(key, value.toISOString())
     } else if (Array.isArray(value)) {
-      value.forEach((v) => encodePair(key, v))
+      for (const v of value) {
+        encodePair(key, v)
+      }
     } else if (typeof value === "object") {
-      Object.entries(value).forEach(([k, v]) => encodePair(`${key}[${k}]`, v))
+      for (const [k, v] of Object.entries(value)) {
+        encodePair(`${key}[${k}]`, v)
+      }
     } else {
       append(key, value)
     }
   }
 
-  Object.entries(params).forEach(([key, value]) => encodePair(key, value))
+  for (const [key, value] of Object.entries(params)) {
+    encodePair(key, value)
+  }
 
   return qs.length ? `?${qs.join("&")}` : ""
 }
@@ -76,7 +82,7 @@ const getUrl = (config: OpenAPIConfig, options: ApiRequestOptions): string => {
   const path = options.url
     .replace("{api-version}", config.VERSION)
     .replace(/{(.*?)}/g, (substring: string, group: string) => {
-      if (options.path?.hasOwnProperty(group)) {
+      if (options.path && group in options.path) {
         return encoder(String(options.path[group]))
       }
       return substring
@@ -100,15 +106,17 @@ export const getFormData = (
       }
     }
 
-    Object.entries(options.formData)
-      .filter(([, value]) => value !== undefined && value !== null)
-      .forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          value.forEach((v) => process(key, v))
-        } else {
-          process(key, value)
+    for (const [key, value] of Object.entries(options.formData).filter(
+      ([, value]) => value !== undefined && value !== null,
+    )) {
+      if (Array.isArray(value)) {
+        for (const v of value) {
+          process(key, v)
         }
-      })
+      } else {
+        process(key, value)
+      }
+    }
 
     return formData
   }
@@ -142,19 +150,15 @@ export const getHeaders = async <T>(
     resolve(options, config.HEADERS),
   ])
 
-  const headers = Object.entries({
+  const headers: Record<string, string> = {}
+
+  for (const [key, value] of Object.entries({
     Accept: "application/json",
     ...additionalHeaders,
     ...options.headers,
-  })
-    .filter(([, value]) => value !== undefined && value !== null)
-    .reduce(
-      (headers, [key, value]) => ({
-        ...headers,
-        [key]: String(value),
-      }),
-      {} as Record<string, string>,
-    )
+  }).filter(([, value]) => value !== undefined && value !== null)) {
+    headers[key] = String(value)
+  }
 
   if (isStringWithValue(token)) {
     headers.Authorization = `Bearer ${token}`

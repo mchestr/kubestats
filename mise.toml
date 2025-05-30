@@ -131,7 +131,7 @@ description = "Build Docker images for both services"
 
 [tasks.docker-up]
 description = "Start development environment with Docker Compose"
-run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build -d"
+run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build"
 
 [tasks.docker-dev]
 description = "Start development environment with Docker Compose"

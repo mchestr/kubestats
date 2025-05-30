@@ -18,11 +18,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
 import { FiActivity, FiPlay, FiRefreshCw, FiUsers } from "react-icons/fi"
 
-import {
-  type ApiError,
-  type TaskTriggerRequest,
-  TasksService,
-} from "@/client"
+import { type ApiError, type TaskTriggerRequest, TasksService } from "@/client"
 import { Field } from "@/components/ui/field"
 import useCustomToast from "@/hooks/useCustomToast"
 

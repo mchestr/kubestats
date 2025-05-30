@@ -6,7 +6,11 @@
   "files": {
     "ignore": [
       "node_modules",
+      "dist",
       "src/routeTree.gen.ts",
+      "src/client/sdk.gen.ts",
+      "src/client/schemas.gen.ts",
+      "src/client/types.gen.ts",
       "playwright.config.ts",
       "playwright-report"
     ]
@@ -17,7 +21,8 @@
       "recommended": true,
       "suspicious": {
         "noExplicitAny": "off",
-        "noArrayIndexKey": "off"
+        "noArrayIndexKey": "off",
+        "noThenProperty": "off"
       },
       "style": {
         "noNonNullAssertion": "off"
