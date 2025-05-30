@@ -10,8 +10,8 @@ from kubestats.tasks.basic_tasks import (
 )
 
 
-@patch("app.tasks.basic_tasks.time.sleep")
-@patch("app.tasks.basic_tasks.datetime")
+@patch("kubestats.tasks.basic_tasks.time.sleep")
+@patch("kubestats.tasks.basic_tasks.datetime")
 def test_create_log_entry_success(mock_datetime, mock_sleep) -> None:
     """Test successful log entry creation."""
     # Mock datetime
@@ -20,7 +20,7 @@ def test_create_log_entry_success(mock_datetime, mock_sleep) -> None:
     mock_datetime.utcnow.side_effect = [start_time, end_time]
 
     # Create a mock task instance to avoid Celery property issues
-    with patch("app.tasks.basic_tasks.create_log_entry"):
+    with patch("kubestats.tasks.basic_tasks.create_log_entry"):
         mock_task_instance = Mock()
         mock_task_instance.request.id = "test-task-id"
         mock_task_instance.update_state = Mock()
@@ -73,8 +73,8 @@ def test_create_log_entry_success(mock_datetime, mock_sleep) -> None:
         assert mock_sleep.call_count == duration
 
 
-@patch("app.tasks.basic_tasks.time.sleep")
-@patch("app.tasks.basic_tasks.datetime")
+@patch("kubestats.tasks.basic_tasks.time.sleep")
+@patch("kubestats.tasks.basic_tasks.datetime")
 def test_create_log_entry_with_custom_duration(mock_datetime, mock_sleep) -> None:
     """Test log entry creation with custom duration."""
     # Mock datetime
@@ -82,7 +82,7 @@ def test_create_log_entry_with_custom_duration(mock_datetime, mock_sleep) -> Non
     end_time = datetime(2024, 1, 1, 12, 0, 3)
     mock_datetime.utcnow.side_effect = [start_time, end_time]
 
-    with patch("app.tasks.basic_tasks.create_log_entry"):
+    with patch("kubestats.tasks.basic_tasks.create_log_entry"):
         mock_task_instance = Mock()
         mock_task_instance.request.id = "test-task-id-2"
         mock_task_instance.update_state = Mock()
@@ -121,10 +121,10 @@ def test_create_log_entry_with_custom_duration(mock_datetime, mock_sleep) -> Non
         assert mock_sleep.call_count == duration
 
 
-@patch("app.tasks.basic_tasks.time.sleep")
+@patch("kubestats.tasks.basic_tasks.time.sleep")
 def test_create_log_entry_exception_handling(_mock_sleep) -> None:
     """Test exception handling in create_log_entry."""
-    with patch("app.tasks.basic_tasks.create_log_entry"):
+    with patch("kubestats.tasks.basic_tasks.create_log_entry"):
         mock_task_instance = Mock()
         mock_task_instance.request.id = "test-task-id-error"
         mock_task_instance.update_state = Mock(
@@ -150,7 +150,7 @@ def test_create_log_entry_exception_handling(_mock_sleep) -> None:
 @patch("redis.Redis.from_url")
 @patch("psutil.cpu_percent")
 @patch("psutil.virtual_memory")
-@patch("app.tasks.basic_tasks.datetime")
+@patch("kubestats.tasks.basic_tasks.datetime")
 def test_system_health_check_success(
     mock_datetime, mock_memory, mock_cpu, mock_redis
 ) -> None:
@@ -182,7 +182,7 @@ def test_system_health_check_success(
 
 
 @patch("redis.Redis.from_url")
-@patch("app.tasks.basic_tasks.datetime")
+@patch("kubestats.tasks.basic_tasks.datetime")
 def test_system_health_check_redis_failure(mock_datetime, mock_redis) -> None:
     """Test system health check with Redis failure."""
     # Mock datetime
@@ -201,7 +201,7 @@ def test_system_health_check_redis_failure(mock_datetime, mock_redis) -> None:
 
 @patch("redis.Redis.from_url")
 @patch("psutil.cpu_percent")
-@patch("app.tasks.basic_tasks.datetime")
+@patch("kubestats.tasks.basic_tasks.datetime")
 def test_system_health_check_psutil_failure(
     mock_datetime, mock_cpu, mock_redis
 ) -> None:
@@ -223,7 +223,7 @@ def test_system_health_check_psutil_failure(
     assert "CPU monitoring failed" in result["error"]
 
 
-@patch("app.tasks.basic_tasks.datetime")
+@patch("kubestats.tasks.basic_tasks.datetime")
 def test_cleanup_old_logs(mock_datetime) -> None:
     """Test cleanup old logs task."""
     # Mock datetime

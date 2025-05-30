@@ -29,19 +29,24 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
-COPY ./app /app/app 
-COPY ./scripts /app/scripts 
-COPY ./alembic.ini ./gunicorn.conf.py /app/
+COPY ./kubestats /app/kubestats
+COPY ./alembic.ini ./docker-entrypoint.sh /app/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev && \
+    # Create runtime directory structure
     mkdir -p /runtime/site-packages && \
     mkdir -p /runtime/tmp && \
     chmod 777 /runtime/tmp && \
+    # Copy Python packages and binaries
     cp -r /app/.venv/lib/python*/site-packages/* /runtime/site-packages/ && \
-    cp -r /app/app /runtime/ && \
-    cp -r /app/scripts /runtime/ && \
+    cp -r /app/.venv/bin/* /runtime/ && \
+    # Copy application files
+    cp -r /app/kubestats /runtime/ && \
+    # Copy configuration files
     cp /app/alembic.ini /runtime/ && \
-    cp /app/gunicorn.conf.py /runtime/
+    # Copy and set executable permissions for entrypoint
+    cp /app/docker-entrypoint.sh /runtime/ && \
+    chmod +x /runtime/docker-entrypoint.sh
 
 # ==============================================================================
 # Stage 2: Runtime stage using distroless
@@ -64,5 +69,4 @@ USER nonroot
 EXPOSE 8000
 
 # Run the application
-ENTRYPOINT ["python", "-m", "gunicorn"]
-CMD ["-c", "gunicorn.conf.py", "app.main:app"]
+ENTRYPOINT ["docker-entrypoint.sh"]

@@ -8,7 +8,7 @@ celery_app = Celery(
     "worker",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=["app.tasks.basic_tasks"],
+    include=["kubestats.tasks.basic_tasks"],
 )
 
 # Celery configuration
@@ -24,7 +24,7 @@ celery_app.conf.update(
     worker_send_task_events=True,
     task_send_sent_event=True,
     discover_repositories={
-        "task": "app.tasks.discover_repositories.run",
+        "task": "kubestats.tasks.discover_repositories.run",
         "schedule": 60.0,  # Every minute
     },
 )

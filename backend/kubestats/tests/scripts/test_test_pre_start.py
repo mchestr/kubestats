@@ -13,7 +13,7 @@ def test_init_successful_connection() -> None:
     session_mock.exec = MagicMock(return_value=True)
 
     with (
-        patch("app.tests_pre_start.Session", return_value=session_mock),
+        patch("kubestats.tests_pre_start.Session", return_value=session_mock),
         patch.object(logger, "info"),
         patch.object(logger, "error"),
         patch.object(logger, "warn"),

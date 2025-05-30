@@ -101,7 +101,7 @@ services:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     restart: always
     entrypoint: ["python"]
-    command: ["-m", "celery", "-A", "app.celery_app", "worker", "-l", "info"]
+    command: ["-m", "celery", "-A", "kubestats.celery_app", "worker", "-l", "info"]
     networks:
       - default
     depends_on:
@@ -134,7 +134,7 @@ services:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     restart: always
     entrypoint: ["python"]
-    command: ["-m", "celery", "-A", "app.celery_app", "beat", "-l", "info", "--schedule=/tmp/celerybeat-schedule"]
+    command: ["-m", "celery", "-A", "kubestats.celery_app", "beat", "-l", "info", "--schedule=/tmp/celerybeat-schedule"]
     networks:
       - default
     depends_on:
