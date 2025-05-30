@@ -36,8 +36,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev && \
     # Prepare optimized runtime structure
     mkdir -p /runtime/site-packages && \
-    mkdir -p /runtime/tmp && \
-    chmod 777 /runtime/tmp && \
     # Copy all necessary files in one operation
     cp -r .venv/lib/python*/site-packages/* /runtime/site-packages/ && \
     cp -r .venv/bin/* /runtime/ && \

@@ -2,7 +2,7 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://frontend:80
+    command: tunnel --no-autoupdate --url http://frontend:80 --hostname kubestats.${DOMAIN?Variable not set} --name kubestats.${DOMAIN?Variable not set}
     networks:
       - public
       - default

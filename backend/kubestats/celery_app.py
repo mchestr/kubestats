@@ -1,6 +1,7 @@
 import os
 
 from celery import Celery
+from celery.schedules import crontab
 
 from kubestats.core.config import settings
 
@@ -8,7 +9,7 @@ celery_app = Celery(
     "worker",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=["kubestats.tasks.basic_tasks"],
+    include=["kubestats.tasks.basic_tasks", "kubestats.tasks.discover_repositories"],
 )
 
 # Celery configuration
@@ -23,8 +24,10 @@ celery_app.conf.update(
     result_extended=True,  # Store additional metadata
     worker_send_task_events=True,
     task_send_sent_event=True,
-    discover_repositories={
-        "task": "kubestats.tasks.discover_repositories.run",
-        "schedule": 60.0,  # Every minute
+    beat_schedule={
+        "discover-repositories": {
+            "task": "kubestats.tasks.discover_repositories.run",
+            "schedule": 30.0,
+        },
     },
 )
