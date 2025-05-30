@@ -78,6 +78,14 @@ run = "npm run lint"
 depends = ["lint-backend", "lint-frontend"]
 description = "Lint both backend and frontend code"
 
+[tasks.generate-client]
+description = "Generate API client from OpenAPI schema"
+dir = "{{ config_root }}/frontend"
+run = [
+    "curl -o openapi.json http://localhost:8000/api/v1/openapi.json",
+    "npm run generate-client"
+]
+
 [tasks.clean-backend]
 description = "Clean backend build artifacts and dependencies"
 dir = "{{ config_root }}/backend"

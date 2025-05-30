@@ -1,8 +1,16 @@
 services:
-  cloudflared:
+  cloudflared-frontend:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     command: tunnel --no-autoupdate --url http://frontend:80 --hostname kubestats.${DOMAIN?Variable not set} --name kubestats.${DOMAIN?Variable not set}
+    networks:
+      - public
+      - default
+
+  cloudflared-api:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://backend:8000 --hostname kubestats-api.${DOMAIN?Variable not set} --name kubestats-api.${DOMAIN?Variable not set}
     networks:
       - public
       - default
