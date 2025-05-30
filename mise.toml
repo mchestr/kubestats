@@ -135,4 +135,4 @@ run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --
 
 [tasks.docker-dev]
 description = "Start development environment with Docker Compose"
-run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build -d db adminer redis celery-worker celery-beat"
+run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build db adminer redis celery-worker celery-beat"
