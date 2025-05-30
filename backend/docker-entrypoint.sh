@@ -3,11 +3,8 @@
 set -e
 set -x
 
-# Let the DB start
-python kubestats/backend_pre_start.py
-
 # Run migrations
-alembic upgrade head
+python -m alembic upgrade head
 
 # Create initial data in DB
 python kubestats/initial_data.py
@@ -30,8 +27,7 @@ exec python -m gunicorn \
     --error-logfile - \
     --access-logformat '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s' \
     --name kubestats \
-    --no-daemon \
-    --keepalive 2 \
+    --keep-alive 2 \
     --timeout 30 \
     --graceful-timeout 30 \
     kubestats.main:app

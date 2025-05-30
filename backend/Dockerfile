@@ -1,13 +1,13 @@
 # ==============================================================================
 # Multi-stage build for minimal Python FastAPI application
-# Stage 1: Builder (python:3.11-slim)
-# Stage 2: Runtime (gcr.io/distroless/python3-debian12)
+# Stage 1: Builder (python:3.13-slim)
+# Stage 2: Runtime (python:3.13-slim)
 # ==============================================================================
 
 # Stage 1: Builder stage
 FROM python:3.13-slim AS builder
 
-# Set all environment variables in one layer
+# Set environment variables and install system dependencies in one layer
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_COMPILE_BYTECODE=1 \
@@ -16,7 +16,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install system dependencies and uv in one layer
+# Install system dependencies and copy uv binary in one layer
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -24,54 +24,44 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=ghcr.io/astral-sh/uv:0.7.8 /uv /uvx /bin/
 
-# Copy all source files and install dependencies in one optimized sequence
+# Copy dependency files and install dependencies
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
-COPY ./kubestats /app/kubestats
-COPY ./alembic.ini ./docker-entrypoint.sh /app/
+# Copy source files and build final runtime structure
+COPY ./kubestats ./kubestats
+COPY ./alembic.ini ./docker-entrypoint.sh ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev && \
-    # Create runtime directory structure
+    # Prepare optimized runtime structure
     mkdir -p /runtime/site-packages && \
     mkdir -p /runtime/tmp && \
     chmod 777 /runtime/tmp && \
-    # Copy Python packages and binaries
-    cp -r /app/.venv/lib/python*/site-packages/* /runtime/site-packages/ && \
-    cp -r /app/.venv/bin/* /runtime/ && \
-    # Copy application files
-    cp -r /app/kubestats /runtime/ && \
-    # Copy configuration files
-    cp /app/alembic.ini /runtime/ && \
-    # Copy and set executable permissions for entrypoint
-    cp /app/docker-entrypoint.sh /runtime/ && \
+    # Copy all necessary files in one operation
+    cp -r .venv/lib/python*/site-packages/* /runtime/site-packages/ && \
+    cp -r .venv/bin/* /runtime/ && \
+    cp -r kubestats alembic.ini /runtime/ && \
+    cp docker-entrypoint.sh /runtime/ && \
     chmod +x /runtime/docker-entrypoint.sh
 
 # ==============================================================================
-# Stage 2: Runtime stage using slim Python image
+# Stage 2: Minimal runtime stage
 FROM python:3.13-slim
 
-# Install minimal runtime dependencies
-RUN apt-get update && apt-get install -y \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy all runtime files and set environment variables in minimal layers
-COPY --from=builder /runtime/ /app/
-COPY --from=builder /runtime/tmp /tmp/
-
-# Set all environment variables and configurations in one layer
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/app/site-packages
-
-# Create non-root user
+# Create user and set up environment in one layer
 RUN groupadd --gid 1000 appuser && \
     useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser
 
+# Copy runtime files and set permissions
+COPY --from=builder --chown=appuser:appuser /runtime/ /app/
+
+# Set environment variables, working directory, and user
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/site-packages
 WORKDIR /app
 USER appuser
-EXPOSE 8000
 
-# Run the application using the bash entrypoint
+EXPOSE 8000
 ENTRYPOINT ["./docker-entrypoint.sh"]

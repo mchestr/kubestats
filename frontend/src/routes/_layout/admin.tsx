@@ -46,7 +46,8 @@ function UsersTable() {
 
   const setPage = (page: number) =>
     navigate({
-      search: (prev: { [key: string]: string }) => ({ ...prev, page }),
+      to: Route.fullPath,
+      search: { page },
     })
 
   const users = data?.data.slice(0, PER_PAGE) ?? []

@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Container,
-  EmptyState,
   Flex,
   HStack,
   Heading,
@@ -21,10 +20,8 @@ import { FiActivity, FiPlay, FiRefreshCw, FiUsers } from "react-icons/fi"
 
 import {
   type ApiError,
-  TaskStatusResponse,
   type TaskTriggerRequest,
   TasksService,
-  WorkerStatsResponse,
 } from "@/client"
 import { Field } from "@/components/ui/field"
 import useCustomToast from "@/hooks/useCustomToast"
