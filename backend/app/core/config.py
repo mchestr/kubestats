@@ -6,7 +6,6 @@ from pydantic import (
     AnyUrl,
     BeforeValidator,
     EmailStr,
-    PostgresDsn,
     computed_field,
     model_validator,
 )
@@ -91,7 +90,9 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def CELERY_RESULT_BACKEND(self) -> str:
-        return str(self.SQLALCHEMY_DATABASE_URI).replace("postgresql+psycopg2", "db+postgresql")
+        return str(self.SQLALCHEMY_DATABASE_URI).replace(
+            "postgresql+psycopg2", "db+postgresql"
+        )
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

@@ -40,8 +40,8 @@ def create_log_entry(self, message: str, log_level: str = "INFO", duration: int 
                     "current": i + 1,
                     "total": duration,
                     "progress": progress,
-                    "status": f"Processing step {i + 1} of {duration}"
-                }
+                    "status": f"Processing step {i + 1} of {duration}",
+                },
             )
 
             # Log progress
@@ -61,7 +61,7 @@ def create_log_entry(self, message: str, log_level: str = "INFO", duration: int 
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
             "duration_seconds": duration_seconds,
-            "status": "completed"
+            "status": "completed",
         }
 
         logger.info(f"Task {task_id} completed successfully")
@@ -102,7 +102,7 @@ def system_health_check():
             "redis_status": "healthy" if redis_status else "unhealthy",
             "cpu_percent": cpu_percent,
             "memory_percent": memory.percent,
-            "status": "healthy"
+            "status": "healthy",
         }
 
         logger.info(f"System health check completed: {health_data}")
@@ -113,7 +113,7 @@ def system_health_check():
         return {
             "timestamp": start_time.isoformat(),
             "status": "unhealthy",
-            "error": str(exc)
+            "error": str(exc),
         }
 
 
@@ -137,7 +137,7 @@ def cleanup_old_logs():
         "timestamp": start_time.isoformat(),
         "cleaned_files": 0,  # Placeholder
         "freed_space_mb": 0,  # Placeholder
-        "status": "completed"
+        "status": "completed",
     }
 
     logger.info(f"Log cleanup completed: {result}")

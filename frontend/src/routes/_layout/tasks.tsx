@@ -1,29 +1,33 @@
 import {
+  Badge,
   Box,
+  Button,
   Container,
+  EmptyState,
   Flex,
+  HStack,
   Heading,
+  Input,
   SimpleGrid,
+  Spinner,
+  Table,
   Text,
   VStack,
-  HStack,
-  Badge,
-  Button,
-  Input,
-  Table,
-  EmptyState,
-  Spinner,
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
-import { FiPlay, FiActivity, FiUsers, FiRefreshCw } from "react-icons/fi"
+import { FiActivity, FiPlay, FiRefreshCw, FiUsers } from "react-icons/fi"
 
-import { ApiError, TasksService, TaskStatusResponse, TaskTriggerRequest, WorkerStatsResponse } from "@/client"
-import useCustomToast from "@/hooks/useCustomToast"
+import {
+  type ApiError,
+  TaskStatusResponse,
+  type TaskTriggerRequest,
+  TasksService,
+  WorkerStatsResponse,
+} from "@/client"
 import { Field } from "@/components/ui/field"
-
-
+import useCustomToast from "@/hooks/useCustomToast"
 
 export const Route = createFileRoute("/_layout/tasks")({
   component: Tasks,
@@ -72,14 +76,20 @@ function Tasks() {
   // Get worker stats for selected worker
   const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
     queryKey: ["workerStats", selectedWorkerId],
-    queryFn: () => selectedWorkerId ? TasksService.getWorkerStats({ workerId: selectedWorkerId }) : null,
+    queryFn: () =>
+      selectedWorkerId
+        ? TasksService.getWorkerStats({ workerId: selectedWorkerId })
+        : null,
     enabled: !!selectedWorkerId,
   })
 
   // Get task status for selected task
   const { data: taskStatus, isLoading: statusLoading } = useQuery({
     queryKey: ["taskStatus", selectedTaskId],
-    queryFn: () => selectedTaskId ? TasksService.getTaskStatus({ taskId: selectedTaskId }) : null,
+    queryFn: () =>
+      selectedTaskId
+        ? TasksService.getTaskStatus({ taskId: selectedTaskId })
+        : null,
     enabled: !!selectedTaskId,
     refetchInterval: 2000, // Refetch every 2 seconds
   })
@@ -130,7 +140,7 @@ function Tasks() {
 
   const extractWorkerId = (workerName: string): string => {
     // Remove 'celery@' prefix to get clean worker ID
-    return workerName.replace(/^celery@/, '')
+    return workerName.replace(/^celery@/, "")
   }
 
   const handleViewWorkerStats = (workerName: string) => {
@@ -138,8 +148,6 @@ function Tasks() {
     setSelectedWorkerId(workerId)
     setWorkerStatsVisible(true)
   }
-
-
 
   return (
     <Container maxW="full" py={4}>
@@ -149,9 +157,7 @@ function Tasks() {
           <Heading size="lg" textAlign={{ base: "center", md: "left" }}>
             Task Management
           </Heading>
-          <Text color="gray.500">
-            Trigger and monitor Celery tasks
-          </Text>
+          <Text color="gray.500">Trigger and monitor Celery tasks</Text>
         </Box>
 
         {/* Task Controls */}
@@ -166,14 +172,14 @@ function Tasks() {
             </Heading>
             <VStack gap={4} align="stretch">
               <Field label="Task Type">
-                <select 
-                  value={taskType} 
+                <select
+                  value={taskType}
                   onChange={(e) => setTaskType(e.target.value)}
-                  style={{ 
-                    padding: '8px', 
-                    borderRadius: '6px', 
-                    border: '1px solid #e2e8f0',
-                    width: '100%'
+                  style={{
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #e2e8f0",
+                    width: "100%",
                   }}
                 >
                   <option value="log">Log Entry Task</option>
@@ -189,14 +195,14 @@ function Tasks() {
               </Field>
 
               <Field label="Log Level">
-                <select 
-                  value={logLevel} 
+                <select
+                  value={logLevel}
                   onChange={(e) => setLogLevel(e.target.value)}
-                  style={{ 
-                    padding: '8px', 
-                    borderRadius: '6px', 
-                    border: '1px solid #e2e8f0',
-                    width: '100%'
+                  style={{
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #e2e8f0",
+                    width: "100%",
                   }}
                 >
                   <option value="DEBUG">DEBUG</option>
@@ -210,7 +216,9 @@ function Tasks() {
                 <Input
                   type="number"
                   value={duration}
-                  onChange={(e) => setDuration(parseInt(e.target.value) || 1)}
+                  onChange={(e) =>
+                    setDuration(Number.parseInt(e.target.value) || 1)
+                  }
                   min={1}
                   max={60}
                 />
@@ -244,9 +252,17 @@ function Tasks() {
                 <FiActivity />
                 Run Health Check
               </Button>
-              
-              <Box p={3} bg="blue.50" borderRadius="md" borderLeftWidth="4px" borderLeftColor="blue.500">
-                <Text fontWeight="bold" color="blue.700" mb={1}>Health Check</Text>
+
+              <Box
+                p={3}
+                bg="blue.50"
+                borderRadius="md"
+                borderLeftWidth="4px"
+                borderLeftColor="blue.500"
+              >
+                <Text fontWeight="bold" color="blue.700" mb={1}>
+                  Health Check
+                </Text>
                 <Text fontSize="sm" color="blue.600">
                   Monitors Redis connection and system resources
                 </Text>
@@ -267,19 +283,22 @@ function Tasks() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ["workers"] })}
+              onClick={() =>
+                queryClient.invalidateQueries({ queryKey: ["workers"] })
+              }
               loading={workersLoading}
             >
               <FiRefreshCw />
               Refresh
             </Button>
           </HStack>
-          
+
           {workersLoading ? (
             <Flex justify="center">
               <Spinner />
             </Flex>
-          ) : workerStatus?.active && Object.keys(workerStatus.active).length > 0 ? (
+          ) : workerStatus?.active &&
+            Object.keys(workerStatus.active).length > 0 ? (
             <Table.Root variant="outline">
               <Table.Header>
                 <Table.Row>
@@ -291,31 +310,39 @@ function Tasks() {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {Object.entries(workerStatus.active || {}).map(([workerName, tasks]) => (
-                  <Table.Row key={workerName}>
-                    <Table.Cell>{workerName}</Table.Cell>
-                    <Table.Cell>
-                      <Badge colorPalette="green">
-                        online
-                      </Badge>
-                    </Table.Cell>
-                    <Table.Cell>{Array.isArray(tasks) ? tasks.length : 0}</Table.Cell>
-                    <Table.Cell>-</Table.Cell>
-                    <Table.Cell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewWorkerStats(workerName)}
-                      >
-                        View Stats
-                      </Button>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
+                {Object.entries(workerStatus.active || {}).map(
+                  ([workerName, tasks]) => (
+                    <Table.Row key={workerName}>
+                      <Table.Cell>{workerName}</Table.Cell>
+                      <Table.Cell>
+                        <Badge colorPalette="green">online</Badge>
+                      </Table.Cell>
+                      <Table.Cell>
+                        {Array.isArray(tasks) ? tasks.length : 0}
+                      </Table.Cell>
+                      <Table.Cell>-</Table.Cell>
+                      <Table.Cell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewWorkerStats(workerName)}
+                        >
+                          View Stats
+                        </Button>
+                      </Table.Cell>
+                    </Table.Row>
+                  ),
+                )}
               </Table.Body>
             </Table.Root>
           ) : (
-            <Box p={3} bg="orange.50" borderRadius="md" borderLeftWidth="4px" borderLeftColor="orange.500">
+            <Box
+              p={3}
+              bg="orange.50"
+              borderRadius="md"
+              borderLeftWidth="4px"
+              borderLeftColor="orange.500"
+            >
               <Text color="orange.700">
                 No workers found. Make sure Celery workers are running.
               </Text>
@@ -326,8 +353,10 @@ function Tasks() {
         {/* Task Status */}
         {selectedTaskId && (
           <Box bg="white" p={6} borderRadius="lg" shadow="sm" borderWidth="1px">
-            <Heading size="md" mb={4}>Task Status: {selectedTaskId}</Heading>
-            
+            <Heading size="md" mb={4}>
+              Task Status: {selectedTaskId}
+            </Heading>
+
             {statusLoading ? (
               <Flex justify="center">
                 <Spinner />
@@ -340,24 +369,26 @@ function Tasks() {
                     {taskStatus.status}
                   </Badge>
                 </HStack>
-                
+
                 {taskStatus.name && (
                   <HStack>
                     <Text fontWeight="bold">Task Name:</Text>
                     <Text>{taskStatus.name}</Text>
                   </HStack>
                 )}
-                
+
                 {taskStatus.worker && (
                   <HStack>
                     <Text fontWeight="bold">Worker:</Text>
                     <Text>{taskStatus.worker}</Text>
                   </HStack>
                 )}
-                
+
                 {taskStatus.result != null && (
                   <Box>
-                    <Text fontWeight="bold" mb={2}>Result:</Text>
+                    <Text fontWeight="bold" mb={2}>
+                      Result:
+                    </Text>
                     <Box
                       p={3}
                       bg="gray.50"
@@ -370,10 +401,12 @@ function Tasks() {
                     </Box>
                   </Box>
                 )}
-                
+
                 {taskStatus.traceback && (
                   <Box>
-                    <Text fontWeight="bold" mb={2} color="red.500">Error:</Text>
+                    <Text fontWeight="bold" mb={2} color="red.500">
+                      Error:
+                    </Text>
                     <Box
                       p={3}
                       bg="red.50"
@@ -388,10 +421,14 @@ function Tasks() {
                 )}
               </VStack>
             ) : (
-              <Box p={3} bg="red.50" borderRadius="md" borderLeftWidth="4px" borderLeftColor="red.500">
-                <Text color="red.700">
-                  Failed to load task status
-                </Text>
+              <Box
+                p={3}
+                bg="red.50"
+                borderRadius="md"
+                borderLeftWidth="4px"
+                borderLeftColor="red.500"
+              >
+                <Text color="red.700">Failed to load task status</Text>
               </Box>
             )}
           </Box>
@@ -413,7 +450,7 @@ function Tasks() {
                 Close Stats
               </Button>
             </HStack>
-            
+
             {workerStatsLoading ? (
               <Flex justify="center">
                 <Spinner />
@@ -431,27 +468,33 @@ function Tasks() {
                   </HStack>
                   <HStack>
                     <Text fontWeight="bold">PID:</Text>
-                    <Text>{workerStats.pid || 'N/A'}</Text>
+                    <Text>{workerStats.pid || "N/A"}</Text>
                   </HStack>
                   <HStack>
                     <Text fontWeight="bold">Uptime:</Text>
-                    <Text>{workerStats.uptime ? `${Math.floor(workerStats.uptime / 60)} minutes` : 'N/A'}</Text>
+                    <Text>
+                      {workerStats.uptime
+                        ? `${Math.floor(workerStats.uptime / 60)} minutes`
+                        : "N/A"}
+                    </Text>
                   </HStack>
                 </VStack>
-                
+
                 <VStack gap={3} align="stretch">
                   <HStack>
                     <Text fontWeight="bold">Clock:</Text>
-                    <Text>{workerStats.clock || 'N/A'}</Text>
+                    <Text>{workerStats.clock || "N/A"}</Text>
                   </HStack>
                   <HStack>
                     <Text fontWeight="bold">Prefetch Count:</Text>
-                    <Text>{workerStats.prefetch_count || 'N/A'}</Text>
+                    <Text>{workerStats.prefetch_count || "N/A"}</Text>
                   </HStack>
-                  
+
                   {workerStats.pool && (
                     <Box>
-                      <Text fontWeight="bold" mb={2}>Pool Info:</Text>
+                      <Text fontWeight="bold" mb={2}>
+                        Pool Info:
+                      </Text>
                       <Box
                         p={3}
                         bg="gray.50"
@@ -464,10 +507,12 @@ function Tasks() {
                       </Box>
                     </Box>
                   )}
-                  
+
                   {workerStats.total_tasks && (
                     <Box>
-                      <Text fontWeight="bold" mb={2}>Task Stats:</Text>
+                      <Text fontWeight="bold" mb={2}>
+                        Task Stats:
+                      </Text>
                       <Box
                         p={3}
                         bg="blue.50"
@@ -476,14 +521,22 @@ function Tasks() {
                         fontSize="sm"
                         overflowX="auto"
                       >
-                        <pre>{JSON.stringify(workerStats.total_tasks, null, 2)}</pre>
+                        <pre>
+                          {JSON.stringify(workerStats.total_tasks, null, 2)}
+                        </pre>
                       </Box>
                     </Box>
                   )}
                 </VStack>
               </SimpleGrid>
             ) : (
-              <Box p={3} bg="red.50" borderRadius="md" borderLeftWidth="4px" borderLeftColor="red.500">
+              <Box
+                p={3}
+                bg="red.50"
+                borderRadius="md"
+                borderLeftWidth="4px"
+                borderLeftColor="red.500"
+              >
                 <Text color="red.700">
                   Failed to load worker stats for {selectedWorkerId}
                 </Text>

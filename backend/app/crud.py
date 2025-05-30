@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlmodel import Session, select, text
+from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
 from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
@@ -55,20 +55,20 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     return db_item
 
 
-def get_worker_stats_by_id(*, db: Session, worker_id: str) -> dict | None:
+def get_worker_stats_by_id(*, worker_id: str) -> dict | None:
     """
     Retrieves Celery worker statistics for a specific worker.
     Returns comprehensive worker stats including uptime, memory usage, and task counts.
     """
     from app.celery_app import celery_app
-    
+
     try:
         # Get inspection interface
         i = celery_app.control.inspect()
-        
+
         # Get worker statistics
         stats_data = i.stats() or {}
-        
+
         # Look for the specific worker
         for worker_name, worker_info in stats_data.items():
             if worker_name == worker_id or worker_name.endswith(f"@{worker_id}"):
@@ -86,11 +86,13 @@ def get_worker_stats_by_id(*, db: Session, worker_id: str) -> dict | None:
                     "total_tasks": worker_info.get("total", {}),
                     "rusage": worker_info.get("rusage", {}),
                 }
-        
+
         # If not found in stats, try to ping the specific worker
         ping_data = i.ping() or {}
         for worker_name, ping_response in ping_data.items():
-            if (worker_name == worker_id or worker_name.endswith(f"@{worker_id}")) and ping_response.get("ok") == "pong":
+            if (
+                worker_name == worker_id or worker_name.endswith(f"@{worker_id}")
+            ) and ping_response.get("ok") == "pong":
                 return {
                     "worker_id": worker_id,
                     "worker_name": worker_name,
@@ -104,10 +106,10 @@ def get_worker_stats_by_id(*, db: Session, worker_id: str) -> dict | None:
                     "total_tasks": None,
                     "rusage": None,
                 }
-        
+
         # Worker not found
         return None
-        
+
     except Exception as e:
         print(f"Error retrieving worker stats from Celery for {worker_id}: {e}")
         # Return None if there's an error

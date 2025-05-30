@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
 
-from app.api.deps import SessionDep, get_current_active_superuser
+from app.api.deps import get_current_active_superuser
 from app.celery_app import celery_app
 from app.crud import get_worker_stats_by_id
 from app.models import User
@@ -148,19 +148,17 @@ def get_task_status(
 )
 def get_worker_stats(
     worker_id: str,
-    session: SessionDep,
 ) -> WorkerStatsResponse:
     """
     Get Celery worker statistics for a specific worker (superuser only).
     Returns comprehensive worker stats including uptime, memory usage, and task counts.
     """
     try:
-        worker_stats = get_worker_stats_by_id(db=session, worker_id=worker_id)
-        
+        worker_stats = get_worker_stats_by_id(worker_id=worker_id)
+
         if not worker_stats:
             raise HTTPException(
-                status_code=404, 
-                detail=f"Worker with ID '{worker_id}' not found"
+                status_code=404, detail=f"Worker with ID '{worker_id}' not found"
             )
 
         return WorkerStatsResponse(
@@ -180,7 +178,9 @@ def get_worker_stats(
         raise
     except Exception as e:
         logger.error(f"Error getting worker stats for {worker_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get worker stats: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get worker stats: {str(e)}"
+        )
 
 
 @router.get("/workers", dependencies=[Depends(get_current_active_superuser)])
