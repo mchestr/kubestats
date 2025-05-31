@@ -47,8 +47,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Stage 2: Minimal runtime stage
 FROM python:3.13-slim
 
-# Create user and set up environment in one layer
-RUN groupadd --gid 1000 appuser && \
+# Install git and create user in one layer
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* && \
+    groupadd --gid 1000 appuser && \
     useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser
 
 # Copy runtime files and set permissions

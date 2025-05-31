@@ -36,10 +36,6 @@
 
 [![API docs](img/dashboard-create.png)](https://github.com/fastapi/full-stack-fastapi-template)
 
-### Dashboard - Items
-
-[![API docs](img/dashboard-items.png)](https://github.com/fastapi/full-stack-fastapi-template)
-
 ### Dashboard - User Settings
 
 [![API docs](img/dashboard-user-settings.png)](https://github.com/fastapi/full-stack-fastapi-template)

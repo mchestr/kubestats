@@ -6,6 +6,7 @@ from kubestats.core.db import engine, init_db
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logging.getLogger("passlib").setLevel(logging.ERROR)
 
 
 def init() -> None:

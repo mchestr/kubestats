@@ -1,20 +1,4 @@
 services:
-  cloudflared-frontend:
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://frontend:80 --hostname kubestats.${DOMAIN?Variable not set} --name kubestats.${DOMAIN?Variable not set}
-    networks:
-      - public
-      - default
-
-  cloudflared-api:
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://backend:8000 --hostname kubestats-api.${DOMAIN?Variable not set} --name kubestats-api.${DOMAIN?Variable not set}
-    networks:
-      - public
-      - default
-
   db:
     image: postgres:17
     restart: always
@@ -45,16 +29,17 @@ services:
       timeout: 3s
       retries: 5
 
-  adminer:
-    image: adminer
+  frontend:
+    image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
     restart: always
     networks:
       - public
       - default
-    depends_on:
-      - db
-    environment:
-      - ADMINER_DESIGN=pepa-linha-dark
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL?Variable not set}
+        - NODE_ENV=production
 
   backend:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
@@ -100,6 +85,8 @@ services:
     command: ["-m", "celery", "-A", "kubestats.celery_app", "worker", "-l", "info"]
     networks:
       - default
+    deploy:
+      replicas: 1
     depends_on:
       db:
         condition: service_healthy
@@ -152,23 +139,13 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - TZ=${TZ?Variable not set}
     build:
       context: ./backend
 
-  frontend:
-    image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
-    restart: always
-    networks:
-      - public
-      - default
-    build:
-      context: ./frontend
-      args:
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL?Variable not set}
-        - NODE_ENV=production
-
 volumes:
   app-db-data:
+  repos:
 
 networks:
   public:

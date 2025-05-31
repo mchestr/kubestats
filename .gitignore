@@ -395,3 +395,6 @@ database.db
 *.njsproj
 *.sln
 *.sw?
+
+.ruff_cache
+data/

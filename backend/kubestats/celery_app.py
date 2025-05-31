@@ -1,6 +1,7 @@
 import os
 
-from celery import Celery
+from celery import Celery  # type: ignore[import-untyped]
+from celery.schedules import crontab  # type: ignore[import-untyped]
 
 from kubestats.core.config import settings
 
@@ -8,7 +9,13 @@ celery_app = Celery(
     "worker",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=["kubestats.tasks.basic_tasks", "kubestats.tasks.discover_repositories"],
+    include=[
+        "kubestats.tasks.basic_tasks",
+        "kubestats.tasks.discover_repositories",
+        "kubestats.tasks.sync_repositories",
+        "kubestats.tasks.scan_repositories",
+        "kubestats.tasks.save_repository_metrics",
+    ],
 )
 
 # Celery configuration
@@ -26,8 +33,12 @@ celery_app.conf.update(
     # Keep the original beat_schedule for task scheduling
     beat_schedule={
         "discover-repositories": {
-            "task": "kubestats.tasks.discover_repositories.run",
-            "schedule": 30.0,
+            "task": "kubestats.tasks.discover_repositories.discover_repositories",
+            "schedule": crontab(hour=0),  # Run once a day at midnight
+        },
+        "cleanup-repository-workdirs": {
+            "task": "kubestats.tasks.sync_repositories.cleanup_repository_workdirs",
+            "schedule": crontab(hour=2, minute=0),  # Run daily at 2 AM
         },
     },
 )

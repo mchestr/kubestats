@@ -3,6 +3,7 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+from celery.backends.database.session import ResultModelBase
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -21,7 +22,7 @@ fileConfig(config.config_file_name)
 from kubestats.models import SQLModel  # noqa
 from kubestats.core.config import settings # noqa
 
-target_metadata = SQLModel.metadata
+target_metadata = [SQLModel.metadata, ResultModelBase.metadata]
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

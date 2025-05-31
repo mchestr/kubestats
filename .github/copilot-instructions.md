@@ -6,14 +6,14 @@ You are an expert in **Python, FastAPI, scalable API development, TypeScript, Re
 - Use **functional and declarative programming patterns**; avoid classes unless absolutely necessary.
 - Prefer **iteration and modularization** over code duplication.
 - Use descriptive variable names with auxiliary verbs (e.g., `is_active`, `has_permission`, `isLoading`, `hasError`).
-- Follow proper **naming conventions**:  
-  - For Python: use lowercase with underscores (e.g., `routers/user_routes.py`).  
+- Follow proper **naming conventions**:
+  - For Python: use lowercase with underscores (e.g., `routers/user_routes.py`).
   - For TypeScript: use lowercase with dashes for directories (e.g., `components/auth-wizard`).
 
 ### Project Structure
 
 - **Root Directory**: Contains the main project files and directories.
-- **Docker Compose**:  
+- **Docker Compose**:
   - `docker-compose.yml`: Main Docker Compose file for orchestrating services.
 - **Configuration**:
   - `frontend/.env`: Environment variables for the frontend.
@@ -21,35 +21,40 @@ You are an expert in **Python, FastAPI, scalable API development, TypeScript, Re
 - **Scripts**:
   - `mise.toml`: All project scripts uses `mise` for task management.
 - **Environment**:
+
   - `mise.toml`: `mise` configuration file for managing environment variables and scripts.
 
-- **Frontend**:  
-  - **Language**: TypeScript  
-  - **Framework**: React  
+- **Frontend**:
+
+  - **Language**: TypeScript
+  - **Framework**: React
   - **UI Library**: Chakra UI
-  - **State Management**: Tanstack Query 
-  - **Build Tool**: Vite  
-  - **Directory Structure**:  
-    - `frontend/src/`: Main source code  
-    - Configuration Files:  
-      - `vite.config.ts`  
+  - **State Management**: Tanstack Query
+  - **Build Tool**:
+    - Vite
+  - **API Client**: OpenAPI TypeScript client generated from FastAPI OpenAPI spec
+    - Use `mise generate-client` to regenerate the client when the OpenAPI spec changes.
+  - **Directory Structure**:
+    - `frontend/src/`: Main source code
+    - Configuration Files:
+      - `vite.config.ts`
       - `tsconfig.json`
       - `openapi-ts.config.ts`
-    - **Docker Files**:  
+    - **Docker Files**:
       - `Dockerfile`
 
-- **Backend**:  
-  - **Language**: Python  
-  - **Framework**: FastAPI  
-  - **Database**: PostgreSQL  
-  - **Directory Structure**:  
-    - `backend/src/`: Main source code  
-    - `backend/tests/`: Tests  
+- **Backend**:
+  - **Language**: Python
+  - **Framework**: FastAPI
+  - **Database**: PostgreSQL
+  - **Directory Structure**:
+    - `backend/src/`: Main source code
+    - `backend/tests/`: Tests
     - `document-processor/`: Document processing utilities
-    - Database Configuration:  
-      - `alembic.ini`  
-    - **Docker Files**:  
-      - `Dockerfile`  
+    - Database Configuration:
+      - `alembic.ini`
+    - **Docker Files**:
+      - `Dockerfile`
       - `Dockerfile.dev`
 
 ### Code Style and Structure
@@ -60,9 +65,9 @@ You are an expert in **Python, FastAPI, scalable API development, TypeScript, Re
 - **Type Hints**: Use Python type hints for all function signatures. Prefer Pydantic models for input validation.
 - **File Structure**: Follow clear separation with directories for routes, utilities, static content, and models/schemas.
 - **RORO Pattern**: Use the "Receive an Object, Return an Object" pattern.
-- **Error Handling**:  
-  - Handle errors at the beginning of functions with early returns.  
-  - Use guard clauses and avoid deeply nested if statements.  
+- **Error Handling**:
+  - Handle errors at the beginning of functions with early returns.
+  - Use guard clauses and avoid deeply nested if statements.
   - Implement proper logging and custom error types.
 
 **Frontend (TypeScript/React)**:
@@ -70,40 +75,23 @@ You are an expert in **Python, FastAPI, scalable API development, TypeScript, Re
 - **TypeScript Usage**: Use TypeScript for all code. Prefer interfaces over types. Avoid enums; use maps instead.
 - **Functional Components**: Write all components as functional components with proper TypeScript interfaces.
 - **UI and Styling**: Implement responsive design using Chakra UI, adopting a mobile-first approach.
-- **Performance**:  
-  - Minimize `use client`, `useEffect`, and `setState` hooks. Favor server-side rendering where possible.  
+- **Performance**:
+  - Minimize `use client`, `useEffect`, and `setState` hooks. Favor server-side rendering where possible.
   - Wrap client components in `Suspense` with fallback for improved performance.
 
-### Performance Optimization
+### Testing Conventions
 
-**Backend**:
+**Critical**: Follow these testing patterns exactly:
 
-- **Asynchronous Operations**: Minimize blocking I/O operations using async functions.
-- **Caching**: Implement caching strategies for frequently accessed data using Redis or in-memory stores.
-- **Lazy Loading**: Use lazy loading techniques for large datasets and API responses.
+**Backend Testing**:
 
-**Frontend**:
-
-- **React Components**: Favor server-side rendering and avoid heavy client-side rendering where possible.
-- **Dynamic Loading**: Implement dynamic loading for non-critical components and optimize image loading using WebP format with lazy loading.
-
-### Project Conventions
-
-**Backend**:
-
-1. Follow **RESTful API design principles**.
-2. Rely on **FastAPI’s dependency injection system** for managing state and shared resources.
-3. Use **SQLAlchemy 2.0** for ORM features, if applicable.
-4. Ensure **CORS** is properly configured for local development.
-
-**Frontend**:
-
-1. Optimize **Web Vitals** (LCP, CLS, FID).
-2. Limit `use client` hooks to small, specific components for Web API access.
-3. Use **Docker** for containerization and ensure easy deployment.
-
-### Testing and Deployment
-
-- Implement **unit tests** for both frontend and backend.
-- Use **Docker** and **docker compose** for orchestration in both development and production environments. Avoid using the obsolete `docker-compose` command.
-- Ensure proper input validation, sanitization, and error handling throughout the application.
+- **NEVER use class-based tests** - Always use individual test functions
+- **Function naming**: Use descriptive test function names starting with `test_`
+- **Structure**: Follow the pattern in existing test files:
+  ```python
+  def test_function_name_scenario() -> None:
+      """Clear description of what the test validates."""
+      # Setup
+      # Execute
+      # Assert
+  ```

@@ -94,6 +94,17 @@ class Settings(BaseSettings):
             "postgresql+psycopg2", "db+postgresql"
         )
 
+    # GitHub API Configuration
+    GITHUB_TOKEN: str | None = None
+    GITHUB_API_BASE_URL: str = "https://api.github.com"
+    GITHUB_DISCOVERY_TAGS: list[str] = ["kubesearch", "k8s-at-home"]
+    GITHUB_MAX_REPOSITORY_SIZE_MB: int = 100  # Maximum size for discovery
+
+    # Repository Sync Configuration
+    REPO_WORKDIR: str = "/data/repos"
+    SYNC_INTERVAL_MINUTES: int = 120  # 2 hours
+    MAX_CONCURRENT_SYNCS: int = 5
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (

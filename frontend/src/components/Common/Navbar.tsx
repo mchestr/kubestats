@@ -1,18 +1,18 @@
-import { Flex, Image, useBreakpointValue } from "@chakra-ui/react"
+import { Flex, Heading, useBreakpointValue } from "@chakra-ui/react"
 import { Link } from "@tanstack/react-router"
 
-import Logo from "/assets/images/fastapi-logo.svg"
+import { ColorModeButton, useColorModeValue } from "../ui/color-mode"
 import UserMenu from "./UserMenu"
 
 function Navbar() {
   const display = useBreakpointValue({ base: "none", md: "flex" })
+  const logoColor = useColorModeValue("teal.600", "teal.300")
 
   return (
     <Flex
       display={display}
       justify="space-between"
       position="sticky"
-      color="white"
       align="center"
       bg="bg.muted"
       w="100%"
@@ -20,9 +20,21 @@ function Navbar() {
       p={4}
     >
       <Link to="/">
-        <Image src={Logo} alt="Logo" maxW="3xs" p={2} />
+        <Heading
+          as="h1"
+          size="xl"
+          fontWeight="bold"
+          color={logoColor}
+          letterSpacing="tight"
+          _hover={{ opacity: 0.9 }}
+          cursor="pointer"
+          py={1}
+        >
+          KubeStats
+        </Heading>
       </Link>
-      <Flex gap={2} alignItems="center">
+      <Flex gap={4} alignItems="center">
+        <ColorModeButton />
         <UserMenu />
       </Flex>
     </Flex>

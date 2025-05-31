@@ -1,5 +1,5 @@
 [tools]
-python = "3.12"
+python = "3.13"
 node = "22"
 uv = "latest"
 
@@ -16,25 +16,31 @@ NODE_ENV = "development"
 # Project paths
 BACKEND_DIR = "./backend"
 FRONTEND_DIR = "./frontend"
+REPO_WORKDIR = "./data"
 
-[tasks.install-frontend]
+[tasks.setup-frontend]
 description = "Install frontend dependencies"
 dir = "{{ config_root }}/frontend"
 run = "npm install"
 
-[tasks.install-backend]
+[tasks.setup-backend]
 description = "Install backend dependencies"
 dir = "{{ config_root }}/backend"
 run = "uv sync"
 
-[tasks.install]
-depends = ["install-backend", "install-frontend"]
+[tasks.setup]
+depends = ["setup-backend", "setup-frontend"]
 description = "Install all dependencies for both backend and frontend"
 
 [tasks.backend]
 description = "Start FastAPI backend development server"
 dir = "{{ config_root }}/backend"
 run = "uv run fastapi dev kubestats/main.py --host 0.0.0.0 --port 8000"
+
+[tasks.celery]
+description = "Start FastAPI backend development server"
+dir = "{{ config_root }}/backend"
+run = "uv run celery -A kubestats.celery_app worker -l info"
 
 [tasks.frontend]
 description = "Start React frontend development server"
@@ -65,7 +71,7 @@ description = "Lint backend Python code"
 dir = "{{ config_root }}/backend"
 run = [
     "uv run ruff format .",
-    "uv run ruff check .", 
+    "uv run ruff check . --fix", 
     "uv run mypy ."
 ]
 
@@ -91,7 +97,8 @@ description = "Clean backend build artifacts and dependencies"
 dir = "{{ config_root }}/backend"
 run = [
     "echo 'Cleaning backend...'",
-    "rm -rf .venv __pycache__ .pytest_cache .mypy_cache .coverage",
+    "rm -rf .venv .pytest_cache .mypy_cache .coverage .ruff_cache htmlcov data/* .ropeproject",
+    "find . -type d -name '__pycache__' -exec rm -rf {} +",
 ]
 
 [tasks.clean-frontend]
@@ -99,12 +106,20 @@ description = "Clean frontend build artifacts and dependencies"
 dir = "{{ config_root }}/frontend"
 run = [
     "echo 'Cleaning frontend...'",
-    "rm -rf node_modules dist .vite",
+    "rm -rf node_modules dist .vite test-results playwright-report blob-report"
 ]
 
 [tasks.clean]
 depends = ["clean-backend", "clean-frontend"]
 description = "Clean build artifacts and dependencies"
+
+[tasks.db-seed]
+description = "Reset database and run migrations"
+dir = "{{ config_root }}/backend"
+run = [
+    "uv run alembic upgrade head",
+    "uv run python kubestats/initial_data.py",
+]
 
 [tasks.db-reset]
 description = "Reset database and run migrations"
@@ -112,7 +127,7 @@ dir = "{{ config_root }}/backend"
 run = [
     "uv run alembic downgrade base",
     "uv run alembic upgrade head",
-    "uv run python app/initial_data.py",
+    "uv run python kubestats/initial_data.py",
 ]
 
 [tasks.docker-build-backend]
@@ -135,4 +150,4 @@ run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --
 
 [tasks.docker-dev]
 description = "Start development environment with Docker Compose"
-run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build db adminer redis celery-worker celery-beat"
+run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build db redis celery-beat celery-worker"

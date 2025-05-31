@@ -1,10 +1,19 @@
 import uuid
 from typing import Any
 
+from sqlalchemy import desc, func, or_
 from sqlmodel import Session, select
 
 from kubestats.core.security import get_password_hash, verify_password
-from kubestats.models import Item, ItemCreate, User, UserCreate, UserUpdate
+from kubestats.models import (
+    Repository,
+    RepositoryMetrics,
+    RepositoryMetricsPublic,
+    RepositoryPublic,
+    User,
+    UserCreate,
+    UserUpdate,
+)
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -47,15 +56,7 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
     return db_user
 
 
-def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -> Item:
-    db_item = Item.model_validate(item_in, update={"owner_id": owner_id})
-    session.add(db_item)
-    session.commit()
-    session.refresh(db_item)
-    return db_item
-
-
-def get_worker_stats_by_id(*, worker_id: str) -> dict | None:
+def get_worker_stats_by_id(*, worker_id: str) -> dict[str, Any] | None:
     """
     Retrieves Celery worker statistics for a specific worker.
     Returns comprehensive worker stats including uptime, memory usage, and task counts.
@@ -114,3 +115,168 @@ def get_worker_stats_by_id(*, worker_id: str) -> dict | None:
         print(f"Error retrieving worker stats from Celery for {worker_id}: {e}")
         # Return None if there's an error
         return None
+
+
+# Repository CRUD operations
+
+
+def get_repositories(
+    *, session: Session, skip: int = 0, limit: int = 100
+) -> list[Repository]:
+    """Get a list of repositories with optional pagination."""
+    statement = select(Repository).offset(skip).limit(limit)
+    return list(session.exec(statement).all())
+
+
+def get_repository_by_github_id(
+    *, session: Session, github_id: int
+) -> Repository | None:
+    """Get a repository by its GitHub ID."""
+    statement = select(Repository).where(Repository.github_id == github_id)
+    return session.exec(statement).first()
+
+
+def get_repository_by_id(
+    *, session: Session, repository_id: uuid.UUID
+) -> Repository | None:
+    """Get a repository by its internal ID."""
+    statement = select(Repository).where(Repository.id == repository_id)
+    return session.exec(statement).first()
+
+
+def get_repository_by_id_with_latest_metrics(
+    *, session: Session, repository_id: uuid.UUID
+) -> RepositoryPublic | None:
+    """Get a repository by its internal ID with latest metrics."""
+    repository = get_repository_by_id(session=session, repository_id=repository_id)
+    if not repository:
+        return None
+
+    return _convert_repository_to_public_with_metrics(repository)
+
+
+def get_repositories_with_latest_metrics(
+    *, session: Session, skip: int = 0, limit: int = 100
+) -> list[RepositoryPublic]:
+    """Get repositories with their latest metrics."""
+
+    # Get repositories with metrics
+    statement = select(Repository).offset(skip).limit(limit)
+    repositories = list(session.exec(statement).all())
+
+    result = []
+    for repo in repositories:
+        repo_public = _convert_repository_to_public_with_metrics(repo)
+        result.append(repo_public)
+
+    return result
+
+
+def _convert_repository_to_public_with_metrics(repo: Repository) -> RepositoryPublic:
+    """Helper function to convert a Repository to RepositoryPublic with latest_metrics."""
+    # Get the latest metrics for this repository
+    latest_metrics_public = None
+    if repo.metrics:
+        latest_metrics = max(repo.metrics, key=lambda m: m.recorded_at)
+        latest_metrics_public = RepositoryMetricsPublic.model_validate(latest_metrics)
+
+    repo_public = RepositoryPublic.model_validate(repo)
+    repo_public.latest_metrics = latest_metrics_public
+    return repo_public
+
+
+def get_repository_metrics_history(
+    *, session: Session, repository_id: uuid.UUID, limit: int = 100
+) -> list[RepositoryMetrics]:
+    """Get metrics history for a specific repository."""
+    statement = (
+        select(RepositoryMetrics)
+        .where(RepositoryMetrics.repository_id == repository_id)
+        .order_by(desc(RepositoryMetrics.recorded_at))  # type: ignore[arg-type]
+        .limit(limit)
+    )
+    return list(session.exec(statement).all())
+
+
+def get_repository_stats(*, session: Session) -> dict[str, Any]:
+    """Get aggregate statistics for all repositories."""
+
+    # Get total repository count
+    total_repos = session.exec(select(func.count()).select_from(Repository)).one()
+
+    # Get latest metrics for each repository to calculate totals
+    latest_metrics_subquery = (
+        select(
+            RepositoryMetrics.repository_id,
+            func.max(RepositoryMetrics.recorded_at).label("max_recorded_at"),
+        )
+        .group_by(RepositoryMetrics.repository_id)  # type: ignore[arg-type]
+        .subquery()
+    )
+
+    latest_metrics_query = select(RepositoryMetrics).join(
+        latest_metrics_subquery,
+        (RepositoryMetrics.repository_id == latest_metrics_subquery.c.repository_id)
+        & (RepositoryMetrics.recorded_at == latest_metrics_subquery.c.max_recorded_at),  # type: ignore[arg-type]
+    )
+
+    latest_metrics = list(session.exec(latest_metrics_query).all())
+
+    total_stars = sum(metrics.stars_count for metrics in latest_metrics)
+    total_forks = sum(metrics.forks_count for metrics in latest_metrics)
+
+    # Get language distribution
+    language_query = (
+        select(Repository.language, func.count())
+        .where(Repository.language.is_not(None))  # type: ignore[union-attr]
+        .group_by(Repository.language)
+    )
+    language_results = session.exec(language_query).all()
+    languages = {lang: count for lang, count in language_results if lang}
+
+    return {
+        "total_repositories": total_repos,
+        "total_stars": total_stars,
+        "total_forks": total_forks,
+        "languages": languages,
+    }
+
+
+def search_repositories(
+    *, session: Session, query: str, skip: int = 0, limit: int = 100
+) -> list[Repository]:
+    """Search repositories by name, description, or topics."""
+
+    search_term = f"%{query}%"
+
+    statement = (
+        select(Repository)
+        .where(
+            or_(
+                Repository.name.ilike(search_term),  # type: ignore[attr-defined]
+                Repository.full_name.ilike(search_term),  # type: ignore[attr-defined]
+                Repository.description.ilike(search_term),  # type: ignore[union-attr]
+                func.array_to_string(Repository.topics, ",").ilike(search_term),
+            )
+        )
+        .offset(skip)
+        .limit(limit)
+    )
+
+    return list(session.exec(statement).all())
+
+
+def search_repositories_with_latest_metrics(
+    *, session: Session, query: str, skip: int = 0, limit: int = 100
+) -> list[RepositoryPublic]:
+    """Search repositories by name, description, or topics with latest metrics."""
+    repositories = search_repositories(
+        session=session, query=query, skip=skip, limit=limit
+    )
+
+    result = []
+    for repo in repositories:
+        repo_public = _convert_repository_to_public_with_metrics(repo)
+        result.append(repo_public)
+
+    return result

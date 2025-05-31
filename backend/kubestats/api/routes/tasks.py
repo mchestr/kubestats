@@ -1,17 +1,13 @@
-import json
 import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
-from sqlmodel import Session
 
-from kubestats.api.deps import get_current_active_superuser, get_db
+from kubestats.api.deps import get_current_active_superuser
 from kubestats.celery_app import celery_app
-from kubestats.core.config import settings
-from kubestats.crud import get_worker_stats_by_id
 from kubestats.models import User
-from kubestats.tasks.basic_tasks import create_log_entry, system_health_check
+from kubestats.tasks.basic_tasks import system_health_check
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -80,33 +76,6 @@ class WorkerStatusResponse(BaseModel):
     periodic_tasks: list[PeriodicTaskResponse]
 
 
-@router.post("/trigger", response_model=TaskResponse)
-def trigger_log_task(
-    task_request: TaskTriggerRequest,
-    current_user: User = Depends(get_current_active_superuser),
-) -> TaskResponse:
-    """
-    Trigger a basic logging task (superuser only).
-    """
-    try:
-        result = create_log_entry.delay(
-            message=task_request.message,
-            log_level=task_request.log_level,
-            duration=task_request.duration,
-        )
-
-        logger.info(f"Task triggered by user {current_user.id}: {result.id}")
-
-        return TaskResponse(
-            task_id=result.id,
-            status="PENDING",
-            message=f"Task triggered successfully: {task_request.message}",
-        )
-    except Exception as e:
-        logger.error(f"Error triggering task: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to trigger task: {str(e)}")
-
-
 @router.post("/health-check", response_model=TaskResponse)
 def trigger_health_check(
     current_user: User = Depends(get_current_active_superuser),
@@ -142,33 +111,31 @@ def trigger_periodic_task(
     try:
         # Get the beat schedule configuration
         beat_schedule = celery_app.conf.beat_schedule
-        
+
         # Find the task configuration
         task_config = None
         for schedule_name, config in beat_schedule.items():
             if schedule_name == task_name:
                 task_config = config
                 break
-        
+
         if not task_config:
             raise HTTPException(
-                status_code=404, 
-                detail=f"Periodic task '{task_name}' not found in schedule"
+                status_code=404,
+                detail=f"Periodic task '{task_name}' not found in schedule",
             )
-        
+
         # Get task details
         task_func = task_config.get("task", "")
         task_args = task_config.get("args", [])
         task_kwargs = task_config.get("kwargs", {})
-        
-        # Trigger the task
-        result = celery_app.send_task(
-            task_func,
-            args=task_args,
-            kwargs=task_kwargs
-        )
 
-        logger.info(f"Periodic task '{task_name}' triggered by user {current_user.id}: {result.id}")
+        # Trigger the task
+        result = celery_app.send_task(task_func, args=task_args, kwargs=task_kwargs)
+
+        logger.info(
+            f"Periodic task '{task_name}' triggered by user {current_user.id}: {result.id}"
+        )
 
         return TaskResponse(
             task_id=result.id,
@@ -180,8 +147,8 @@ def trigger_periodic_task(
     except Exception as e:
         logger.error(f"Error triggering periodic task '{task_name}': {e}")
         raise HTTPException(
-            status_code=500, 
-            detail=f"Failed to trigger periodic task '{task_name}': {str(e)}"
+            status_code=500,
+            detail=f"Failed to trigger periodic task '{task_name}': {str(e)}",
         )
 
 
@@ -216,10 +183,12 @@ def get_task_status(
         )
 
 
-@router.get("/workers", dependencies=[Depends(get_current_active_superuser)], response_model=WorkerStatusResponse)
-def get_worker_status(
-    session: Session = Depends(get_db),
-) -> WorkerStatusResponse:
+@router.get(
+    "/workers",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=WorkerStatusResponse,
+)
+def get_worker_status() -> WorkerStatusResponse:
     """
     Get Celery worker status and periodic tasks configuration (superuser only).
     """
@@ -231,11 +200,11 @@ def get_worker_status(
             "reserved": inspector.reserved() or {},
             "stats": inspector.stats() or {},
         }
-        
+
         # Get periodic tasks from the beat_schedule configuration
         periodic_tasks = []
         beat_schedule = celery_app.conf.beat_schedule
-        
+
         # Aggregate task stats across all workers for periodic tasks
         task_stats = {}
         for _, stats in worker_data["stats"].items():
@@ -244,11 +213,11 @@ def get_worker_status(
                     if task_name not in task_stats:
                         task_stats[task_name] = 0
                     task_stats[task_name] += count
-        
+
         for name, task_config in beat_schedule.items():
             task_name = task_config.get("task", "")
             total_run_count = task_stats.get(task_name, 0)
-            
+
             periodic_task = PeriodicTaskResponse(
                 name=name,
                 task=task_name,
@@ -259,7 +228,7 @@ def get_worker_status(
                 total_run_count=total_run_count if total_run_count > 0 else None,
             )
             periodic_tasks.append(periodic_task)
-        
+
         return WorkerStatusResponse(
             active=worker_data["active"],
             scheduled=worker_data["scheduled"],

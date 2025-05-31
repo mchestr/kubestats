@@ -1,4 +1,4 @@
-import { Badge, Container, Flex, Heading, Table } from "@chakra-ui/react"
+import { Badge, Containe, Heading, Table } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { z } from "zod"
@@ -7,12 +7,6 @@ import { type UserPublic, type UsersPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { UserActionsMenu } from "@/components/Common/UserActionsMenu"
 import PendingUsers from "@/components/Pending/PendingUsers"
-import {
-  PaginationItems,
-  PaginationNextTrigger,
-  PaginationPrevTrigger,
-  PaginationRoot,
-} from "@/components/ui/pagination.tsx"
 
 const usersSearchSchema = z.object({
   page: z.number().catch(1),
@@ -48,14 +42,7 @@ function UsersTable() {
     placeholderData: (prevData) => prevData,
   })
 
-  const setPage = (page: number) =>
-    navigate({
-      to: Route.fullPath,
-      search: { page },
-    })
-
   const users = data?.data.slice(0, PER_PAGE) ?? []
-  const count = data?.count ?? 0
 
   if (isLoading) {
     return <PendingUsers />
@@ -101,19 +88,6 @@ function UsersTable() {
           ))}
         </Table.Body>
       </Table.Root>
-      <Flex justifyContent="flex-end" mt={4}>
-        <PaginationRoot
-          count={count}
-          pageSize={PER_PAGE}
-          onPageChange={({ page }) => setPage(page)}
-        >
-          <Flex>
-            <PaginationPrevTrigger />
-            <PaginationItems />
-            <PaginationNextTrigger />
-          </Flex>
-        </PaginationRoot>
-      </Flex>
     </>
   )
 }

@@ -41,67 +41,158 @@ export type HttpValidationError = {
 };
 
 /**
- * ItemCreate
+ * KubernetesResourceMetricsPublic
  */
-export type ItemCreate = {
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Description
-     */
-    description?: string | null;
-};
-
-/**
- * ItemPublic
- */
-export type ItemPublic = {
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Description
-     */
-    description?: string | null;
+export type KubernetesResourceMetricsPublic = {
     /**
      * Id
      */
     id: string;
     /**
-     * Owner Id
+     * Chart Version
      */
-    owner_id: string;
+    chart_version: string | null;
+    /**
+     * Chart Name
+     */
+    chart_name: string | null;
+    /**
+     * Chart Repository
+     */
+    chart_repository: string | null;
+    /**
+     * Source Revision
+     */
+    source_revision: string | null;
+    /**
+     * Image Versions
+     */
+    image_versions: {
+        [key: string]: string;
+    };
+    /**
+     * Replicas
+     */
+    replicas: number | null;
+    /**
+     * Reference Versions
+     */
+    reference_versions: {
+        [key: string]: string;
+    };
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
 };
 
 /**
- * ItemUpdate
+ * KubernetesResourcePublic
  */
-export type ItemUpdate = {
+export type KubernetesResourcePublic = {
     /**
-     * Title
+     * Id
      */
-    title?: string | null;
+    id: string;
     /**
-     * Description
+     * Repository Id
      */
-    description?: string | null;
+    repository_id: string;
+    /**
+     * Api Version
+     */
+    api_version: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Namespace
+     */
+    namespace: string | null;
+    /**
+     * File Path
+     */
+    file_path: string;
+    /**
+     * Resource Metadata
+     */
+    resource_metadata: {
+        [key: string]: unknown;
+    };
+    /**
+     * Spec
+     */
+    spec: {
+        [key: string]: unknown;
+    };
+    /**
+     * Current Status
+     */
+    current_status: string;
+    /**
+     * Modification Count
+     */
+    modification_count: number;
+    /**
+     * Last Change Type
+     */
+    last_change_type: string | null;
+    /**
+     * First Seen At
+     */
+    first_seen_at: string;
+    /**
+     * Last Updated At
+     */
+    last_updated_at: string;
+    latest_metrics?: KubernetesResourceMetricsPublic | null;
 };
 
 /**
- * ItemsPublic
+ * KubernetesResourcesPublic
  */
-export type ItemsPublic = {
+export type KubernetesResourcesPublic = {
     /**
      * Data
      */
-    data: Array<ItemPublic>;
+    data: Array<KubernetesResourcePublic>;
     /**
      * Count
      */
     count: number;
+};
+
+/**
+ * KubernetesStatsPublic
+ */
+export type KubernetesStatsPublic = {
+    /**
+     * Total Resources
+     */
+    total_resources: number;
+    /**
+     * Total Repositories With Resources
+     */
+    total_repositories_with_resources: number;
+    /**
+     * Resource Breakdown
+     */
+    resource_breakdown: {
+        [key: string]: number;
+    };
+    /**
+     * Popular Charts
+     */
+    popular_charts: Array<ResourceTrendPublic>;
+    /**
+     * Recent Trends
+     */
+    recent_trends: Array<ResourceTrendPublic>;
 };
 
 /**
@@ -149,6 +240,266 @@ export type PeriodicTaskResponse = {
         [key: string]: unknown;
     } | null;
 };
+
+/**
+ * RepositoriesPublic
+ */
+export type RepositoriesPublic = {
+    /**
+     * Data
+     */
+    data: Array<RepositoryPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * RepositoryMetricsPublic
+ */
+export type RepositoryMetricsPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Stars Count
+     */
+    stars_count: number;
+    /**
+     * Forks Count
+     */
+    forks_count: number;
+    /**
+     * Watchers Count
+     */
+    watchers_count: number;
+    /**
+     * Open Issues Count
+     */
+    open_issues_count: number;
+    /**
+     * Size
+     */
+    size: number;
+    /**
+     * Kubernetes Resources Count
+     */
+    kubernetes_resources_count: number;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Pushed At
+     */
+    pushed_at: string | null;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+};
+
+/**
+ * RepositoryPublic
+ */
+export type RepositoryPublic = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Full Name
+     */
+    full_name: string;
+    /**
+     * Owner
+     */
+    owner: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Language
+     */
+    language?: string | null;
+    /**
+     * Topics
+     */
+    topics?: Array<string>;
+    /**
+     * License Name
+     */
+    license_name?: string | null;
+    /**
+     * Default Branch
+     */
+    default_branch?: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Discovery Tags
+     */
+    discovery_tags?: Array<string>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Github Id
+     */
+    github_id: number;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Last Sync At
+     */
+    last_sync_at?: string | null;
+    sync_status?: SyncStatus;
+    /**
+     * Sync Error
+     */
+    sync_error?: string | null;
+    /**
+     * Working Directory Path
+     */
+    working_directory_path?: string | null;
+    /**
+     * Last Scan At
+     */
+    last_scan_at?: string | null;
+    scan_status?: SyncStatus;
+    /**
+     * Scan Error
+     */
+    scan_error?: string | null;
+    /**
+     * Last Scan Total Resources
+     */
+    last_scan_total_resources?: number | null;
+    latest_metrics?: RepositoryMetricsPublic | null;
+};
+
+/**
+ * RepositoryStatsPublic
+ */
+export type RepositoryStatsPublic = {
+    /**
+     * Total Repositories
+     */
+    total_repositories: number;
+    /**
+     * Total Stars
+     */
+    total_stars: number;
+    /**
+     * Total Forks
+     */
+    total_forks: number;
+    /**
+     * Languages
+     */
+    languages: {
+        [key: string]: number;
+    };
+    /**
+     * Top Repositories
+     */
+    top_repositories: Array<RepositoryPublic>;
+};
+
+/**
+ * ResourceReferencePublic
+ */
+export type ResourceReferencePublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Reference Type
+     */
+    reference_type: string;
+    /**
+     * Target Name
+     */
+    target_name: string;
+    /**
+     * Target Namespace
+     */
+    target_namespace: string | null;
+    /**
+     * Target Kind
+     */
+    target_kind: string;
+    /**
+     * Target Api Version
+     */
+    target_api_version: string | null;
+    /**
+     * Referenced Version
+     */
+    referenced_version: string | null;
+    /**
+     * Is External Reference
+     */
+    is_external_reference: boolean;
+};
+
+/**
+ * ResourceTrendPublic
+ */
+export type ResourceTrendPublic = {
+    /**
+     * Resource Kind
+     */
+    resource_kind: string;
+    /**
+     * Resource Api Version
+     */
+    resource_api_version: string;
+    /**
+     * Chart Name
+     */
+    chart_name: string | null;
+    /**
+     * Total Instances
+     */
+    total_instances: number;
+    /**
+     * Active Repositories
+     */
+    active_repositories: number;
+    /**
+     * Growth Trend
+     */
+    growth_trend: number;
+    /**
+     * Adoption Velocity
+     */
+    adoption_velocity: number;
+    /**
+     * Modification Frequency
+     */
+    modification_frequency: number;
+    /**
+     * Popular Versions
+     */
+    popular_versions: {
+        [key: string]: number;
+    };
+};
+
+/**
+ * SyncStatus
+ */
+export type SyncStatus = 'pending' | 'syncing' | 'success' | 'error' | 'blocked' | 'pending_approval';
 
 /**
  * TaskResponse
@@ -204,24 +555,6 @@ export type TaskStatusResponse = {
      * Retries
      */
     retries?: number | null;
-};
-
-/**
- * TaskTriggerRequest
- */
-export type TaskTriggerRequest = {
-    /**
-     * Message
-     */
-    message: string;
-    /**
-     * Log Level
-     */
-    log_level?: string;
-    /**
-     * Duration
-     */
-    duration?: number;
 };
 
 /**
@@ -699,7 +1032,7 @@ export type UtilsHealthCheckResponses = {
 
 export type UtilsHealthCheckResponse = UtilsHealthCheckResponses[keyof UtilsHealthCheckResponses];
 
-export type ItemsReadItemsData = {
+export type RepositoriesReadRepositoriesData = {
     body?: never;
     path?: never;
     query?: {
@@ -712,166 +1045,527 @@ export type ItemsReadItemsData = {
          */
         limit?: number;
     };
-    url: '/api/v1/items/';
+    url: '/api/v1/repositories/';
 };
 
-export type ItemsReadItemsErrors = {
+export type RepositoriesReadRepositoriesErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type ItemsReadItemsError = ItemsReadItemsErrors[keyof ItemsReadItemsErrors];
+export type RepositoriesReadRepositoriesError = RepositoriesReadRepositoriesErrors[keyof RepositoriesReadRepositoriesErrors];
 
-export type ItemsReadItemsResponses = {
+export type RepositoriesReadRepositoriesResponses = {
     /**
      * Successful Response
      */
-    200: ItemsPublic;
+    200: RepositoriesPublic;
 };
 
-export type ItemsReadItemsResponse = ItemsReadItemsResponses[keyof ItemsReadItemsResponses];
+export type RepositoriesReadRepositoriesResponse = RepositoriesReadRepositoriesResponses[keyof RepositoriesReadRepositoriesResponses];
 
-export type ItemsCreateItemData = {
-    body: ItemCreate;
+export type RepositoriesReadRepositoryStatsData = {
+    body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/items/';
+    url: '/api/v1/repositories/stats';
 };
 
-export type ItemsCreateItemErrors = {
+export type RepositoriesReadRepositoryStatsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RepositoryStatsPublic;
+};
+
+export type RepositoriesReadRepositoryStatsResponse = RepositoriesReadRepositoryStatsResponses[keyof RepositoriesReadRepositoryStatsResponses];
+
+export type RepositoriesSearchRepositoriesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Q
+         * Search query
+         */
+        q: string;
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/repositories/search';
+};
+
+export type RepositoriesSearchRepositoriesErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type ItemsCreateItemError = ItemsCreateItemErrors[keyof ItemsCreateItemErrors];
+export type RepositoriesSearchRepositoriesError = RepositoriesSearchRepositoriesErrors[keyof RepositoriesSearchRepositoriesErrors];
 
-export type ItemsCreateItemResponses = {
+export type RepositoriesSearchRepositoriesResponses = {
     /**
      * Successful Response
      */
-    200: ItemPublic;
+    200: RepositoriesPublic;
 };
 
-export type ItemsCreateItemResponse = ItemsCreateItemResponses[keyof ItemsCreateItemResponses];
+export type RepositoriesSearchRepositoriesResponse = RepositoriesSearchRepositoriesResponses[keyof RepositoriesSearchRepositoriesResponses];
 
-export type ItemsDeleteItemData = {
+export type RepositoriesReadRepositoryData = {
     body?: never;
     path: {
         /**
-         * Id
+         * Repository Id
          */
-        id: string;
+        repository_id: string;
     };
     query?: never;
-    url: '/api/v1/items/{id}';
+    url: '/api/v1/repositories/{repository_id}';
 };
 
-export type ItemsDeleteItemErrors = {
+export type RepositoriesReadRepositoryErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type ItemsDeleteItemError = ItemsDeleteItemErrors[keyof ItemsDeleteItemErrors];
+export type RepositoriesReadRepositoryError = RepositoriesReadRepositoryErrors[keyof RepositoriesReadRepositoryErrors];
 
-export type ItemsDeleteItemResponses = {
+export type RepositoriesReadRepositoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: RepositoryPublic;
+};
+
+export type RepositoriesReadRepositoryResponse = RepositoriesReadRepositoryResponses[keyof RepositoriesReadRepositoryResponses];
+
+export type RepositoriesReadRepositoryMetricsData = {
+    body?: never;
+    path: {
+        /**
+         * Repository Id
+         */
+        repository_id: string;
+    };
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/repositories/{repository_id}/metrics';
+};
+
+export type RepositoriesReadRepositoryMetricsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RepositoriesReadRepositoryMetricsError = RepositoriesReadRepositoryMetricsErrors[keyof RepositoriesReadRepositoryMetricsErrors];
+
+export type RepositoriesReadRepositoryMetricsResponses = {
+    /**
+     * Response Repositories-Read Repository Metrics
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RepositoriesTriggerRepositoryDiscoveryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/repositories/discover';
+};
+
+export type RepositoriesTriggerRepositoryDiscoveryResponses = {
     /**
      * Successful Response
      */
     200: Message;
 };
 
-export type ItemsDeleteItemResponse = ItemsDeleteItemResponses[keyof ItemsDeleteItemResponses];
+export type RepositoriesTriggerRepositoryDiscoveryResponse = RepositoriesTriggerRepositoryDiscoveryResponses[keyof RepositoriesTriggerRepositoryDiscoveryResponses];
 
-export type ItemsReadItemData = {
+export type RepositoriesTriggerRepositorySyncAllData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/repositories/sync';
+};
+
+export type RepositoriesTriggerRepositorySyncAllResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type RepositoriesTriggerRepositorySyncAllResponse = RepositoriesTriggerRepositorySyncAllResponses[keyof RepositoriesTriggerRepositorySyncAllResponses];
+
+export type RepositoriesTriggerRepositorySyncSingleData = {
     body?: never;
     path: {
         /**
-         * Id
+         * Repository Id
          */
-        id: string;
+        repository_id: string;
     };
     query?: never;
-    url: '/api/v1/items/{id}';
+    url: '/api/v1/repositories/{repository_id}/sync';
 };
 
-export type ItemsReadItemErrors = {
+export type RepositoriesTriggerRepositorySyncSingleErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type ItemsReadItemError = ItemsReadItemErrors[keyof ItemsReadItemErrors];
+export type RepositoriesTriggerRepositorySyncSingleError = RepositoriesTriggerRepositorySyncSingleErrors[keyof RepositoriesTriggerRepositorySyncSingleErrors];
 
-export type ItemsReadItemResponses = {
+export type RepositoriesTriggerRepositorySyncSingleResponses = {
     /**
      * Successful Response
      */
-    200: ItemPublic;
+    200: Message;
 };
 
-export type ItemsReadItemResponse = ItemsReadItemResponses[keyof ItemsReadItemResponses];
+export type RepositoriesTriggerRepositorySyncSingleResponse = RepositoriesTriggerRepositorySyncSingleResponses[keyof RepositoriesTriggerRepositorySyncSingleResponses];
 
-export type ItemsUpdateItemData = {
-    body: ItemUpdate;
+export type RepositoriesBlockRepositoryData = {
+    body?: never;
     path: {
         /**
-         * Id
+         * Repository Id
          */
-        id: string;
+        repository_id: string;
     };
     query?: never;
-    url: '/api/v1/items/{id}';
+    url: '/api/v1/repositories/{repository_id}/block';
 };
 
-export type ItemsUpdateItemErrors = {
+export type RepositoriesBlockRepositoryErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type ItemsUpdateItemError = ItemsUpdateItemErrors[keyof ItemsUpdateItemErrors];
+export type RepositoriesBlockRepositoryError = RepositoriesBlockRepositoryErrors[keyof RepositoriesBlockRepositoryErrors];
 
-export type ItemsUpdateItemResponses = {
+export type RepositoriesBlockRepositoryResponses = {
     /**
      * Successful Response
      */
-    200: ItemPublic;
+    200: Message;
 };
 
-export type ItemsUpdateItemResponse = ItemsUpdateItemResponses[keyof ItemsUpdateItemResponses];
+export type RepositoriesBlockRepositoryResponse = RepositoriesBlockRepositoryResponses[keyof RepositoriesBlockRepositoryResponses];
 
-export type TasksTriggerLogTaskData = {
-    body: TaskTriggerRequest;
+export type RepositoriesApproveRepositoryData = {
+    body?: never;
+    path: {
+        /**
+         * Repository Id
+         */
+        repository_id: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{repository_id}/approve';
+};
+
+export type RepositoriesApproveRepositoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RepositoriesApproveRepositoryError = RepositoriesApproveRepositoryErrors[keyof RepositoriesApproveRepositoryErrors];
+
+export type RepositoriesApproveRepositoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type RepositoriesApproveRepositoryResponse = RepositoriesApproveRepositoryResponses[keyof RepositoriesApproveRepositoryResponses];
+
+export type KubernetesReadKubernetesResourcesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Repository Id
+         */
+        repository_id?: string | null;
+        /**
+         * Resource Kind
+         */
+        resource_kind?: string | null;
+        /**
+         * Api Version
+         */
+        api_version?: string | null;
+        /**
+         * Namespace
+         */
+        namespace?: string | null;
+    };
+    url: '/api/v1/kubernetes/';
+};
+
+export type KubernetesReadKubernetesResourcesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type KubernetesReadKubernetesResourcesError = KubernetesReadKubernetesResourcesErrors[keyof KubernetesReadKubernetesResourcesErrors];
+
+export type KubernetesReadKubernetesResourcesResponses = {
+    /**
+     * Successful Response
+     */
+    200: KubernetesResourcesPublic;
+};
+
+export type KubernetesReadKubernetesResourcesResponse = KubernetesReadKubernetesResourcesResponses[keyof KubernetesReadKubernetesResourcesResponses];
+
+export type KubernetesReadKubernetesStatsData = {
+    body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/tasks/trigger';
+    url: '/api/v1/kubernetes/stats';
 };
 
-export type TasksTriggerLogTaskErrors = {
+export type KubernetesReadKubernetesStatsResponses = {
+    /**
+     * Successful Response
+     */
+    200: KubernetesStatsPublic;
+};
+
+export type KubernetesReadKubernetesStatsResponse = KubernetesReadKubernetesStatsResponses[keyof KubernetesReadKubernetesStatsResponses];
+
+export type KubernetesReadKubernetesResourceData = {
+    body?: never;
+    path: {
+        /**
+         * Resource Id
+         */
+        resource_id: string;
+    };
+    query?: never;
+    url: '/api/v1/kubernetes/{resource_id}';
+};
+
+export type KubernetesReadKubernetesResourceErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type TasksTriggerLogTaskError = TasksTriggerLogTaskErrors[keyof TasksTriggerLogTaskErrors];
+export type KubernetesReadKubernetesResourceError = KubernetesReadKubernetesResourceErrors[keyof KubernetesReadKubernetesResourceErrors];
 
-export type TasksTriggerLogTaskResponses = {
+export type KubernetesReadKubernetesResourceResponses = {
     /**
      * Successful Response
      */
-    200: TaskResponse;
+    200: KubernetesResourcePublic;
 };
 
-export type TasksTriggerLogTaskResponse = TasksTriggerLogTaskResponses[keyof TasksTriggerLogTaskResponses];
+export type KubernetesReadKubernetesResourceResponse = KubernetesReadKubernetesResourceResponses[keyof KubernetesReadKubernetesResourceResponses];
+
+export type KubernetesReadResourceReferencesData = {
+    body?: never;
+    path: {
+        /**
+         * Resource Id
+         */
+        resource_id: string;
+    };
+    query?: never;
+    url: '/api/v1/kubernetes/{resource_id}/references';
+};
+
+export type KubernetesReadResourceReferencesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type KubernetesReadResourceReferencesError = KubernetesReadResourceReferencesErrors[keyof KubernetesReadResourceReferencesErrors];
+
+export type KubernetesReadResourceReferencesResponses = {
+    /**
+     * Response Kubernetes-Read Resource References
+     * Successful Response
+     */
+    200: Array<ResourceReferencePublic>;
+};
+
+export type KubernetesReadResourceReferencesResponse = KubernetesReadResourceReferencesResponses[keyof KubernetesReadResourceReferencesResponses];
+
+export type KubernetesReadResourceHistoryData = {
+    body?: never;
+    path: {
+        /**
+         * Resource Id
+         */
+        resource_id: string;
+    };
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/kubernetes/{resource_id}/history';
+};
+
+export type KubernetesReadResourceHistoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type KubernetesReadResourceHistoryError = KubernetesReadResourceHistoryErrors[keyof KubernetesReadResourceHistoryErrors];
+
+export type KubernetesReadResourceHistoryResponses = {
+    /**
+     * Response Kubernetes-Read Resource History
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type KubernetesGetPopularHelmChartsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Time Period
+         */
+        time_period?: string;
+    };
+    url: '/api/v1/kubernetes/trends/popular-charts';
+};
+
+export type KubernetesGetPopularHelmChartsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type KubernetesGetPopularHelmChartsError = KubernetesGetPopularHelmChartsErrors[keyof KubernetesGetPopularHelmChartsErrors];
+
+export type KubernetesGetPopularHelmChartsResponses = {
+    /**
+     * Response Kubernetes-Get Popular Helm Charts
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type KubernetesGetResourceAdoptionTrendsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Resource Kind
+         */
+        resource_kind?: string | null;
+        /**
+         * Time Period
+         */
+        time_period?: string;
+    };
+    url: '/api/v1/kubernetes/trends/resource-adoption';
+};
+
+export type KubernetesGetResourceAdoptionTrendsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type KubernetesGetResourceAdoptionTrendsError = KubernetesGetResourceAdoptionTrendsErrors[keyof KubernetesGetResourceAdoptionTrendsErrors];
+
+export type KubernetesGetResourceAdoptionTrendsResponses = {
+    /**
+     * Response Kubernetes-Get Resource Adoption Trends
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type KubernetesGetHelmReleasesWithVersionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Repository Id
+         */
+        repository_id?: string | null;
+    };
+    url: '/api/v1/kubernetes/helm-releases/with-versions';
+};
+
+export type KubernetesGetHelmReleasesWithVersionsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type KubernetesGetHelmReleasesWithVersionsError = KubernetesGetHelmReleasesWithVersionsErrors[keyof KubernetesGetHelmReleasesWithVersionsErrors];
+
+export type KubernetesGetHelmReleasesWithVersionsResponses = {
+    /**
+     * Response Kubernetes-Get Helm Releases With Versions
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type TasksTriggerHealthCheckData = {
     body?: never;

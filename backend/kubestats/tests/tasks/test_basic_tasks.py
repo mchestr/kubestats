@@ -1,150 +1,10 @@
 from datetime import datetime
+from typing import Any
 from unittest.mock import Mock, patch
 
-import pytest
-
 from kubestats.tasks.basic_tasks import (
-    cleanup_old_logs,
-    create_log_entry,
     system_health_check,
 )
-
-
-@patch("kubestats.tasks.basic_tasks.time.sleep")
-@patch("kubestats.tasks.basic_tasks.datetime")
-def test_create_log_entry_success(mock_datetime, mock_sleep) -> None:
-    """Test successful log entry creation."""
-    # Mock datetime
-    start_time = datetime(2024, 1, 1, 12, 0, 0)
-    end_time = datetime(2024, 1, 1, 12, 0, 5)
-    mock_datetime.utcnow.side_effect = [start_time, end_time]
-
-    # Create a mock task instance to avoid Celery property issues
-    with patch("kubestats.tasks.basic_tasks.create_log_entry"):
-        mock_task_instance = Mock()
-        mock_task_instance.request.id = "test-task-id"
-        mock_task_instance.update_state = Mock()
-
-        # Mock the actual task function
-        def mock_run(message, log_level="INFO", duration=5):
-            # Simulate the task logic without Celery specifics
-            for i in range(duration):
-                mock_task_instance.update_state(
-                    state="PROGRESS",
-                    meta={
-                        "current": i + 1,
-                        "total": duration,
-                        "status": f"Processing step {i + 1}",
-                    },
-                )
-                mock_sleep(1)
-
-            return {
-                "message": message,
-                "log_level": log_level,
-                "task_id": mock_task_instance.request.id,
-                "status": "completed",
-                "start_time": start_time.isoformat(),
-                "end_time": end_time.isoformat(),
-                "duration_seconds": (end_time - start_time).total_seconds(),
-            }
-
-        # Test data
-        message = "Test log message"
-        log_level = "INFO"
-        duration = 2
-
-        # Execute mock task
-        result = mock_run(message, log_level, duration)
-
-        # Assertions
-        assert result["message"] == message
-        assert result["log_level"] == log_level
-        assert result["task_id"] == "test-task-id"
-        assert result["status"] == "completed"
-        assert "start_time" in result
-        assert "end_time" in result
-        assert "duration_seconds" in result
-
-        # Verify update_state was called for progress
-        assert mock_task_instance.update_state.call_count == duration
-
-        # Verify sleep was called
-        assert mock_sleep.call_count == duration
-
-
-@patch("kubestats.tasks.basic_tasks.time.sleep")
-@patch("kubestats.tasks.basic_tasks.datetime")
-def test_create_log_entry_with_custom_duration(mock_datetime, mock_sleep) -> None:
-    """Test log entry creation with custom duration."""
-    # Mock datetime
-    start_time = datetime(2024, 1, 1, 12, 0, 0)
-    end_time = datetime(2024, 1, 1, 12, 0, 3)
-    mock_datetime.utcnow.side_effect = [start_time, end_time]
-
-    with patch("kubestats.tasks.basic_tasks.create_log_entry"):
-        mock_task_instance = Mock()
-        mock_task_instance.request.id = "test-task-id-2"
-        mock_task_instance.update_state = Mock()
-
-        def mock_run(message, log_level="INFO", duration=5):
-            for i in range(duration):
-                mock_task_instance.update_state(
-                    state="PROGRESS",
-                    meta={
-                        "current": i + 1,
-                        "total": duration,
-                        "status": f"Processing step {i + 1}",
-                    },
-                )
-                mock_sleep(1)
-
-            return {
-                "message": message,
-                "log_level": log_level,
-                "task_id": mock_task_instance.request.id,
-                "status": "completed",
-                "start_time": start_time.isoformat(),
-                "end_time": end_time.isoformat(),
-                "duration_seconds": (end_time - start_time).total_seconds(),
-            }
-
-        message = "Custom duration test"
-        log_level = "WARNING"
-        duration = 3
-
-        result = mock_run(message, log_level, duration)
-
-        assert result["message"] == message
-        assert result["log_level"] == log_level
-        assert mock_task_instance.update_state.call_count == duration
-        assert mock_sleep.call_count == duration
-
-
-@patch("kubestats.tasks.basic_tasks.time.sleep")
-def test_create_log_entry_exception_handling(_mock_sleep) -> None:
-    """Test exception handling in create_log_entry."""
-    with patch("kubestats.tasks.basic_tasks.create_log_entry"):
-        mock_task_instance = Mock()
-        mock_task_instance.request.id = "test-task-id-error"
-        mock_task_instance.update_state = Mock(
-            side_effect=Exception("Update state error")
-        )
-
-        def mock_run_with_error(_message, _log_level="INFO", duration=5):
-            # Simulate the first update_state call that will raise an exception
-            mock_task_instance.update_state(
-                state="PROGRESS",
-                meta={"current": 1, "total": duration, "status": "Processing step 1"},
-            )
-
-        message = "Test error handling"
-
-        # Should raise the exception
-        with pytest.raises(Exception) as exc_info:
-            mock_run_with_error(message)
-
-        assert "Update state error" in str(exc_info.value)
 
 
 @patch("redis.Redis.from_url")
@@ -152,7 +12,7 @@ def test_create_log_entry_exception_handling(_mock_sleep) -> None:
 @patch("psutil.virtual_memory")
 @patch("kubestats.tasks.basic_tasks.datetime")
 def test_system_health_check_success(
-    mock_datetime, mock_memory, mock_cpu, mock_redis
+    mock_datetime: Any, mock_memory: Any, mock_cpu: Any, mock_redis: Any
 ) -> None:
     """Test successful system health check."""
     # Mock datetime
@@ -183,7 +43,7 @@ def test_system_health_check_success(
 
 @patch("redis.Redis.from_url")
 @patch("kubestats.tasks.basic_tasks.datetime")
-def test_system_health_check_redis_failure(mock_datetime, mock_redis) -> None:
+def test_system_health_check_redis_failure(mock_datetime: Any, mock_redis: Any) -> None:
     """Test system health check with Redis failure."""
     # Mock datetime
     timestamp = datetime(2024, 1, 1, 12, 0, 0)
@@ -203,7 +63,7 @@ def test_system_health_check_redis_failure(mock_datetime, mock_redis) -> None:
 @patch("psutil.cpu_percent")
 @patch("kubestats.tasks.basic_tasks.datetime")
 def test_system_health_check_psutil_failure(
-    mock_datetime, mock_cpu, mock_redis
+    mock_datetime: Any, mock_cpu: Any, mock_redis: Any
 ) -> None:
     """Test system health check with psutil failure."""
     # Mock datetime
@@ -221,86 +81,3 @@ def test_system_health_check_psutil_failure(
 
     assert result["status"] == "unhealthy"
     assert "CPU monitoring failed" in result["error"]
-
-
-@patch("kubestats.tasks.basic_tasks.datetime")
-def test_cleanup_old_logs(mock_datetime) -> None:
-    """Test cleanup old logs task."""
-    # Mock datetime
-    timestamp = datetime(2024, 1, 1, 12, 0, 0)
-    mock_datetime.utcnow.return_value = timestamp
-
-    result = cleanup_old_logs.run()
-
-    # Since this is a placeholder implementation
-    assert result["status"] == "completed"
-    assert result["cleaned_files"] == 0
-    assert result["freed_space_mb"] == 0
-    assert "timestamp" in result
-
-
-def test_create_log_entry_integration() -> None:
-    """Integration test for create_log_entry with minimal mocking."""
-    from kubestats.celery_app import celery_app
-
-    # Use memory backend for testing to avoid PostgreSQL dependency
-    celery_app.conf.update(
-        task_always_eager=True,
-        task_eager_propagates=True,
-        result_backend="cache+memory://",
-        broker_url="memory://",
-    )
-
-    # Execute task
-    result = create_log_entry.delay("Integration test message", "INFO", 1)
-
-    # Check that task completed
-    assert result.ready()
-    task_result = result.get()
-
-    assert task_result["message"] == "Integration test message"
-    assert task_result["log_level"] == "INFO"
-    assert task_result["status"] == "completed"
-
-
-def test_system_health_check_integration() -> None:
-    """Integration test for system_health_check."""
-    from kubestats.celery_app import celery_app
-
-    # Use memory backend for testing
-    celery_app.conf.update(
-        task_always_eager=True,
-        task_eager_propagates=True,
-        result_backend="cache+memory://",
-        broker_url="memory://",
-    )
-
-    result = system_health_check.delay()
-
-    assert result.ready()
-    task_result = result.get()
-
-    # Should either be healthy or unhealthy
-    assert task_result["status"] in ["healthy", "unhealthy"]
-    assert "timestamp" in task_result
-
-
-def test_cleanup_old_logs_integration() -> None:
-    """Integration test for cleanup_old_logs."""
-    from kubestats.celery_app import celery_app
-
-    # Use memory backend for testing
-    celery_app.conf.update(
-        task_always_eager=True,
-        task_eager_propagates=True,
-        result_backend="cache+memory://",
-        broker_url="memory://",
-    )
-
-    result = cleanup_old_logs.delay()
-
-    assert result.ready()
-    task_result = result.get()
-
-    assert task_result["status"] == "completed"
-    assert "timestamp" in task_result
