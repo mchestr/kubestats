@@ -1,7 +1,6 @@
 import os
 
 from celery import Celery
-from celery.schedules import crontab
 
 from kubestats.core.config import settings
 
@@ -24,18 +23,11 @@ celery_app.conf.update(
     result_extended=True,  # Store additional metadata
     worker_send_task_events=True,
     task_send_sent_event=True,
+    # Keep the original beat_schedule for task scheduling
     beat_schedule={
         "discover-repositories": {
             "task": "kubestats.tasks.discover_repositories.run",
             "schedule": 30.0,
-        },
-        "system-health-check": {
-            "task": "kubestats.tasks.basic_tasks.system_health_check",
-            "schedule": crontab(minute="*/5"),  # Every 5 minutes
-        },
-        "cleanup-old-logs": {
-            "task": "kubestats.tasks.basic_tasks.cleanup_old_logs",
-            "schedule": crontab(hour=2, minute=0),  # Daily at 2:00 AM
         },
     },
 )

@@ -128,7 +128,7 @@ services:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     restart: always
     entrypoint: ["python"]
-    command: ["-m", "celery", "-A", "kubestats.celery_app", "beat", "-l", "info", "--schedule=/tmp/celerybeat-schedule"]
+    command: ["-m", "celery", "-A", "kubestats.celery_app", "beat", "-l", "info"]
     networks:
       - default
     depends_on:
@@ -164,7 +164,7 @@ services:
     build:
       context: ./frontend
       args:
-        - VITE_API_URL=https://api.${DOMAIN?Variable not set}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL?Variable not set}
         - NODE_ENV=production
 
 volumes:

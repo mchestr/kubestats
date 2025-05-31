@@ -31,6 +31,7 @@ const useAuth = () => {
     const response = await LoginService.loginLoginAccessToken({
       body: data,
     })
+    console.log(response);
     const tokenData = response.data as unknown as Token
     localStorage.setItem("access_token", tokenData.access_token)
   }

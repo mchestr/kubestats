@@ -6,57 +6,61 @@ import {
   Flex,
   HStack,
   Heading,
-  Input,
   SimpleGrid,
   Spinner,
   Table,
   Text,
   VStack,
+  Card,
 } from "@chakra-ui/react"
+import {
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
 import {
   FiActivity,
   FiClock,
-  FiPlay,
   FiRefreshCw,
   FiUsers,
+  FiServer,
+  FiDatabase,
+  FiList,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiZap,
+  FiEye,
 } from "react-icons/fi"
 
-import { type TaskTriggerRequest, TasksService } from "@/client"
-import { Field } from "@/components/ui/field"
+import { TasksService } from "@/client"
 import useCustomToast from "@/hooks/useCustomToast"
 
 export const Route = createFileRoute("/_layout/tasks")({
   component: Tasks,
 })
 
+interface SystemHealth {
+  redis_status: string
+  active_workers: number
+  running_tasks: number
+  queue_depth: number
+  failed_tasks_24h: number
+}
+
 function Tasks() {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
-  const [taskType, setTaskType] = useState("log")
-  const [message, setMessage] = useState("Test message from frontend")
-  const [logLevel, setLogLevel] = useState("INFO")
-  const [duration, setDuration] = useState(3)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
-  const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null)
-  const [workerStatsVisible, setWorkerStatsVisible] = useState(false)
-
-  // Trigger task mutation
-  const triggerTaskMutation = useMutation({
-    mutationFn: (data: TaskTriggerRequest) =>
-      TasksService.tasksTriggerLogTask({ body: data }),
-    onSuccess: (data: any) => {
-      showSuccessToast(`Task ${data.task_id} triggered successfully`)
-      setSelectedTaskId(data.task_id)
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-    },
-    onError: (err: any) => {
-      const errDetail = (err.body as any)?.detail
-      showErrorToast(`${errDetail}`)
-    },
-  })
+  const [selectedWorkerData, setSelectedWorkerData] = useState<any>(null)
+  const [workerStatsModalOpen, setWorkerStatsModalOpen] = useState(false)
+  const [taskDetailsModalOpen, setTaskDetailsModalOpen] = useState(false)
 
   // Health check mutation
   const healthCheckMutation = useMutation({
@@ -65,6 +69,7 @@ function Tasks() {
       showSuccessToast(`Health check ${data.task_id} started`)
       setSelectedTaskId(data.task_id)
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["workers"] })
     },
     onError: (err: any) => {
       const errDetail = (err.body as any)?.detail
@@ -72,17 +77,20 @@ function Tasks() {
     },
   })
 
-  // Get worker stats for selected worker
-  const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
-    queryKey: ["workerStats", selectedWorkerId],
-    queryFn: async () => {
-      if (!selectedWorkerId) return null
-      const response = await TasksService.tasksGetWorkerStats({
-        path: { worker_id: selectedWorkerId },
-      })
-      return response.data as any
+  // Trigger periodic task mutation
+  const triggerPeriodicTaskMutation = useMutation({
+    mutationFn: (taskName: string) => 
+      TasksService.tasksTriggerPeriodicTask({ path: { task_name: taskName } }),
+    onSuccess: (data: any) => {
+      showSuccessToast(`Task ${data.task_id} triggered successfully`)
+      setSelectedTaskId(data.task_id)
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["workers"] })
     },
-    enabled: !!selectedWorkerId,
+    onError: (err: any) => {
+      const errDetail = (err.body as any)?.detail
+      showErrorToast(`${errDetail}`)
+    },
   })
 
   // Get task status for selected task
@@ -99,36 +107,22 @@ function Tasks() {
     refetchInterval: 2000, // Refetch every 2 seconds
   })
 
-  // Get worker status
+  // Get worker status (which now includes periodic tasks)
   const { data: workerStatus, isLoading: workersLoading } = useQuery({
     queryKey: ["workers"],
     queryFn: async () => {
       const response = await TasksService.tasksGetWorkerStatus()
       return response.data as any
     },
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds
   })
-
-  // Get periodic tasks
-  const { data: periodicTasks, isLoading: periodicTasksLoading } = useQuery({
-    queryKey: ["periodicTasks"],
-    queryFn: async () => {
-      const response = await TasksService.tasksGetPeriodicTasks()
-      return response.data as any
-    },
-    refetchInterval: 30000, // Refetch every 30 seconds
-  })
-
-  const handleTriggerTask = () => {
-    triggerTaskMutation.mutate({
-      message: message,
-      log_level: logLevel,
-      duration: duration,
-    })
-  }
 
   const handleHealthCheck = () => {
     healthCheckMutation.mutate()
+  }
+
+  const handleTriggerPeriodicTask = (taskName: string) => {
+    triggerPeriodicTaskMutation.mutate(taskName)
   }
 
   const getStatusColor = (status: string) => {
@@ -156,15 +150,34 @@ function Tasks() {
     }
   }
 
-  const extractWorkerId = (workerName: string): string => {
-    // Remove 'celery@' prefix to get clean worker ID
-    return workerName.replace(/^celery@/, "")
+  const handleViewWorkerStats = (workerName: string) => {
+    const workerStats = workerStatus?.stats?.[workerName]
+    if (workerStats) {
+      setSelectedWorkerData({
+        worker_name: workerName,
+        worker_id: workerName.replace(/^celery@/, ""),
+        status: "ONLINE",
+        ...workerStats
+      })
+      setWorkerStatsModalOpen(true)
+    }
   }
 
-  const handleViewWorkerStats = (workerName: string) => {
-    const workerId = extractWorkerId(workerName)
-    setSelectedWorkerId(workerId)
-    setWorkerStatsVisible(true)
+  const handleViewTaskDetails = (taskId: string) => {
+    setSelectedTaskId(taskId)
+    setTaskDetailsModalOpen(true)
+  }
+
+  // Calculate system health metrics
+  const systemHealth: SystemHealth = {
+    redis_status: "healthy", // Would come from backend
+    active_workers: workerStatus?.active ? Object.keys(workerStatus.active).length : 0,
+    running_tasks: workerStatus?.active 
+      ? Object.values(workerStatus.active).reduce((total: number, tasks: any) => 
+          total + (Array.isArray(tasks) ? tasks.length : 0), 0)
+      : 0,
+    queue_depth: 0, // Would need to be calculated from backend
+    failed_tasks_24h: 0, // Would need to be calculated from backend
   }
 
   return (
@@ -173,427 +186,497 @@ function Tasks() {
         {/* Header */}
         <Box>
           <Heading size="lg" textAlign={{ base: "center", md: "left" }}>
-            Task Management
+            Celery Task Management
           </Heading>
-          <Text color="gray.500">Trigger and monitor Celery tasks</Text>
+          <Text color="gray.500">Monitor workers, tasks, and system health</Text>
         </Box>
 
-        {/* Task Controls */}
-        <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6}>
-          {/* Trigger Task Card */}
-          <Box bg="white" p={6} borderRadius="lg" shadow="sm" borderWidth="1px">
-            <Heading size="md" mb={4}>
+        {/* System Health Overview */}
+        <Box>
+          <Heading size="md" mb={4}>
+            <HStack>
+              <FiActivity />
+              <Text>System Health</Text>
+            </HStack>
+          </Heading>
+          <SimpleGrid columns={{ base: 2, md: 5 }} gap={4}>
+            {/* Redis Status */}
+            <Card.Root>
+              <Card.Body>
+                <VStack gap={2}>
+                  <HStack>
+                    <FiDatabase color="green" />
+                    <Text fontSize="sm" fontWeight="medium">Redis</Text>
+                  </HStack>
+                  <Badge colorPalette="green" size="sm">
+                    {systemHealth.redis_status}
+                  </Badge>
+                </VStack>
+              </Card.Body>
+            </Card.Root>
+
+            {/* Active Workers */}
+            <Card.Root>
+              <Card.Body>
+                <VStack gap={2}>
+                  <HStack>
+                    <FiUsers color="blue" />
+                    <Text fontSize="sm" fontWeight="medium">Workers</Text>
+                  </HStack>
+                  <Text fontSize="xl" fontWeight="bold">
+                    {systemHealth.active_workers}
+                  </Text>
+                </VStack>
+              </Card.Body>
+            </Card.Root>
+
+            {/* Running Tasks */}
+            <Card.Root>
+              <Card.Body>
+                <VStack gap={2}>
+                  <HStack>
+                    <FiZap color="orange" />
+                    <Text fontSize="sm" fontWeight="medium">Running</Text>
+                  </HStack>
+                  <Text fontSize="xl" fontWeight="bold">
+                    {systemHealth.running_tasks}
+                  </Text>
+                </VStack>
+              </Card.Body>
+            </Card.Root>
+
+            {/* Queue Depth */}
+            <Card.Root>
+              <Card.Body>
+                <VStack gap={2}>
+                  <HStack>
+                    <FiList color="purple" />
+                    <Text fontSize="sm" fontWeight="medium">Queued</Text>
+                  </HStack>
+                  <Text fontSize="xl" fontWeight="bold">
+                    {systemHealth.queue_depth}
+                  </Text>
+                </VStack>
+              </Card.Body>
+            </Card.Root>
+
+            {/* Failed Tasks */}
+            <Card.Root>
+              <Card.Body>
+                <VStack gap={2}>
+                  <HStack>
+                    <FiAlertCircle color="red" />
+                    <Text fontSize="sm" fontWeight="medium">Failed (24h)</Text>
+                  </HStack>
+                  <Text fontSize="xl" fontWeight="bold">
+                    {systemHealth.failed_tasks_24h}
+                  </Text>
+                </VStack>
+              </Card.Body>
+            </Card.Root>
+          </SimpleGrid>
+        </Box>
+
+        {/* Task Operations */}
+        <Card.Root>
+          <Card.Header>
+            <Heading size="md">
               <HStack>
-                <FiPlay />
-                <Text>Trigger Task</Text>
+                <FiZap />
+                <Text>Quick Actions</Text>
               </HStack>
             </Heading>
-            <VStack gap={4} align="stretch">
-              <Field label="Task Type">
-                <select
-                  value={taskType}
-                  onChange={(e) => setTaskType(e.target.value)}
-                  style={{
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #e2e8f0",
-                    width: "100%",
-                  }}
-                >
-                  <option value="log">Log Entry Task</option>
-                </select>
-              </Field>
-
-              <Field label="Message">
-                <Input
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Enter task message"
-                />
-              </Field>
-
-              <Field label="Log Level">
-                <select
-                  value={logLevel}
-                  onChange={(e) => setLogLevel(e.target.value)}
-                  style={{
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #e2e8f0",
-                    width: "100%",
-                  }}
-                >
-                  <option value="DEBUG">DEBUG</option>
-                  <option value="INFO">INFO</option>
-                  <option value="WARNING">WARNING</option>
-                  <option value="ERROR">ERROR</option>
-                </select>
-              </Field>
-
-              <Field label="Duration (seconds)">
-                <Input
-                  type="number"
-                  value={duration}
-                  onChange={(e) =>
-                    setDuration(Number.parseInt(e.target.value) || 1)
-                  }
-                  min={1}
-                  max={60}
-                />
-              </Field>
-
-              <Button
-                colorPalette="blue"
-                onClick={handleTriggerTask}
-                loading={triggerTaskMutation.isPending}
-              >
-                <FiPlay />
-                Trigger Task
-              </Button>
-            </VStack>
-          </Box>
-
-          {/* System Tasks Card */}
-          <Box bg="white" p={6} borderRadius="lg" shadow="sm" borderWidth="1px">
-            <Heading size="md" mb={4}>
-              <HStack>
-                <FiActivity />
-                <Text>System Tasks</Text>
-              </HStack>
-            </Heading>
-            <VStack gap={4} align="stretch">
+          </Card.Header>
+          <Card.Body>
+            <VStack gap={3}>
               <Button
                 colorPalette="green"
                 onClick={handleHealthCheck}
                 loading={healthCheckMutation.isPending}
+                width="full"
               >
                 <FiActivity />
                 Run Health Check
               </Button>
-
-              <Box
-                p={3}
-                bg="blue.50"
-                borderRadius="md"
-                borderLeftWidth="4px"
-                borderLeftColor="blue.500"
+              <Button
+                colorPalette="blue"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["workers"] })}
+                loading={workersLoading}
+                width="full"
               >
-                <Text fontWeight="bold" color="blue.700" mb={1}>
-                  Health Check
-                </Text>
-                <Text fontSize="sm" color="blue.600">
-                  Monitors Redis connection and system resources
-                </Text>
-              </Box>
+                <FiRefreshCw />
+                Refresh All Data
+              </Button>
             </VStack>
-          </Box>
-        </SimpleGrid>
+          </Card.Body>
+        </Card.Root>
 
-        {/* Worker Status */}
-        <Box bg="white" p={6} borderRadius="lg" shadow="sm" borderWidth="1px">
-          <HStack justify="space-between" mb={4}>
-            <Heading size="md">
-              <HStack>
-                <FiUsers />
-                <Text>Worker Status</Text>
-              </HStack>
-            </Heading>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                queryClient.invalidateQueries({ queryKey: ["workers"] })
-              }
-              loading={workersLoading}
-            >
-              <FiRefreshCw />
-              Refresh
-            </Button>
-          </HStack>
-
-          {workersLoading ? (
-            <Flex justify="center">
-              <Spinner />
-            </Flex>
-          ) : workerStatus?.active &&
-            Object.keys(workerStatus.active).length > 0 ? (
-            <Table.Root variant="outline">
-              <Table.Header>
-                <Table.Row>
-                  <Table.ColumnHeader>Worker</Table.ColumnHeader>
-                  <Table.ColumnHeader>Status</Table.ColumnHeader>
-                  <Table.ColumnHeader>Active Tasks</Table.ColumnHeader>
-                  <Table.ColumnHeader>Processed</Table.ColumnHeader>
-                  <Table.ColumnHeader>Actions</Table.ColumnHeader>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {Object.entries(workerStatus.data?.active || {}).map(
-                  ([workerName, tasks]) => (
-                    <Table.Row key={workerName}>
-                      <Table.Cell>{workerName}</Table.Cell>
-                      <Table.Cell>
-                        <Badge colorPalette="green">online</Badge>
-                      </Table.Cell>
-                      <Table.Cell>
-                        {Array.isArray(tasks) ? tasks.length : 0}
-                      </Table.Cell>
-                      <Table.Cell>-</Table.Cell>
-                      <Table.Cell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewWorkerStats(workerName)}
-                        >
-                          View Stats
-                        </Button>
-                      </Table.Cell>
-                    </Table.Row>
-                  ),
-                )}
-              </Table.Body>
-            </Table.Root>
-          ) : (
-            <Box
-              p={3}
-              bg="orange.50"
-              borderRadius="md"
-              borderLeftWidth="4px"
-              borderLeftColor="orange.500"
-            >
-              <Text color="orange.700">
-                No workers found. Make sure Celery workers are running.
-              </Text>
-            </Box>
-          )}
-        </Box>
-
-        {/* Periodic Tasks */}
-        <Box bg="white" p={6} borderRadius="lg" shadow="sm" borderWidth="1px">
-          <HStack justify="space-between" mb={4}>
-            <Heading size="md">
-              <HStack>
-                <FiClock />
-                <Text>Periodic Tasks</Text>
-              </HStack>
-            </Heading>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                queryClient.invalidateQueries({ queryKey: ["periodicTasks"] })
-              }
-              loading={periodicTasksLoading}
-            >
-              <FiRefreshCw />
-              Refresh
-            </Button>
-          </HStack>
-
-          {periodicTasksLoading ? (
-            <Flex justify="center">
-              <Spinner />
-            </Flex>
-          ) : periodicTasks && periodicTasks.length > 0 ? (
-            <Table.Root variant="outline">
-              <Table.Header>
-                <Table.Row>
-                  <Table.ColumnHeader>Task Name</Table.ColumnHeader>
-                  <Table.ColumnHeader>Schedule</Table.ColumnHeader>
-                  <Table.ColumnHeader>Status</Table.ColumnHeader>
-                  <Table.ColumnHeader>Last Run</Table.ColumnHeader>
-                  <Table.ColumnHeader>Run Count</Table.ColumnHeader>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {periodicTasks.map((task: any) => (
-                  <Table.Row key={task.name}>
-                    <Table.Cell>
-                      <VStack align="start" gap={1}>
-                        <Text fontWeight="medium">{task.name}</Text>
-                        <Text fontSize="sm" color="gray.500">
-                          {task.task}
-                        </Text>
-                      </VStack>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text fontSize="sm">{task.schedule}</Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Badge colorPalette={task.enabled ? "green" : "gray"}>
-                        {task.enabled ? "enabled" : "disabled"}
-                      </Badge>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text fontSize="sm" color="gray.500">
-                        {task.last_run_at || "Never"}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text fontSize="sm">{task.total_run_count || 0}</Text>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table.Root>
-          ) : (
-            <Box
-              p={3}
-              bg="blue.50"
-              borderRadius="md"
-              borderLeftWidth="4px"
-              borderLeftColor="blue.500"
-            >
-              <Text color="blue.700">No periodic tasks configured.</Text>
-            </Box>
-          )}
-        </Box>
-
-        {/* Task Status */}
-        {selectedTaskId && (
-          <Box bg="white" p={6} borderRadius="lg" shadow="sm" borderWidth="1px">
-            <Heading size="md" mb={4}>
-              Task Status: {selectedTaskId}
-            </Heading>
-
-            {statusLoading ? (
-              <Flex justify="center">
-                <Spinner />
-              </Flex>
-            ) : taskStatus ? (
-              <VStack gap={4} align="stretch">
+        {/* Active Tasks Monitor */}
+        <Card.Root>
+          <Card.Header>
+            <HStack justify="space-between">
+              <Heading size="md">
                 <HStack>
-                  <Text fontWeight="bold">Status:</Text>
-                  <Badge colorPalette={getStatusColor(taskStatus.status)}>
-                    {taskStatus.status}
-                  </Badge>
+                  <FiZap />
+                  <Text>Active Tasks</Text>
                 </HStack>
-
-                {taskStatus.name && (
-                  <HStack>
-                    <Text fontWeight="bold">Task Name:</Text>
-                    <Text>{taskStatus.name}</Text>
-                  </HStack>
-                )}
-
-                {taskStatus.worker && (
-                  <HStack>
-                    <Text fontWeight="bold">Worker:</Text>
-                    <Text>{taskStatus.worker}</Text>
-                  </HStack>
-                )}
-
-                {taskStatus.result != null && (
-                  <Box>
-                    <Text fontWeight="bold" mb={2}>
-                      Result:
-                    </Text>
-                    <Box
-                      p={3}
-                      bg="gray.50"
-                      borderRadius="md"
-                      fontFamily="mono"
-                      fontSize="sm"
-                      overflowX="auto"
-                    >
-                      <pre>{renderTaskResult(taskStatus.result)}</pre>
-                    </Box>
-                  </Box>
-                )}
-
-                {taskStatus.traceback && (
-                  <Box>
-                    <Text fontWeight="bold" mb={2} color="red.500">
-                      Error:
-                    </Text>
-                    <Box
-                      p={3}
-                      bg="red.50"
-                      borderRadius="md"
-                      fontFamily="mono"
-                      fontSize="sm"
-                      overflowX="auto"
-                    >
-                      <pre>{taskStatus.traceback}</pre>
-                    </Box>
-                  </Box>
-                )}
-              </VStack>
-            ) : (
-              <Box
-                p={3}
-                bg="red.50"
-                borderRadius="md"
-                borderLeftWidth="4px"
-                borderLeftColor="red.500"
-              >
-                <Text color="red.700">Failed to load task status</Text>
-              </Box>
-            )}
-          </Box>
-        )}
-
-        {/* Worker Stats Details */}
-        {workerStatsVisible && selectedWorkerId && (
-          <Box bg="white" p={6} borderRadius="lg" shadow="sm" borderWidth="1px">
-            <HStack justify="space-between" mb={4}>
-              <Heading size="md">Worker Stats: {selectedWorkerId}</Heading>
+              </Heading>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => {
-                  setWorkerStatsVisible(false)
-                  setSelectedWorkerId(null)
-                }}
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["workers"] })}
+                loading={workersLoading}
               >
-                Close Stats
+                <FiRefreshCw />
               </Button>
             </HStack>
-
-            {workerStatsLoading ? (
-              <Flex justify="center">
+          </Card.Header>
+          <Card.Body>
+            {workersLoading ? (
+              <Flex justify="center" py={8}>
                 <Spinner />
               </Flex>
-            ) : workerStats ? (
-              <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-                <VStack gap={3} align="stretch">
-                  <HStack>
-                    <Text fontWeight="bold">Worker Name:</Text>
-                    <Text>{workerStats.worker_name}</Text>
-                  </HStack>
-                  <HStack>
-                    <Text fontWeight="bold">Status:</Text>
-                    <Badge colorPalette="green">{workerStats.status}</Badge>
-                  </HStack>
-                  <HStack>
-                    <Text fontWeight="bold">PID:</Text>
-                    <Text>{workerStats.pid || "N/A"}</Text>
-                  </HStack>
-                  <HStack>
-                    <Text fontWeight="bold">Uptime:</Text>
-                    <Text>
-                      {workerStats.uptime
-                        ? `${Math.floor(workerStats.uptime / 60)} minutes`
-                        : "N/A"}
-                    </Text>
-                  </HStack>
-                </VStack>
+            ) : workerStatus?.active && Object.keys(workerStatus.active).length > 0 ? (
+              <Table.Root variant="outline">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeader>Task ID</Table.ColumnHeader>
+                    <Table.ColumnHeader>Task Name</Table.ColumnHeader>
+                    <Table.ColumnHeader>Worker</Table.ColumnHeader>
+                    <Table.ColumnHeader>Started</Table.ColumnHeader>
+                    <Table.ColumnHeader>Actions</Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {Object.entries(workerStatus.active).map(([workerName, tasks]) =>
+                    Array.isArray(tasks) ? tasks.map((task: any, index: number) => (
+                      <Table.Row key={`${workerName}-${index}`}>
+                        <Table.Cell>
+                          <Text fontFamily="mono" fontSize="sm">
+                            {task.id?.substring(0, 8) || 'N/A'}...
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text fontWeight="medium">{task.name || 'Unknown'}</Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Badge size="sm" colorPalette="blue">
+                            {workerName.replace(/^celery@/, '')}
+                          </Badge>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text fontSize="sm" color="gray.600">
+                            {task.time_start ? new Date(task.time_start * 1000).toLocaleTimeString() : 'N/A'}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <HStack gap={2}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewTaskDetails(task.id)}
+                            >
+                              <FiEye />
+                            </Button>
+                          </HStack>
+                        </Table.Cell>
+                      </Table.Row>
+                    )) : []
+                  )}
+                </Table.Body>
+              </Table.Root>
+            ) : (
+              <Box
+                p={6}
+                bg="blue.50"
+                borderRadius="md"
+                textAlign="center"
+              >
+                <FiCheckCircle size={24} color="blue" style={{ margin: "0 auto 8px" }} />
+                <Text color="blue.700" fontWeight="medium">
+                  No active tasks
+                </Text>
+                <Text color="blue.600" fontSize="sm">
+                  All workers are idle and ready for new tasks
+                </Text>
+              </Box>
+            )}
+          </Card.Body>
+        </Card.Root>
 
-                <VStack gap={3} align="stretch">
-                  <HStack>
-                    <Text fontWeight="bold">Clock:</Text>
-                    <Text>{workerStats.clock || "N/A"}</Text>
-                  </HStack>
-                  <HStack>
-                    <Text fontWeight="bold">Prefetch Count:</Text>
-                    <Text>{workerStats.prefetch_count || "N/A"}</Text>
-                  </HStack>
+        {/* Worker Status */}
+        <Card.Root>
+          <Card.Header>
+            <HStack justify="space-between">
+              <Heading size="md">
+                <HStack>
+                  <FiServer />
+                  <Text>Workers</Text>
+                </HStack>
+              </Heading>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["workers"] })}
+                loading={workersLoading}
+              >
+                <FiRefreshCw />
+              </Button>
+            </HStack>
+          </Card.Header>
+          <Card.Body>
+            {workersLoading ? (
+              <Flex justify="center" py={8}>
+                <Spinner />
+              </Flex>
+            ) : workerStatus?.stats && Object.keys(workerStatus.stats).length > 0 ? (
+              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
+                {Object.entries(workerStatus.stats).map(([workerName, stats]: [string, any]) => {
+                  const activeTasks = workerStatus?.active?.[workerName] || []
+                  const taskCount = Array.isArray(activeTasks) ? activeTasks.length : 0
+                  
+                  return (
+                    <Card.Root key={workerName} variant="outline">
+                      <Card.Body>
+                        <VStack gap={3} align="stretch">
+                          <HStack justify="space-between">
+                            <VStack gap={1} align="start">
+                              <Text fontWeight="bold" fontSize="sm">
+                                {workerName.replace(/^celery@/, '')}
+                              </Text>
+                              <Badge colorPalette="green" size="sm">
+                                ONLINE
+                              </Badge>
+                            </VStack>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewWorkerStats(workerName)}
+                            >
+                              <FiEye />
+                            </Button>
+                          </HStack>
+                          
+                          <VStack gap={2} align="stretch" fontSize="sm">
+                            <HStack justify="space-between">
+                              <Text color="gray.600">Active Tasks:</Text>
+                              <Text fontWeight="medium">{taskCount}</Text>
+                            </HStack>
+                            <HStack justify="space-between">
+                              <Text color="gray.600">Pool:</Text>
+                              <Text fontWeight="medium">{stats.pool?.max_concurrency || 'N/A'}</Text>
+                            </HStack>
+                            <HStack justify="space-between">
+                              <Text color="gray.600">Processed:</Text>
+                              <Text fontWeight="medium">
+                                {stats.total ? String(Object.values(stats.total).reduce((a: any, b: any) => a + b, 0)) : '0'}
+                              </Text>
+                            </HStack>
+                          </VStack>
+                        </VStack>
+                      </Card.Body>
+                    </Card.Root>
+                  )
+                })}
+              </SimpleGrid>
+            ) : (
+              <Box
+                p={6}
+                bg="orange.50"
+                borderRadius="md"
+                textAlign="center"
+              >
+                <FiAlertCircle size={24} color="orange" style={{ margin: "0 auto 8px" }} />
+                <Text color="orange.700" fontWeight="medium">
+                  No workers found
+                </Text>
+                <Text color="orange.600" fontSize="sm">
+                  Make sure Celery workers are running
+                </Text>
+              </Box>
+            )}
+          </Card.Body>
+        </Card.Root>
 
-                  {workerStats.pool && (
+        {/* Periodic Tasks */}
+        <Card.Root>
+          <Card.Header>
+            <HStack justify="space-between">
+              <Heading size="md">
+                <HStack>
+                  <FiClock />
+                  <Text>Periodic Tasks</Text>
+                </HStack>
+              </Heading>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["workers"] })}
+                loading={workersLoading}
+              >
+                <FiRefreshCw />
+              </Button>
+            </HStack>
+          </Card.Header>
+          <Card.Body>
+            {workersLoading ? (
+              <Flex justify="center" py={8}>
+                <Spinner />
+              </Flex>
+            ) : workerStatus?.periodic_tasks && workerStatus.periodic_tasks.length > 0 ? (
+              <Table.Root variant="outline">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeader>Task Name</Table.ColumnHeader>
+                    <Table.ColumnHeader>Schedule</Table.ColumnHeader>
+                    <Table.ColumnHeader>Status</Table.ColumnHeader>
+                    <Table.ColumnHeader>Run Count</Table.ColumnHeader>
+                    <Table.ColumnHeader>Actions</Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {workerStatus.periodic_tasks.map((task: any) => (
+                    <Table.Row key={task.name}>
+                      <Table.Cell>
+                        <VStack gap={1} align="start">
+                          <Text fontWeight="medium">{task.name}</Text>
+                          <Text fontSize="sm" color="gray.600">{task.task}</Text>
+                        </VStack>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text fontSize="sm" fontFamily="mono" color="gray.600">
+                          {task.schedule}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Badge
+                          colorPalette={task.enabled ? "green" : "red"}
+                          size="sm"
+                        >
+                          {task.enabled ? "Enabled" : "Disabled"}
+                        </Badge>
+                      </Table.Cell>
+                      <Table.Cell>
+                        {task.total_run_count ? (
+                          <Badge colorPalette="blue" size="sm">
+                            {task.total_run_count}
+                          </Badge>
+                        ) : (
+                          <Text color="gray.500" fontSize="sm">
+                            0
+                          </Text>
+                        )}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          colorPalette="green"
+                          onClick={() => handleTriggerPeriodicTask(task.name)}
+                          loading={triggerPeriodicTaskMutation.isPending}
+                        >
+                          <FiZap />
+                          Trigger Now
+                        </Button>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+            ) : (
+              <Box
+                p={6}
+                bg="blue.50"
+                borderRadius="md"
+                textAlign="center"
+              >
+                <FiClock size={24} color="blue" style={{ margin: "0 auto 8px" }} />
+                <Text color="blue.700" fontWeight="medium">
+                  No periodic tasks configured
+                </Text>
+                <Text color="blue.600" fontSize="sm">
+                  Scheduled tasks will appear here
+                </Text>
+              </Box>
+            )}
+          </Card.Body>
+        </Card.Root>
+
+        {/* Task Details Modal */}
+        <DialogRoot
+          open={taskDetailsModalOpen}
+          onOpenChange={(e) => setTaskDetailsModalOpen(e.open)}
+        >
+          <DialogContent maxW="4xl">
+            <DialogHeader>
+              <DialogTitle>
+                Task Details: {selectedTaskId?.substring(0, 8)}...
+              </DialogTitle>
+            </DialogHeader>
+            <DialogCloseTrigger />
+            
+            <DialogBody>
+              {statusLoading ? (
+                <Flex justify="center" py={8}>
+                  <Spinner />
+                </Flex>
+              ) : taskStatus ? (
+                <VStack gap={4} align="stretch">
+                  <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+                    <VStack gap={3} align="stretch">
+                      <Box>
+                        <Text fontWeight="bold" mb={2}>Basic Information</Text>
+                        <VStack gap={2} align="stretch">
+                          <HStack>
+                            <Text fontWeight="medium" minW="100px">Status:</Text>
+                            <Badge colorPalette={getStatusColor(taskStatus.status)}>
+                              {taskStatus.status}
+                            </Badge>
+                          </HStack>
+                          <HStack>
+                            <Text fontWeight="medium" minW="100px">Task ID:</Text>
+                            <Text fontFamily="mono" fontSize="sm">{selectedTaskId}</Text>
+                          </HStack>
+                          {taskStatus.name && (
+                            <HStack>
+                              <Text fontWeight="medium" minW="100px">Name:</Text>
+                              <Text>{taskStatus.name}</Text>
+                            </HStack>
+                          )}
+                          {taskStatus.worker && (
+                            <HStack>
+                              <Text fontWeight="medium" minW="100px">Worker:</Text>
+                              <Text>{taskStatus.worker}</Text>
+                            </HStack>
+                          )}
+                        </VStack>
+                      </Box>
+                    </VStack>
+
+                    <VStack gap={3} align="stretch">
+                      {taskStatus.date_done && (
+                        <Box>
+                          <Text fontWeight="bold" mb={2}>Timing</Text>
+                          <VStack gap={2} align="stretch">
+                            <HStack>
+                              <Text fontWeight="medium" minW="100px">Completed:</Text>
+                              <Text fontSize="sm">{new Date(taskStatus.date_done).toLocaleString()}</Text>
+                            </HStack>
+                            {taskStatus.retries !== null && (
+                              <HStack>
+                                <Text fontWeight="medium" minW="100px">Retries:</Text>
+                                <Text>{taskStatus.retries}</Text>
+                              </HStack>
+                            )}
+                          </VStack>
+                        </Box>
+                      )}
+                    </VStack>
+                  </SimpleGrid>
+
+                  {taskStatus.result != null && (
                     <Box>
-                      <Text fontWeight="bold" mb={2}>
-                        Pool Info:
-                      </Text>
+                      <Text fontWeight="bold" mb={2}>Result</Text>
                       <Box
                         p={3}
                         bg="gray.50"
@@ -601,48 +684,174 @@ function Tasks() {
                         fontFamily="mono"
                         fontSize="sm"
                         overflowX="auto"
+                        maxH="300px"
+                        overflowY="auto"
                       >
-                        <pre>{JSON.stringify(workerStats.pool, null, 2)}</pre>
+                        <pre>{renderTaskResult(taskStatus.result)}</pre>
                       </Box>
                     </Box>
                   )}
 
-                  {workerStats.total_tasks && (
+                  {taskStatus.traceback && (
                     <Box>
-                      <Text fontWeight="bold" mb={2}>
-                        Task Stats:
-                      </Text>
+                      <Text fontWeight="bold" mb={2} color="red.500">Error Details</Text>
                       <Box
                         p={3}
-                        bg="blue.50"
+                        bg="red.50"
                         borderRadius="md"
                         fontFamily="mono"
                         fontSize="sm"
                         overflowX="auto"
+                        maxH="300px"
+                        overflowY="auto"
                       >
-                        <pre>
-                          {JSON.stringify(workerStats.total_tasks, null, 2)}
-                        </pre>
+                        <pre>{taskStatus.traceback}</pre>
                       </Box>
                     </Box>
                   )}
                 </VStack>
-              </SimpleGrid>
-            ) : (
-              <Box
-                p={3}
-                bg="red.50"
-                borderRadius="md"
-                borderLeftWidth="4px"
-                borderLeftColor="red.500"
+              ) : (
+                <Box
+                  p={6}
+                  bg="red.50"
+                  borderRadius="md"
+                  textAlign="center"
+                >
+                  <Text color="red.700">Failed to load task details</Text>
+                </Box>
+              )}
+            </DialogBody>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setTaskDetailsModalOpen(false)}
               >
-                <Text color="red.700">
-                  Failed to load worker stats for {selectedWorkerId}
-                </Text>
-              </Box>
-            )}
-          </Box>
-        )}
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </DialogRoot>
+
+        {/* Worker Stats Modal */}
+        <DialogRoot
+          open={workerStatsModalOpen}
+          onOpenChange={(e) => setWorkerStatsModalOpen(e.open)}
+        >
+          <DialogContent maxW="4xl">
+            <DialogHeader>
+              <DialogTitle>
+                Worker Details: {selectedWorkerData?.worker_id || "N/A"}
+              </DialogTitle>
+            </DialogHeader>
+            <DialogCloseTrigger />
+            
+            <DialogBody>
+              {selectedWorkerData ? (
+                <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+                  <VStack gap={4} align="stretch">
+                    <Box>
+                      <Text fontWeight="bold" mb={2}>Basic Information</Text>
+                      <VStack gap={2} align="stretch">
+                        <HStack>
+                          <Text fontWeight="medium" minW="120px">Worker Name:</Text>
+                          <Text>{selectedWorkerData.worker_name}</Text>
+                        </HStack>
+                        <HStack>
+                          <Text fontWeight="medium" minW="120px">Status:</Text>
+                          <Badge colorPalette="green">{selectedWorkerData.status}</Badge>
+                        </HStack>
+                        <HStack>
+                          <Text fontWeight="medium" minW="120px">PID:</Text>
+                          <Text>{selectedWorkerData.pid || "N/A"}</Text>
+                        </HStack>
+                        <HStack>
+                          <Text fontWeight="medium" minW="120px">Uptime:</Text>
+                          <Text>
+                            {selectedWorkerData.uptime
+                              ? `${Math.floor(selectedWorkerData.uptime / 60)} minutes`
+                              : "N/A"}
+                          </Text>
+                        </HStack>
+                      </VStack>
+                    </Box>
+
+                    <Box>
+                      <Text fontWeight="bold" mb={2}>Configuration</Text>
+                      <VStack gap={2} align="stretch">
+                        <HStack>
+                          <Text fontWeight="medium" minW="120px">Clock:</Text>
+                          <Text>{selectedWorkerData.clock || "N/A"}</Text>
+                        </HStack>
+                        <HStack>
+                          <Text fontWeight="medium" minW="120px">Prefetch Count:</Text>
+                          <Text>{selectedWorkerData.prefetch_count || "N/A"}</Text>
+                        </HStack>
+                      </VStack>
+                    </Box>
+                  </VStack>
+
+                  <VStack gap={4} align="stretch">
+                    {selectedWorkerData.pool && (
+                      <Box>
+                        <Text fontWeight="bold" mb={2}>Pool Information</Text>
+                        <Box
+                          p={3}
+                          bg="gray.50"
+                          borderRadius="md"
+                          fontFamily="mono"
+                          fontSize="sm"
+                          overflowX="auto"
+                          maxH="200px"
+                          overflowY="auto"
+                        >
+                          <pre>{JSON.stringify(selectedWorkerData.pool, null, 2)}</pre>
+                        </Box>
+                      </Box>
+                    )}
+
+                    {selectedWorkerData.total_tasks && (
+                      <Box>
+                        <Text fontWeight="bold" mb={2}>Task Statistics</Text>
+                        <Box
+                          p={3}
+                          bg="blue.50"
+                          borderRadius="md"
+                          fontFamily="mono"
+                          fontSize="sm"
+                          overflowX="auto"
+                          maxH="200px"
+                          overflowY="auto"
+                        >
+                          <pre>{JSON.stringify(selectedWorkerData.total_tasks, null, 2)}</pre>
+                        </Box>
+                      </Box>
+                    )}
+                  </VStack>
+                </SimpleGrid>
+              ) : (
+                <Box
+                  p={4}
+                  bg="red.50"
+                  borderRadius="md"
+                  borderLeftWidth="4px"
+                  borderLeftColor="red.500"
+                >
+                  <Text color="red.700">No worker data available</Text>
+                </Box>
+              )}
+            </DialogBody>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setWorkerStatsModalOpen(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </DialogRoot>
       </VStack>
     </Container>
   )

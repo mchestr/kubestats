@@ -180,18 +180,30 @@ def test_get_worker_stats_not_found(
     )
 
 
+@patch("app.api.routes.tasks.celery_app.conf.beat_schedule", {})
 @patch("app.api.routes.tasks.celery_app.control.inspect")
 def test_get_worker_status_success(
-    mock_inspect, client: TestClient, superuser_token_headers: dict[str, str]
+    mock_inspect, mock_beat_schedule, client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
-    """Test successful worker status retrieval."""
+    """Test successful worker status retrieval with periodic tasks."""
     # Mock inspect result
     mock_i = Mock()
     mock_i.active.return_value = {"worker1": []}
     mock_i.scheduled.return_value = {"worker1": []}
     mock_i.reserved.return_value = {"worker1": []}
-    mock_i.stats.return_value = {"worker1": {"total": 10}}
+    mock_i.stats.return_value = {"worker1": {"total": {"task1": 5}}}
     mock_inspect.return_value = mock_i
+
+    # Mock beat schedule
+    mock_beat_schedule.items.return_value = [
+        ("test-task", {
+            "task": "task1",
+            "schedule": "0 0 * * *",
+            "enabled": True,
+            "args": [],
+            "kwargs": {}
+        })
+    ]
 
     # Make request
     response = client.get(
@@ -206,8 +218,13 @@ def test_get_worker_status_success(
     assert "scheduled" in data
     assert "reserved" in data
     assert "stats" in data
+    assert "periodic_tasks" in data
     assert data["active"] == {"worker1": []}
-    assert data["stats"] == {"worker1": {"total": 10}}
+    assert data["stats"] == {"worker1": {"total": {"task1": 5}}}
+    assert len(data["periodic_tasks"]) == 1
+    assert data["periodic_tasks"][0]["name"] == "test-task"
+    assert data["periodic_tasks"][0]["task"] == "task1"
+    assert data["periodic_tasks"][0]["total_run_count"] == 5
 
 
 def test_task_routes_require_superuser(

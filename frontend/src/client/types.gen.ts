@@ -135,10 +135,6 @@ export type PeriodicTaskResponse = {
      */
     enabled?: boolean;
     /**
-     * Last Run At
-     */
-    last_run_at?: string | null;
-    /**
      * Total Run Count
      */
     total_run_count?: number | null;
@@ -381,61 +377,37 @@ export type ValidationError = {
 };
 
 /**
- * WorkerStatsResponse
+ * WorkerStatusResponse
  */
-export type WorkerStatsResponse = {
+export type WorkerStatusResponse = {
     /**
-     * Worker Id
+     * Active
      */
-    worker_id: string;
-    /**
-     * Worker Name
-     */
-    worker_name: string;
-    /**
-     * Status
-     */
-    status: string;
-    /**
-     * Uptime
-     */
-    uptime?: number | null;
-    /**
-     * Pid
-     */
-    pid?: number | null;
-    /**
-     * Clock
-     */
-    clock?: number | null;
-    /**
-     * Prefetch Count
-     */
-    prefetch_count?: number | null;
-    /**
-     * Pool
-     */
-    pool?: {
+    active: {
         [key: string]: unknown;
-    } | null;
+    };
     /**
-     * Broker
+     * Scheduled
      */
-    broker?: {
+    scheduled: {
         [key: string]: unknown;
-    } | null;
+    };
     /**
-     * Total Tasks
+     * Reserved
      */
-    total_tasks?: {
+    reserved: {
         [key: string]: unknown;
-    } | null;
+    };
     /**
-     * Rusage
+     * Stats
      */
-    rusage?: {
+    stats: {
         [key: string]: unknown;
-    } | null;
+    };
+    /**
+     * Periodic Tasks
+     */
+    periodic_tasks: Array<PeriodicTaskResponse>;
 };
 
 export type LoginLoginAccessTokenData = {
@@ -917,6 +889,36 @@ export type TasksTriggerHealthCheckResponses = {
 
 export type TasksTriggerHealthCheckResponse = TasksTriggerHealthCheckResponses[keyof TasksTriggerHealthCheckResponses];
 
+export type TasksTriggerPeriodicTaskData = {
+    body?: never;
+    path: {
+        /**
+         * Task Name
+         */
+        task_name: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/trigger-periodic/{task_name}';
+};
+
+export type TasksTriggerPeriodicTaskErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TasksTriggerPeriodicTaskError = TasksTriggerPeriodicTaskErrors[keyof TasksTriggerPeriodicTaskErrors];
+
+export type TasksTriggerPeriodicTaskResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaskResponse;
+};
+
+export type TasksTriggerPeriodicTaskResponse = TasksTriggerPeriodicTaskResponses[keyof TasksTriggerPeriodicTaskResponses];
+
 export type TasksGetTaskStatusData = {
     body?: never;
     path: {
@@ -947,36 +949,6 @@ export type TasksGetTaskStatusResponses = {
 
 export type TasksGetTaskStatusResponse = TasksGetTaskStatusResponses[keyof TasksGetTaskStatusResponses];
 
-export type TasksGetWorkerStatsData = {
-    body?: never;
-    path: {
-        /**
-         * Worker Id
-         */
-        worker_id: string;
-    };
-    query?: never;
-    url: '/api/v1/tasks/workers/{worker_id}';
-};
-
-export type TasksGetWorkerStatsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type TasksGetWorkerStatsError = TasksGetWorkerStatsErrors[keyof TasksGetWorkerStatsErrors];
-
-export type TasksGetWorkerStatsResponses = {
-    /**
-     * Successful Response
-     */
-    200: WorkerStatsResponse;
-};
-
-export type TasksGetWorkerStatsResponse = TasksGetWorkerStatsResponses[keyof TasksGetWorkerStatsResponses];
-
 export type TasksGetWorkerStatusData = {
     body?: never;
     path?: never;
@@ -986,32 +958,12 @@ export type TasksGetWorkerStatusData = {
 
 export type TasksGetWorkerStatusResponses = {
     /**
-     * Response Tasks-Get Worker Status
      * Successful Response
      */
-    200: {
-        [key: string]: unknown;
-    };
+    200: WorkerStatusResponse;
 };
 
 export type TasksGetWorkerStatusResponse = TasksGetWorkerStatusResponses[keyof TasksGetWorkerStatusResponses];
-
-export type TasksGetPeriodicTasksData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/tasks/periodic-tasks';
-};
-
-export type TasksGetPeriodicTasksResponses = {
-    /**
-     * Response Tasks-Get Periodic Tasks
-     * Successful Response
-     */
-    200: Array<PeriodicTaskResponse>;
-};
-
-export type TasksGetPeriodicTasksResponse = TasksGetPeriodicTasksResponses[keyof TasksGetPeriodicTasksResponses];
 
 export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
