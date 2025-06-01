@@ -327,7 +327,7 @@ function RepositoryDetail() {
                 <Text color="fg.muted">Unable to load metrics data</Text>
               </Box>
             ) : (
-              <MetricsChart metrics={{ data: metrics }} />
+              <MetricsChart metrics={ metrics } />
             )}
           </Card.Body>
         </Card.Root>

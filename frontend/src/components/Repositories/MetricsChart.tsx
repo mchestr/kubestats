@@ -14,7 +14,7 @@ import {
 import type { RepositoryMetricsPublic } from "../../client"
 
 interface MetricsChartProps {
-  metrics: { data: RepositoryMetricsPublic[] }
+  metrics: RepositoryMetricsPublic[]
 }
 
 type TimeFilter = "7d" | "30d" | "90d" | "1y" | "all"
@@ -26,6 +26,7 @@ function MetricsChart({ metrics }: MetricsChartProps) {
     "forks_count",
     "kubernetes_resources_count",
   ])
+  console.log(metrics);
 
   const getFilteredData = () => {
     if (!metrics.data.length) return []

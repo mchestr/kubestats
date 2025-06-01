@@ -25,7 +25,7 @@ def check_repository_size_and_update_status(
     # Convert KB to MB (GitHub API returns size in KB)
     size_mb = size_kb / 1024
 
-    # If repository is > 200MB and not already blocked or pending approval, set to pending approval
+    # If repository is > XMB and not already blocked or pending approval, set to pending approval
     if (
         size_mb > settings.GITHUB_MAX_REPOSITORY_SIZE_MB
         and repository.sync_status
@@ -39,7 +39,7 @@ def check_repository_size_and_update_status(
             f"Setting status to PENDING_APPROVAL."
         )
         repository.sync_status = SyncStatus.PENDING_APPROVAL
-        repository.sync_error = f"Repository size ({size_mb:.1f}MB) exceeds the 200MB threshold and requires approval"
+        repository.sync_error = f"Repository size ({size_mb:.1f}MB) exceeds the {settings.GITHUB_MAX_REPOSITORY_SIZE_MB}MB threshold and requires approval"
         session.add(repository)
         session.commit()
         logger.info(
