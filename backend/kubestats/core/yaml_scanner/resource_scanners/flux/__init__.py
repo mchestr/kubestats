@@ -67,7 +67,7 @@ class FluxResourceScanner(ResourceScanner):
                 and resource.kind == "Kustomization"
             ):
                 if resource.data:
-                    path_ns_map[resource.file_path] = resource.data.get(
+                    path_ns_map[Path(resource.file_path).parent] = resource.data.get(
                         "targetNamespace"
                     )
             if (

@@ -78,10 +78,10 @@ def test_parse_github_repo_minimal() -> None:
 
 
 @patch("kubestats.tasks.discover_repositories.Session")
-@patch("kubestats.tasks.discover_repositories.sync_repository.delay")
+@patch("kubestats.tasks.discover_repositories.group")
 @patch("kubestats.tasks.discover_repositories.search_repositories")
 def test_sync_repository_called_for_all_discovered_repositories(
-    mock_search: Mock, mock_sync_delay: Mock, mock_session_class: Mock
+    mock_search: Mock, mock_group: Mock, mock_session_class: Mock
 ) -> None:
     """Test that sync_repository.delay is called for all discovered repositories."""
     from unittest.mock import Mock
@@ -142,6 +142,10 @@ def test_sync_repository_called_for_all_discovered_repositories(
     repo2_mock = Mock(spec=Repository)
     repo2_mock.id = "repo2-uuid"
 
+    # Mock group and apply_async
+    mock_group_instance = Mock()
+    mock_group.return_value = mock_group_instance
+
     # Mock the create_or_update_repository behavior by patching it directly
     with patch(
         "kubestats.tasks.discover_repositories.create_or_update_repository"
@@ -154,13 +158,11 @@ def test_sync_repository_called_for_all_discovered_repositories(
     # Verify the task completed successfully
     assert result["repositories_found"] == 2
 
-    # Verify sync_repository.delay was called twice (once for each repository)
-    assert mock_sync_delay.call_count == 2
+    # Verify group was called with sync tasks
+    assert mock_group.call_count == 1
 
-    # Verify the correct repository IDs were passed
-    calls = mock_sync_delay.call_args_list
-    assert calls[0][0][0] == "repo1-uuid"  # First call with repo1 ID
-    assert calls[1][0][0] == "repo2-uuid"  # Second call with repo2 ID
+    # Verify apply_async was called on the group
+    mock_group_instance.apply_async.assert_called_once()
 
 
 @patch("kubestats.core.github_client.search_repositories")

@@ -5,10 +5,11 @@ Tests for repository metrics saving tasks.
 import uuid
 from datetime import datetime, timezone
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
-from sqlmodel import select
+from sqlalchemy import desc
+from sqlmodel import Session, select
 
 from kubestats.models import Repository, RepositoryMetrics
 from kubestats.tasks.save_repository_metrics import (
@@ -90,8 +91,8 @@ def test_parse_github_stats_no_pushed_at() -> None:
 
 @patch("kubestats.tasks.save_repository_metrics.get_repository")
 def test_save_repository_metrics_success(
-    mock_get_repo, test_repository, db, mock_github_data
-):
+    mock_get_repo: Mock, test_repository: Repository, db: Session, mock_github_data: dict[str, Any]
+) -> None:
     """Test successful repository metrics saving."""
     mock_get_repo.return_value = mock_github_data
 
@@ -122,8 +123,8 @@ def test_save_repository_metrics_success(
 
 @patch("kubestats.tasks.save_repository_metrics.get_repository")
 def test_save_repository_metrics_github_api_failure_with_previous_metrics(
-    mock_get_repo, test_repository, db
-):
+    mock_get_repo: Mock, test_repository: Repository, db: Session
+) -> None:
     """Test metrics saving when GitHub API fails but previous metrics exist."""
     # Create previous metrics
     previous_metrics = RepositoryMetrics(
@@ -158,17 +159,18 @@ def test_save_repository_metrics_github_api_failure_with_previous_metrics(
     new_metrics = db.exec(
         select(RepositoryMetrics)
         .where(RepositoryMetrics.repository_id == test_repository.id)
-        .order_by(RepositoryMetrics.recorded_at.desc())
+        .order_by(desc(RepositoryMetrics.recorded_at))  # type: ignore[arg-type]
     ).first()
 
+    assert new_metrics is not None
     assert new_metrics.stars_count == 50
     assert new_metrics.kubernetes_resources_count == 7
 
 
 @patch("kubestats.tasks.save_repository_metrics.get_repository")
 def test_save_repository_metrics_github_api_failure_no_previous_metrics(
-    mock_get_repo, test_repository, db
-):
+    mock_get_repo: Mock, test_repository: Repository, db: Session
+) -> None:
     """Test metrics saving when GitHub API fails and no previous metrics exist."""
     # Mock GitHub API failure
     mock_get_repo.side_effect = Exception("GitHub API error")
@@ -190,11 +192,12 @@ def test_save_repository_metrics_github_api_failure_no_previous_metrics(
         )
     ).first()
 
+    assert metrics is not None
     assert metrics.stars_count == 0
     assert metrics.kubernetes_resources_count == 3
 
 
-def test_save_repository_metrics_repository_not_found(db):
+def test_save_repository_metrics_repository_not_found(db: Session) -> None:
     """Test error handling when repository doesn't exist."""
     non_existent_id = str(uuid.uuid4())
 
@@ -202,7 +205,7 @@ def test_save_repository_metrics_repository_not_found(db):
         save_repository_metrics(non_existent_id, kubernetes_resources_count=1)
 
 
-def test_save_repository_metrics_with_provided_github_stats(test_repository, db):
+def test_save_repository_metrics_with_provided_github_stats(test_repository: Repository, db: Session) -> None:
     """Test metrics saving when GitHub stats are provided directly."""
     # Provide GitHub stats directly (no API call needed)
     github_stats = {
@@ -233,6 +236,7 @@ def test_save_repository_metrics_with_provided_github_stats(test_repository, db)
         )
     ).first()
 
+    assert metrics is not None
     assert metrics.stars_count == 150
     assert metrics.forks_count == 30
     assert metrics.kubernetes_resources_count == 5
@@ -240,8 +244,8 @@ def test_save_repository_metrics_with_provided_github_stats(test_repository, db)
 
 @patch("kubestats.tasks.save_repository_metrics.get_repository")
 def test_save_repository_metrics_zero_kubernetes_resources(
-    mock_get_repo, test_repository, db, mock_github_data
-):
+    mock_get_repo: Mock, test_repository: Repository, db: Session, mock_github_data: dict[str, Any]
+) -> None:
     """Test metrics saving with zero Kubernetes resources."""
     mock_get_repo.return_value = mock_github_data
 
@@ -261,14 +265,15 @@ def test_save_repository_metrics_zero_kubernetes_resources(
         )
     ).first()
 
+    assert metrics is not None
     assert metrics.kubernetes_resources_count == 0
     assert metrics.stars_count == 100  # GitHub data should still be saved
 
 
 @patch("kubestats.tasks.save_repository_metrics.get_repository")
 def test_save_repository_metrics_with_incomplete_github_stats(
-    mock_get_repo, test_repository, db, mock_github_data
-):
+    mock_get_repo: Mock, test_repository: Repository, db: Session, mock_github_data: dict[str, Any]
+) -> None:
     """Test that missing fields in provided GitHub stats are fetched from API."""
     mock_get_repo.return_value = mock_github_data
 
@@ -309,6 +314,7 @@ def test_save_repository_metrics_with_incomplete_github_stats(
         )
     ).first()
 
+    assert metrics is not None
     assert metrics.stars_count == 50  # From provided stats
     assert metrics.forks_count == 10  # From provided stats
     assert metrics.watchers_count == 75  # From API
@@ -319,8 +325,8 @@ def test_save_repository_metrics_with_incomplete_github_stats(
 
 @patch("kubestats.tasks.save_repository_metrics.get_repository")
 def test_save_repository_metrics_incomplete_stats_api_failure(
-    mock_get_repo, test_repository, db
-):
+    mock_get_repo: Mock, test_repository: Repository, db: Session
+) -> None:
     """Test handling when provided stats are incomplete and API call fails."""
     # Mock API failure
     mock_get_repo.side_effect = Exception("GitHub API error")
@@ -346,7 +352,7 @@ def test_save_repository_metrics_incomplete_stats_api_failure(
     assert result["metrics"]["kubernetes_resources_count"] == 2
 
 
-def test_parse_github_stats_with_different_field_names():
+def test_parse_github_stats_with_different_field_names() -> None:
     """Test parsing GitHub stats with both API format (stargazers_count) and our format (stars_count)."""
     # Test with API format
     api_data = {

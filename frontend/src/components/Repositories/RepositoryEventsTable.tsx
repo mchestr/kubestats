@@ -32,7 +32,8 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("")
   const [resourceKindFilter, setResourceKindFilter] = useState<string>("")
-  const [resourceNamespaceFilter, setResourceNamespaceFilter] = useState<string>("")
+  const [resourceNamespaceFilter, setResourceNamespaceFilter] =
+    useState<string>("")
 
   const {
     data: eventsData,
@@ -62,8 +63,10 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
     enabled: !!repositoryId,
   })
 
-  const events = (eventsData?.data as KubernetesResourceEventsPublic | undefined)?.data || []
-  const totalCount = (eventsData?.data as KubernetesResourceEventsPublic | undefined)?.count || 0
+  const events =
+    (eventsData?.data as KubernetesResourceEventsPublic | undefined)?.data || []
+  const totalCount =
+    (eventsData?.data as KubernetesResourceEventsPublic | undefined)?.count || 0
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("en-US", {
@@ -202,7 +205,9 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
                   All
                 </Button>
                 <Button
-                  variant={resourceKindFilter === "HelmRelease" ? "solid" : "outline"}
+                  variant={
+                    resourceKindFilter === "HelmRelease" ? "solid" : "outline"
+                  }
                   onClick={() => {
                     setResourceKindFilter("HelmRelease")
                     setCurrentPage(1)
@@ -211,7 +216,9 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
                   HelmRelease
                 </Button>
                 <Button
-                  variant={resourceKindFilter === "Kustomization" ? "solid" : "outline"}
+                  variant={
+                    resourceKindFilter === "Kustomization" ? "solid" : "outline"
+                  }
                   onClick={() => {
                     setResourceKindFilter("Kustomization")
                     setCurrentPage(1)
@@ -220,7 +227,9 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
                   Kustomization
                 </Button>
                 <Button
-                  variant={resourceKindFilter === "GitRepository" ? "solid" : "outline"}
+                  variant={
+                    resourceKindFilter === "GitRepository" ? "solid" : "outline"
+                  }
                   onClick={() => {
                     setResourceKindFilter("GitRepository")
                     setCurrentPage(1)
@@ -229,7 +238,9 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
                   GitRepository
                 </Button>
                 <Button
-                  variant={resourceKindFilter === "OCIRepository" ? "solid" : "outline"}
+                  variant={
+                    resourceKindFilter === "OCIRepository" ? "solid" : "outline"
+                  }
                   onClick={() => {
                     setResourceKindFilter("OCIRepository")
                     setCurrentPage(1)
@@ -255,7 +266,9 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
                   All
                 </Button>
                 <Button
-                  variant={resourceNamespaceFilter === "default" ? "solid" : "outline"}
+                  variant={
+                    resourceNamespaceFilter === "default" ? "solid" : "outline"
+                  }
                   onClick={() => {
                     setResourceNamespaceFilter("default")
                     setCurrentPage(1)
@@ -264,7 +277,11 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
                   default
                 </Button>
                 <Button
-                  variant={resourceNamespaceFilter === "kube-system" ? "solid" : "outline"}
+                  variant={
+                    resourceNamespaceFilter === "kube-system"
+                      ? "solid"
+                      : "outline"
+                  }
                   onClick={() => {
                     setResourceNamespaceFilter("kube-system")
                     setCurrentPage(1)
@@ -280,7 +297,9 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
           {events.length === 0 ? (
             <Box textAlign="center" py={12}>
               <Text color="fg.muted">No events found</Text>
-              {(eventTypeFilter || resourceKindFilter || resourceNamespaceFilter) && (
+              {(eventTypeFilter ||
+                resourceKindFilter ||
+                resourceNamespaceFilter) && (
                 <Text fontSize="sm" color="fg.muted" mt={2}>
                   Try adjusting your filters
                 </Text>
@@ -322,7 +341,11 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
                         <Table.Cell>
                           <Text fontSize="sm" fontFamily="mono">
                             {event.resource_namespace || (
-                              <Text as="span" color="fg.muted" fontStyle="italic">
+                              <Text
+                                as="span"
+                                color="fg.muted"
+                                fontStyle="italic"
+                              >
                                 cluster-scoped
                               </Text>
                             )}

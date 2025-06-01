@@ -140,7 +140,7 @@ def create_or_update_repository(
     return new_repo
 
 
-@celery_app.task()
+@celery_app.task()  # type: ignore[misc]
 def discover_repositories() -> dict[str, Any]:
     """Discover GitHub repositories with kubesearch or k8s-at-home tags."""
     with Session(engine) as session:

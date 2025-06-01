@@ -143,14 +143,14 @@ def get_recent_active_repositories(session: SessionDep) -> Any:
 
     # Query to get repositories with the most resource events in the last 3 days
     recent_activity_query = (
-        select(
-            KubernetesResourceEvent.repository_id,
+        select(  # type: ignore[call-overload]
+            col(KubernetesResourceEvent.repository_id),
             func.count().label("event_count"),
             func.max(KubernetesResourceEvent.event_timestamp).label("last_activity"),
-            Repository.name,
-            Repository.full_name,
-            Repository.owner,
-            Repository.description,
+            col(Repository.name),
+            col(Repository.full_name),
+            col(Repository.owner),
+            col(Repository.description),
         )
         .join(Repository, KubernetesResourceEvent.repository_id == Repository.id)
         .where(KubernetesResourceEvent.event_timestamp >= three_days_ago)

@@ -1,18 +1,27 @@
-import { Box, Button, ButtonGroup, Card, Heading, Skeleton, Stack, Text } from "@chakra-ui/react"
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  Card,
+  Heading,
+  Skeleton,
+  Stack,
+  Text,
+} from "@chakra-ui/react"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import {
-  LineChart,
-  Line,
   CartesianGrid,
   Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts"
 
-import type { EventDailyCountsPublic, EventDailyCount } from "../../client"
+import type { EventDailyCount, EventDailyCountsPublic } from "../../client"
 import { RepositoriesService } from "../../client"
 
 interface RepositoryEventsChartProps {
@@ -53,7 +62,8 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
     enabled: !!repositoryId,
   })
 
-  const dailyCounts = (dailyCountsData?.data as EventDailyCountsPublic | undefined)?.data || []
+  const dailyCounts =
+    (dailyCountsData?.data as EventDailyCountsPublic | undefined)?.data || []
 
   // Transform data for the chart
   const getChartData = () => {
@@ -62,12 +72,12 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
     // Group by date and aggregate by event type
     const groupedByDate: Record<string, Record<string, number>> = {}
 
-    dailyCounts.forEach((count: EventDailyCount) => {
+    for (const count of dailyCounts) {
       if (!groupedByDate[count.date]) {
         groupedByDate[count.date] = { CREATED: 0, MODIFIED: 0, DELETED: 0 }
       }
       groupedByDate[count.date][count.event_type] = count.count
-    })
+    }
 
     // Convert to chart format and sort by date
     return Object.entries(groupedByDate)
@@ -80,7 +90,10 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
         CREATED: eventCounts.CREATED || 0,
         MODIFIED: eventCounts.MODIFIED || 0,
         DELETED: eventCounts.DELETED || 0,
-        total: (eventCounts.CREATED || 0) + (eventCounts.MODIFIED || 0) + (eventCounts.DELETED || 0),
+        total:
+          (eventCounts.CREATED || 0) +
+          (eventCounts.MODIFIED || 0) +
+          (eventCounts.DELETED || 0),
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   }
@@ -109,19 +122,30 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
           </Text>
           <Stack gap={1}>
             {payload.map((entry: any) => (
-              <Box key={entry.dataKey} display="flex" alignItems="center" gap={2}>
-                <Box
-                  w={3}
-                  h={3}
-                  borderRadius="sm"
-                  bg={entry.color}
-                />
+              <Box
+                key={entry.dataKey}
+                display="flex"
+                alignItems="center"
+                gap={2}
+              >
+                <Box w={3} h={3} borderRadius="sm" bg={entry.color} />
                 <Text fontSize="sm">
-                  {entry.dataKey}: <Text as="span" fontWeight="medium">{entry.value}</Text>
+                  {entry.dataKey}:{" "}
+                  <Text as="span" fontWeight="medium">
+                    {entry.value}
+                  </Text>
                 </Text>
               </Box>
             ))}
-            <Box display="flex" alignItems="center" gap={2} mt={1} pt={1} borderTop="1px solid" borderColor="border.muted">
+            <Box
+              display="flex"
+              alignItems="center"
+              gap={2}
+              mt={1}
+              pt={1}
+              borderTop="1px solid"
+              borderColor="border.muted"
+            >
               <Text fontSize="sm" fontWeight="medium">
                 Total: {data.total}
               </Text>
@@ -138,9 +162,7 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
       <Card.Root>
         <Card.Header>
           <Heading size="lg">Daily Event Activity</Heading>
-          <Text color="fg.muted">
-            Resource events over time
-          </Text>
+          <Text color="fg.muted">Resource events over time</Text>
         </Card.Header>
         <Card.Body>
           <Skeleton height="400px" />
@@ -154,9 +176,7 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
       <Card.Root>
         <Card.Header>
           <Heading size="lg">Daily Event Activity</Heading>
-          <Text color="fg.muted">
-            Resource events over time
-          </Text>
+          <Text color="fg.muted">Resource events over time</Text>
         </Card.Header>
         <Card.Body>
           <Box textAlign="center" py={12}>
@@ -170,12 +190,14 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
   return (
     <Card.Root>
       <Card.Header>
-        <Stack direction={{ base: "column", md: "row" }} justify="space-between" align={{ md: "center" }}>
+        <Stack
+          direction={{ base: "column", md: "row" }}
+          justify="space-between"
+          align={{ md: "center" }}
+        >
           <Box>
             <Heading size="lg">Daily Event Activity</Heading>
-            <Text color="fg.muted">
-              Resource events over time
-            </Text>
+            <Text color="fg.muted">Resource events over time</Text>
           </Box>
           <ButtonGroup size="sm" variant="outline">
             <Button
@@ -202,13 +224,21 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
       <Card.Body>
         {chartData.length === 0 ? (
           <Box textAlign="center" py={12}>
-            <Text color="fg.muted">No events found for the selected time period</Text>
+            <Text color="fg.muted">
+              No events found for the selected time period
+            </Text>
           </Box>
         ) : (
           <Box h="400px">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--chakra-colors-border-muted)" />
+              <LineChart
+                data={chartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--chakra-colors-border-muted)"
+                />
                 <XAxis
                   dataKey="formattedDate"
                   tick={{ fontSize: 12 }}
@@ -225,7 +255,11 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
                   dataKey="CREATED"
                   stroke="var(--chakra-colors-green-500)"
                   strokeWidth={2}
-                  dot={{ fill: "var(--chakra-colors-green-500)", strokeWidth: 2, r: 4 }}
+                  dot={{
+                    fill: "var(--chakra-colors-green-500)",
+                    strokeWidth: 2,
+                    r: 4,
+                  }}
                   name="Created"
                 />
                 <Line
@@ -233,7 +267,11 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
                   dataKey="MODIFIED"
                   stroke="var(--chakra-colors-blue-500)"
                   strokeWidth={2}
-                  dot={{ fill: "var(--chakra-colors-blue-500)", strokeWidth: 2, r: 4 }}
+                  dot={{
+                    fill: "var(--chakra-colors-blue-500)",
+                    strokeWidth: 2,
+                    r: 4,
+                  }}
                   name="Modified"
                 />
                 <Line
@@ -241,7 +279,11 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
                   dataKey="DELETED"
                   stroke="var(--chakra-colors-red-500)"
                   strokeWidth={2}
-                  dot={{ fill: "var(--chakra-colors-red-500)", strokeWidth: 2, r: 4 }}
+                  dot={{
+                    fill: "var(--chakra-colors-red-500)",
+                    strokeWidth: 2,
+                    r: 4,
+                  }}
                   name="Deleted"
                 />
               </LineChart>

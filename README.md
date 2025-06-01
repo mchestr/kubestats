@@ -48,6 +48,46 @@
 
 [![API docs](img/docs.png)](https://github.com/fastapi/full-stack-fastapi-template)
 
+## Docker Images
+
+Pre-built Docker images are automatically published to GitHub Container Registry (GHCR) on every release:
+
+- **Backend**: `ghcr.io/mchestr/kubestats-backend:latest`
+- **Frontend**: `ghcr.io/mchestr/kubestats-frontend:latest`
+
+### Using Published Images
+
+You can use the published images directly with Docker Compose:
+
+```yaml
+# docker-compose.prod.yml
+services:
+  backend:
+    image: ghcr.io/mchestr/kubestats-backend:latest
+    # ... your configuration
+  
+  frontend:
+    image: ghcr.io/mchestr/kubestats-frontend:latest
+    # ... your configuration
+```
+
+### Available Tags
+
+- `latest` - Latest stable release from main branch
+- `v*` - Specific version tags (e.g., `v1.0.0`)
+- `main` - Latest build from main branch
+- `develop` - Latest build from develop branch
+
+### Quick Production Deployment
+
+```bash
+# Using published images
+docker-compose -f docker-compose.prod.yml up -d
+
+# Using specific version
+TAG=v1.0.0 docker-compose -f docker-compose.prod.yml up -d
+```
+
 ## How To Use It
 
 You can **just fork or clone** this repository and use it as is.

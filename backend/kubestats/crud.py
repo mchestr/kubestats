@@ -427,7 +427,7 @@ def get_repository_events(
     statement = (
         select(KubernetesResourceEvent)
         .where(KubernetesResourceEvent.repository_id == repository_id)
-        .order_by(desc(KubernetesResourceEvent.event_timestamp))
+        .order_by(desc(KubernetesResourceEvent.event_timestamp))  # type: ignore[arg-type]
     )
 
     if event_type:
@@ -474,8 +474,9 @@ def get_repository_events_daily_counts(
     days: int = 30,
 ) -> list[dict[str, Any]]:
     """Get daily event counts for a repository over the specified number of days."""
-    from kubestats.models import KubernetesResourceEvent
     from datetime import datetime, timedelta
+
+    from kubestats.models import KubernetesResourceEvent
 
     # Calculate the start date
     start_date = datetime.utcnow() - timedelta(days=days)
@@ -503,11 +504,12 @@ def get_repository_events_daily_counts(
     # Convert to a more usable format
     daily_counts = []
     for result in results:
+        date, event_type, count = result
         daily_counts.append(
             {
-                "date": result.date.isoformat(),
-                "event_type": result.event_type,
-                "count": result.count,
+                "date": date.isoformat(),
+                "event_type": event_type,
+                "count": count,
             }
         )
 

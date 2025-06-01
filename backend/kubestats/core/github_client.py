@@ -33,6 +33,10 @@ def get_repository(owner: str, repo: str) -> dict[str, Any]:
         "User-Agent": "kubestats/1.0",
     }
 
+    # Add authentication if token is available
+    if settings.GITHUB_TOKEN:
+        headers["Authorization"] = f"Bearer {settings.GITHUB_TOKEN}"
+
     # Make the API request using synchronous client
     with httpx.Client(timeout=30.0) as client:
         response = client.get(
@@ -52,12 +56,20 @@ def search_repositories(query: str) -> dict[str, Any]:
     """
     Synchronous implementation of GitHub repository search.
     """
+    logger.info(f"Searching GitHub with query: {query}")
 
     # Prepare headers
     headers = {
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "kubestats/1.0",
     }
+
+    # Add authentication if token is available
+    if settings.GITHUB_TOKEN:
+        headers["Authorization"] = f"Bearer {settings.GITHUB_TOKEN}"
+        logger.debug("Using authenticated GitHub API request")
+    else:
+        logger.debug("Using unauthenticated GitHub API request (60 requests/hour limit)")
 
     # Make the API request using synchronous client
     with httpx.Client(timeout=30.0) as client:

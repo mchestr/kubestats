@@ -165,6 +165,7 @@ def upgrade():
             "kind",
             "name",
             "namespace",
+            "file_path",
             name="uq_kubernetes_resource_per_repo",
         ),
     )
