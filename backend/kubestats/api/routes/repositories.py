@@ -11,6 +11,9 @@ from sqlmodel import Session
 from kubestats import crud
 from kubestats.api.deps import get_current_active_superuser, get_db
 from kubestats.models import (
+    EventDailyCountsPublic,
+    KubernetesResourceEventPublic,
+    KubernetesResourceEventsPublic,
     Message,
     RepositoriesPublic,
     RepositoryPublic,
@@ -257,3 +260,71 @@ def approve_repository(
     return Message(
         message=f"Repository {repository.full_name} has been approved for sync"
     )
+
+
+@router.get("/{repository_id}/events", response_model=KubernetesResourceEventsPublic)
+def read_repository_events(
+    repository_id: uuid.UUID,
+    session: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = Query(default=100, le=1000),
+    event_type: str | None = Query(default=None, description="Filter by event type (CREATED, MODIFIED, DELETED)"),
+    resource_kind: str | None = Query(default=None, description="Filter by resource kind"),
+    resource_namespace: str | None = Query(default=None, description="Filter by resource namespace"),
+) -> Any:
+    """
+    Get events for a specific repository with pagination and filters.
+    """
+    # Verify repository exists
+    repository = crud.get_repository_by_id(session=session, repository_id=repository_id)
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
+
+    # Get events with filters
+    events = crud.get_repository_events(
+        session=session,
+        repository_id=repository_id,
+        skip=skip,
+        limit=limit,
+        event_type=event_type,
+        resource_kind=resource_kind,
+        resource_namespace=resource_namespace,
+    )
+
+    # Get total count for pagination
+    total_count = crud.get_repository_events_count(
+        session=session,
+        repository_id=repository_id,
+        event_type=event_type,
+        resource_kind=resource_kind,
+        resource_namespace=resource_namespace,
+    )
+
+    # Convert to public models
+    events_public = [
+        KubernetesResourceEventPublic.model_validate(event) for event in events
+    ]
+
+    return KubernetesResourceEventsPublic(data=events_public, count=total_count)
+
+
+@router.get("/{repository_id}/events/daily-counts", response_model=EventDailyCountsPublic)
+def read_repository_events_daily_counts(
+    repository_id: uuid.UUID,
+    session: Session = Depends(get_db),
+    days: int = Query(default=30, le=365, description="Number of days to include in the chart"),
+) -> Any:
+    """
+    Get daily event counts for a repository over the specified number of days.
+    """
+    # Verify repository exists
+    repository = crud.get_repository_by_id(session=session, repository_id=repository_id)
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
+
+    # Get daily counts
+    daily_counts = crud.get_repository_events_daily_counts(
+        session=session, repository_id=repository_id, days=days
+    )
+
+    return EventDailyCountsPublic(data=daily_counts)

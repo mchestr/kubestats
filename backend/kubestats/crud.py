@@ -7,6 +7,7 @@ from sqlmodel import Session, col, delete, select
 from kubestats.core.security import get_password_hash, verify_password
 from kubestats.models import (
     KubernetesResource,
+    KubernetesResourceEvent,
     Repository,
     RepositoryMetrics,
     RepositoryMetricsPublic,
@@ -408,3 +409,106 @@ def search_kubernetes_resources(
     statement = statement.offset(skip).limit(limit)
 
     return list(session.exec(statement).all())
+
+
+def get_repository_events(
+    *,
+    session: Session,
+    repository_id: uuid.UUID,
+    skip: int = 0,
+    limit: int = 100,
+    event_type: str | None = None,
+    resource_kind: str | None = None,
+    resource_namespace: str | None = None,
+) -> list[KubernetesResourceEvent]:
+    """Get paginated repository events with optional filters."""
+    from kubestats.models import KubernetesResourceEvent
+
+    statement = (
+        select(KubernetesResourceEvent)
+        .where(KubernetesResourceEvent.repository_id == repository_id)
+        .order_by(desc(KubernetesResourceEvent.event_timestamp))
+    )
+
+    if event_type:
+        statement = statement.where(KubernetesResourceEvent.event_type == event_type)
+    if resource_kind:
+        statement = statement.where(KubernetesResourceEvent.resource_kind == resource_kind)
+    if resource_namespace:
+        statement = statement.where(KubernetesResourceEvent.resource_namespace == resource_namespace)
+
+    statement = statement.offset(skip).limit(limit)
+
+    return list(session.exec(statement).all())
+
+
+def get_repository_events_count(
+    *,
+    session: Session,
+    repository_id: uuid.UUID,
+    event_type: str | None = None,
+    resource_kind: str | None = None,
+    resource_namespace: str | None = None,
+) -> int:
+    """Get total count of repository events with optional filters."""
+    from kubestats.models import KubernetesResourceEvent
+
+    statement = select(func.count()).select_from(KubernetesResourceEvent).where(
+        KubernetesResourceEvent.repository_id == repository_id
+    )
+
+    if event_type:
+        statement = statement.where(KubernetesResourceEvent.event_type == event_type)
+    if resource_kind:
+        statement = statement.where(KubernetesResourceEvent.resource_kind == resource_kind)
+    if resource_namespace:
+        statement = statement.where(KubernetesResourceEvent.resource_namespace == resource_namespace)
+
+    return session.exec(statement).one()
+
+
+def get_repository_events_daily_counts(
+    *,
+    session: Session,
+    repository_id: uuid.UUID,
+    days: int = 30,
+) -> list[dict[str, Any]]:
+    """Get daily event counts for a repository over the specified number of days."""
+    from kubestats.models import KubernetesResourceEvent
+    from datetime import datetime, timedelta
+
+    # Calculate the start date
+    start_date = datetime.utcnow() - timedelta(days=days)
+
+    # Query for daily counts
+    statement = (
+        select(
+            func.date(KubernetesResourceEvent.event_timestamp).label("date"),
+            KubernetesResourceEvent.event_type,
+            func.count().label("count"),
+        )
+        .where(
+            KubernetesResourceEvent.repository_id == repository_id,
+            KubernetesResourceEvent.event_timestamp >= start_date,
+        )
+        .group_by(
+            func.date(KubernetesResourceEvent.event_timestamp),
+            KubernetesResourceEvent.event_type,
+        )
+        .order_by(func.date(KubernetesResourceEvent.event_timestamp))
+    )
+
+    results = session.exec(statement).all()
+
+    # Convert to a more usable format
+    daily_counts = []
+    for result in results:
+        daily_counts.append(
+            {
+                "date": result.date.isoformat(),
+                "event_type": result.event_type,
+                "count": result.count,
+            }
+        )
+
+    return daily_counts

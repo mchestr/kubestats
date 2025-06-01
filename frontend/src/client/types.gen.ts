@@ -31,6 +31,34 @@ export type BodyLoginLoginAccessToken = {
 };
 
 /**
+ * EventDailyCount
+ */
+export type EventDailyCount = {
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Event Type
+     */
+    event_type: string;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * EventDailyCountsPublic
+ */
+export type EventDailyCountsPublic = {
+    /**
+     * Data
+     */
+    data: Array<EventDailyCount>;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -38,6 +66,62 @@ export type HttpValidationError = {
      * Detail
      */
     detail?: Array<ValidationError>;
+};
+
+/**
+ * KubernetesResourceEventPublic
+ */
+export type KubernetesResourceEventPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Event Type
+     */
+    event_type: string;
+    /**
+     * Event Timestamp
+     */
+    event_timestamp: string;
+    /**
+     * Resource Name
+     */
+    resource_name: string;
+    /**
+     * Resource Namespace
+     */
+    resource_namespace: string | null;
+    /**
+     * Resource Kind
+     */
+    resource_kind: string;
+    /**
+     * File Path
+     */
+    file_path: string;
+    /**
+     * Changes Detected
+     */
+    changes_detected: Array<string>;
+    /**
+     * Sync Run Id
+     */
+    sync_run_id: string;
+};
+
+/**
+ * KubernetesResourceEventsPublic
+ */
+export type KubernetesResourceEventsPublic = {
+    /**
+     * Data
+     */
+    data: Array<KubernetesResourceEventPublic>;
+    /**
+     * Count
+     */
+    count: number;
 };
 
 /**
@@ -1107,6 +1191,96 @@ export type RepositoriesApproveRepositoryResponses = {
 };
 
 export type RepositoriesApproveRepositoryResponse = RepositoriesApproveRepositoryResponses[keyof RepositoriesApproveRepositoryResponses];
+
+export type RepositoriesReadRepositoryEventsData = {
+    body?: never;
+    path: {
+        /**
+         * Repository Id
+         */
+        repository_id: string;
+    };
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Event Type
+         * Filter by event type (CREATED, MODIFIED, DELETED)
+         */
+        event_type?: string | null;
+        /**
+         * Resource Kind
+         * Filter by resource kind
+         */
+        resource_kind?: string | null;
+        /**
+         * Resource Namespace
+         * Filter by resource namespace
+         */
+        resource_namespace?: string | null;
+    };
+    url: '/api/v1/repositories/{repository_id}/events';
+};
+
+export type RepositoriesReadRepositoryEventsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RepositoriesReadRepositoryEventsError = RepositoriesReadRepositoryEventsErrors[keyof RepositoriesReadRepositoryEventsErrors];
+
+export type RepositoriesReadRepositoryEventsResponses = {
+    /**
+     * Successful Response
+     */
+    200: KubernetesResourceEventsPublic;
+};
+
+export type RepositoriesReadRepositoryEventsResponse = RepositoriesReadRepositoryEventsResponses[keyof RepositoriesReadRepositoryEventsResponses];
+
+export type RepositoriesReadRepositoryEventsDailyCountsData = {
+    body?: never;
+    path: {
+        /**
+         * Repository Id
+         */
+        repository_id: string;
+    };
+    query?: {
+        /**
+         * Days
+         * Number of days to include in the chart
+         */
+        days?: number;
+    };
+    url: '/api/v1/repositories/{repository_id}/events/daily-counts';
+};
+
+export type RepositoriesReadRepositoryEventsDailyCountsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RepositoriesReadRepositoryEventsDailyCountsError = RepositoriesReadRepositoryEventsDailyCountsErrors[keyof RepositoriesReadRepositoryEventsDailyCountsErrors];
+
+export type RepositoriesReadRepositoryEventsDailyCountsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EventDailyCountsPublic;
+};
+
+export type RepositoriesReadRepositoryEventsDailyCountsResponse = RepositoriesReadRepositoryEventsDailyCountsResponses[keyof RepositoriesReadRepositoryEventsDailyCountsResponses];
 
 export type TasksTriggerHealthCheckData = {
     body?: never;

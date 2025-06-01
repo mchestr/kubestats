@@ -351,3 +351,18 @@ class KubernetesResourceEventPublic(SQLModel):
     file_path: str
     changes_detected: list[str]
     sync_run_id: uuid.UUID
+
+
+class KubernetesResourceEventsPublic(SQLModel):
+    data: list[KubernetesResourceEventPublic]
+    count: int
+
+
+class EventDailyCount(SQLModel):
+    date: str
+    event_type: str
+    count: int
+
+
+class EventDailyCountsPublic(SQLModel):
+    data: list[EventDailyCount]

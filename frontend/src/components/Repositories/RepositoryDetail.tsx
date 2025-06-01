@@ -24,13 +24,15 @@ import {
   FiTag,
 } from "react-icons/fi"
 
-import type { RepositoryMetricsPublic, RepositoryPublic } from "../../client"
+import type { RepositoryPublic } from "../../client"
 import { RepositoriesService } from "../../client"
 import useAuth from "../../hooks/useAuth"
 import useCustomToast from "../../hooks/useCustomToast"
 import { SyncButton } from "../ui/sync-button"
 import MetricsCards from "./MetricsCards"
 import MetricsChart from "./MetricsChart"
+import RepositoryEventsChart from "./RepositoryEventsChart"
+import RepositoryEventsTable from "./RepositoryEventsTable"
 import RepositoryInfo from "./RepositoryInfo"
 import { getSyncStatusBadge } from "./repository-utils"
 
@@ -332,6 +334,12 @@ function RepositoryDetail() {
             )}
           </Card.Body>
         </Card.Root>
+
+        {/* Events Chart */}
+        <RepositoryEventsChart repositoryId={repositoryId} />
+
+        {/* Events Table */}
+        <RepositoryEventsTable repositoryId={repositoryId} />
 
         {/* Repository Information */}
         <RepositoryInfo repository={repositoryData} />
