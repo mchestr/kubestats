@@ -1,10 +1,11 @@
-import { Badge, Containe, Heading, Table } from "@chakra-ui/react"
+import { Badge, Container, Heading, Table, VStack } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import { z } from "zod"
 
 import { type UserPublic, type UsersPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
+import DatabaseStats from "@/components/Admin/DatabaseStats"
 import { UserActionsMenu } from "@/components/Common/UserActionsMenu"
 import PendingUsers from "@/components/Pending/PendingUsers"
 
@@ -34,7 +35,6 @@ export const Route = createFileRoute("/_layout/admin")({
 function UsersTable() {
   const queryClient = useQueryClient()
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
-  const navigate = useNavigate({ from: Route.fullPath })
   const { page } = Route.useSearch()
 
   const { data, isLoading, isPlaceholderData } = useQuery({
@@ -95,12 +95,15 @@ function UsersTable() {
 function Admin() {
   return (
     <Container maxW="full">
-      <Heading size="lg" pt={12}>
-        Users Management
-      </Heading>
+      <VStack gap={8} align="start" py={8}>
+        <DatabaseStats />
 
-      <AddUser />
-      <UsersTable />
+        <VStack align="start" w="full" gap={4}>
+          <Heading size="lg">Users Management</Heading>
+          <AddUser />
+          <UsersTable />
+        </VStack>
+      </VStack>
     </Container>
   )
 }

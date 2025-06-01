@@ -197,8 +197,6 @@ class RepositoryStatsPublic(SQLModel):
     top_repositories: list[RepositoryPublic]
 
 
-
-
 # Forward reference will be resolved after KubernetesResourcePublic is defined
 
 
@@ -241,7 +239,9 @@ class KubernetesResource(SQLModel, table=True):
     file_path: str = Field(max_length=500)
     file_hash: str = Field(max_length=64)  # SHA256 of file content
     version: str | None = Field(max_length=100)  # Resource version if specified
-    data: dict = Field(default_factory=dict, sa_column=Column(JSON))  # Full resource spec
+    data: dict = Field(
+        default_factory=dict, sa_column=Column(JSON)
+    )  # Full resource spec
 
     # Lifecycle tracking
     status: str = Field(max_length=20, default="ACTIVE", index=True)  # ACTIVE, DELETED
@@ -261,7 +261,7 @@ class KubernetesResource(SQLModel, table=True):
     __table_args__ = (
         UniqueConstraint(
             "repository_id",
-            "api_version", 
+            "api_version",
             "kind",
             "name",
             "namespace",
@@ -281,7 +281,10 @@ class KubernetesResourceEvent(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     resource_id: uuid.UUID = Field(
-        foreign_key="kubernetesresource.id", nullable=False, ondelete="CASCADE", index=True
+        foreign_key="kubernetesresource.id",
+        nullable=False,
+        ondelete="CASCADE",
+        index=True,
     )
     repository_id: uuid.UUID = Field(
         foreign_key="repository.id", ondelete="CASCADE", index=True
@@ -301,9 +304,7 @@ class KubernetesResourceEvent(SQLModel, table=True):
     file_path: str = Field(max_length=500)
     file_hash_before: str | None = Field(max_length=64)
     file_hash_after: str | None = Field(max_length=64)
-    changes_detected: list[str] = Field(
-        default_factory=list, sa_column=Column(JSON)
-    )
+    changes_detected: list[str] = Field(default_factory=list, sa_column=Column(JSON))
 
     # Resource snapshot at time of event
     resource_data: dict = Field(default_factory=dict, sa_column=Column(JSON))

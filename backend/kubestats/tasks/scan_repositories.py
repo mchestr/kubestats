@@ -33,7 +33,9 @@ def update_scan_status(
     session.commit()
 
 
-def get_repository_by_id(session: Session, repository_id: str | uuid.UUID) -> Repository:
+def get_repository_by_id(
+    session: Session, repository_id: str | uuid.UUID
+) -> Repository:
     """Get repository by ID with error handling."""
     if isinstance(repository_id, str):
         repo_uuid = uuid.UUID(repository_id)
@@ -61,56 +63,28 @@ def perform_yaml_scan(
     session: Session, repository: Repository, repo_workdir: Path
 ) -> Any:
     """Perform YAML scanning on the repository."""
-    logger.info(f"Starting YAML scanning for repository {repository.full_name}")
-    
     from kubestats.core.yaml_scanner.repository_scanner import RepositoryScanner
     from kubestats.core.yaml_scanner.resource_db_service import ResourceDatabaseService
-    
-    try:
-        # Initialize scanner services
-        repo_scanner = RepositoryScanner()
-        db_service = ResourceDatabaseService()
-        
-        # Scan the repository directory for Flux resources
-        logger.info(f"Scanning directory: {repo_workdir}")
-        scanned_resources = repo_scanner.scan_directory(repo_workdir)
-        
-        logger.info(
-            f"Found {len(scanned_resources)} Flux resources in repository {repository.full_name}"
-        )
-        
-        # Apply scan results to database
-        scan_result = db_service.apply_scan_results(
-            session, repository.id, scanned_resources
-        )
-        
-        logger.info(
-            f"Successfully processed scan results for {repository.full_name}: "
-            f"{scan_result.created_count} created, {scan_result.deleted_count} deleted, "
-            f"{scan_result.total_resources} total resources"
-        )
-        
-        return scan_result
-        
-    except Exception as e:
-        logger.error(
-            f"Error during YAML scanning for repository {repository.full_name}: {str(e)}",
-            exc_info=True
-        )
-        raise
 
+    # Initialize scanner services
+    repo_scanner = RepositoryScanner()
+    db_service = ResourceDatabaseService()
 
-def trigger_metrics_task(
-    repository: Repository, scan_result: Any, github_stats: dict[str, Any] | None
-) -> None:
-    """Trigger the metrics saving task."""
+    # Scan the repository directory for Flux resources
+    scanned_resources = repo_scanner.scan_directory(repo_workdir)
 
-    metrics_task = save_repository_metrics.delay(
-        str(repository.id), scan_result.total_resources, github_stats
+    # Apply scan results to database
+    scan_result = db_service.apply_scan_results(
+        session, repository.id, scanned_resources
     )
+
     logger.info(
-        f"Metrics saving task {metrics_task.id} triggered for repository {repository.full_name}"
+        f"Successfully processed scan results for {repository.full_name}: "
+        f"{scan_result.created_count} created, {scan_result.deleted_count} deleted, "
+        f"{scan_result.total_resources} total resources"
     )
+
+    return scan_result
 
 
 def handle_scan_error(
@@ -151,8 +125,6 @@ def scan_repository(
         repository_id: UUID string of the repository to scan
         github_stats: Optional GitHub statistics data to pass to metrics task
     """
-    logger.info(f"Starting repository scan task for repository_id={repository_id}")
-
     try:
         with Session(engine) as session:
             repository = get_repository_by_id(session, repository_id)
@@ -162,14 +134,16 @@ def scan_repository(
 
             # Perform the YAML scanning
             scan_result = perform_yaml_scan(session, repository, repo_workdir)
-            
+
             # Update repository with scan results
             repository.last_scan_total_resources = scan_result.total_resources
             update_scan_status(session, repository, SyncStatus.SUCCESS)
-            
+
             # Trigger metrics task with scan results
-            trigger_metrics_task(repository, scan_result, github_stats)
-            
+            save_repository_metrics.delay(
+                str(repository.id), scan_result.total_resources, github_stats
+            )
+
             return {
                 "status": "success",
                 "repository_id": repository_id,
@@ -178,8 +152,8 @@ def scan_repository(
                 "deleted_count": scan_result.deleted_count,
                 "total_resources": scan_result.total_resources,
                 "scan_duration_seconds": scan_result.scan_duration_seconds,
-                "sync_run_id": str(scan_result.sync_run_id)
+                "sync_run_id": str(scan_result.sync_run_id),
             }
-            
+
     except Exception as exc:
         return handle_scan_error(repository_id, exc, self)

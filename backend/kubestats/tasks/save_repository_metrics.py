@@ -26,8 +26,6 @@ def parse_datetime_field(date_str: str | None) -> datetime | None:
 
 def parse_github_stats(github_stats: dict[str, Any]) -> dict[str, Any]:
     """Parse GitHub stats into standardized metrics format."""
-    logger.debug(f"Parsing GitHub stats: {list(github_stats.keys())}")
-
     # Handle datetime fields
     updated_at = github_stats.get("updated_at")
     if isinstance(updated_at, str):
@@ -75,9 +73,6 @@ def get_github_metrics(
     ]
 
     if provided_stats:
-        logger.info(
-            f"Using provided GitHub stats for repository {repository.full_name}"
-        )
         parsed_stats = parse_github_stats(provided_stats)
 
         # Check if any required fields are missing
@@ -88,7 +83,7 @@ def get_github_metrics(
         ]
 
         if missing_fields:
-            logger.info(
+            logger.warning(
                 f"Missing fields {missing_fields} in provided stats, fetching from GitHub API"
             )
             try:
@@ -98,7 +93,6 @@ def get_github_metrics(
                 for field in missing_fields:
                     if field in api_stats:
                         parsed_stats[field] = api_stats[field]
-                logger.debug(f"Merged GitHub metrics: {parsed_stats}")
             except Exception as api_error:
                 logger.warning(f"Failed to fetch missing GitHub data: {api_error}")
                 # Use defaults for missing fields
@@ -111,7 +105,6 @@ def get_github_metrics(
         return parsed_stats
 
     # Fetch fresh GitHub API data
-    logger.info(f"Fetching fresh GitHub data for repository {repository.full_name}")
     try:
         github_data = get_repository(repository.owner, repository.name)
         return parse_github_stats(github_data)
@@ -127,7 +120,6 @@ def get_fallback_metrics(repository: Repository) -> dict[str, Any]:
     # Try to use previous metrics if GitHub API fails
     if hasattr(repository, "metrics") and repository.metrics:
         latest_metrics = max(repository.metrics, key=lambda m: m.recorded_at)
-        logger.info(f"Using previous GitHub metrics for {repository.full_name}")
         return {
             "stars_count": latest_metrics.stars_count,
             "forks_count": latest_metrics.forks_count,
@@ -161,8 +153,6 @@ def create_metrics_snapshot(
 ) -> RepositoryMetrics:
     """Create and save a complete metrics snapshot."""
     current_time = datetime.now(timezone.utc)
-    logger.info(f"Creating complete metrics snapshot for {repository.full_name}")
-
     metrics_snapshot = RepositoryMetrics(
         repository_id=repository.id,
         stars_count=github_metrics["stars_count"],
@@ -199,11 +189,6 @@ def save_repository_metrics(
         kubernetes_resources_count: Number of Kubernetes resources found in the repo
         github_stats: Optional GitHub stats dict - missing fields will be fetched from API
     """
-    logger.info(
-        f"Starting save repository metrics task for repository_id={repository_id}, "
-        f"kubernetes_resources_count={kubernetes_resources_count}"
-    )
-
     try:
         with Session(engine) as session:
             # Get repository with error handling
@@ -231,7 +216,6 @@ def save_repository_metrics(
                     "recorded_at": datetime.now(timezone.utc).isoformat(),
                 },
             }
-            logger.info(f"Repository metrics saved successfully: {result}")
             return result
 
     except Exception as exc:
@@ -242,8 +226,5 @@ def save_repository_metrics(
 
         # Retry with exponential backoff
         retry_in = 60 * (2**self.request.retries)
-        logger.info(
-            f"Retrying save metrics task for repository {repository_id} in {retry_in} seconds (attempt {self.request.retries + 1}/3)"
-        )
         self.retry(countdown=retry_in, max_retries=2, exc=exc)
         return {}  # This return is never reached but satisfies mypy

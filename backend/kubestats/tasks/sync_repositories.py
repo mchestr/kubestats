@@ -153,16 +153,10 @@ def sync_repository(
             sync_action = sync_git_repository(
                 repo_workdir, git_url, repository.default_branch
             )
-            logger.info(f"Successfully {sync_action} repository {repository.full_name}")
-
             repository.working_directory_path = str(repo_workdir)
             update_repository_status(session, repository, SyncStatus.SUCCESS)
 
-            task = scan_repository.delay(str(repository.id), repo_stats)
-            logger.info(
-                f"Scan task {task.id} triggered for repository {repository.full_name}"
-            )
-
+            scan_repository.delay(str(repository.id), repo_stats)
             return {
                 "repository_id": repository_id,
                 "repository_name": repository.full_name,
@@ -202,8 +196,6 @@ def cleanup_repository_workdirs() -> dict[str, Any]:
     Cleanup old repository working directories that are no longer needed.
     Runs periodically to manage disk space.
     """
-    logger.info("Starting repository working directory cleanup")
-
     try:
         workdir_base = Path(settings.REPO_WORKDIR)
         if not workdir_base.exists():

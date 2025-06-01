@@ -795,6 +795,25 @@ export type UtilsHealthCheckResponses = {
 
 export type UtilsHealthCheckResponse = UtilsHealthCheckResponses[keyof UtilsHealthCheckResponses];
 
+export type AdminGetDatabaseStatsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/database-stats';
+};
+
+export type AdminGetDatabaseStatsResponses = {
+    /**
+     * Response Admin-Get Database Stats
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type AdminGetDatabaseStatsResponse = AdminGetDatabaseStatsResponses[keyof AdminGetDatabaseStatsResponses];
+
 export type RepositoriesReadRepositoriesData = {
     body?: never;
     path?: never;

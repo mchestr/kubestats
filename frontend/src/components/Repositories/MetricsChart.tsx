@@ -26,7 +26,7 @@ function MetricsChart({ metrics }: MetricsChartProps) {
     "forks_count",
     "kubernetes_resources_count",
   ])
-  console.log(metrics);
+  console.log(metrics)
 
   const getFilteredData = () => {
     if (!metrics.length) return []

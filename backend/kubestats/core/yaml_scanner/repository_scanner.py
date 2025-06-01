@@ -2,10 +2,9 @@
 Repository scanner service for finding and parsing YAML files in Git repositories.
 """
 
-import logging
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from ruamel.yaml import YAML
 from ruamel.yaml.composer import ReusedAnchorWarning
@@ -15,8 +14,6 @@ from kubestats.core.yaml_scanner.resource_scanners.flux import FluxResourceScann
 
 # Suppress ruamel.yaml ReusedAnchorWarning
 warnings.filterwarnings("ignore", category=ReusedAnchorWarning)
-
-logger = logging.getLogger(__name__)
 
 
 class RepositoryScanner:
@@ -29,7 +26,7 @@ class RepositoryScanner:
         self.yaml.allow_duplicate_keys = False  # Allow duplicate keys silently
         self.yaml.width = 4096  # Prevent line wrapping
 
-    def scan_directory(self, repo_path: Path) -> List[ResourceData]:
+    def scan_directory(self, repo_path: Path) -> list[ResourceData]:
         """
         Scan a repository directory for YAML files and extract Flux resources.
 
@@ -39,13 +36,8 @@ class RepositoryScanner:
         Returns:
             List of ResourceData objects found in the repository
         """
-        logger.info(f"Starting directory scan for repository at {repo_path}")
-
         resources = []
         yaml_files = self.find_yaml_files(repo_path)
-
-        logger.info(f"Found {len(yaml_files)} YAML files to process")
-
         for file_path in yaml_files:
             try:
                 file_resources = self.process_yaml_file(file_path, repo_path)
@@ -57,11 +49,9 @@ class RepositoryScanner:
         # Post-process resources for cross-resource relationships
         if resources:
             self.flux_scanner.post_process(resources)
-
-        logger.info(f"Scan completed. Found {len(resources)} Flux resources")
         return resources
 
-    def find_yaml_files(self, repo_path: Path) -> List[Path]:
+    def find_yaml_files(self, repo_path: Path) -> list[Path]:
         """
         Recursively find all YAML files in the repository.
 
@@ -84,7 +74,7 @@ class RepositoryScanner:
 
         return sorted(yaml_files)
 
-    def parse_yaml_file(self, file_path: Path) -> List[Dict[str, Any]]:
+    def parse_yaml_file(self, file_path: Path) -> list[dict[str, Any]]:
         """
         Parse a YAML file and return all documents using ruamel.yaml.
 
@@ -95,7 +85,7 @@ class RepositoryScanner:
             List of parsed YAML documents
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Handle empty files
@@ -124,7 +114,7 @@ class RepositoryScanner:
             # Silently ignore any file reading errors and return empty list
             return []
 
-    def process_yaml_file(self, file_path: Path, repo_root: Path) -> List[ResourceData]:
+    def process_yaml_file(self, file_path: Path, repo_root: Path) -> list[ResourceData]:
         """
         Process a single YAML file and extract Flux resources.
 
@@ -155,7 +145,7 @@ class RepositoryScanner:
         return resources
 
     def process_document(
-        self, relative_path: str, document: Dict[str, Any], doc_index: int = 0
+        self, relative_path: str, document: dict[str, Any], doc_index: int = 0
     ) -> ResourceData | None:
         """
         Process a single YAML document using FluxResourceScanner.

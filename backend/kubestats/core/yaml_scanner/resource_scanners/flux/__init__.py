@@ -1,10 +1,11 @@
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any
+
 from kubestats.core.yaml_scanner.models import ResourceData
 from kubestats.core.yaml_scanner.resource_scanners import ResourceScanner
 
-from .helm_release import HelmReleaseResourceScanner
 from .git_repository import GitRepositoryResourceScanner
+from .helm_release import HelmReleaseResourceScanner
 from .kustomization import KustomizationResourceScanner
 from .oci_repository import OciRepositoryResourceScanner
 
@@ -13,7 +14,7 @@ class FluxResourceScanner(ResourceScanner):
     """Scanner for Flux CD resources"""
 
     @property
-    def scanners(self) -> Set[Tuple[str, str]]:
+    def scanners(self) -> set[tuple[str, str]]:
         return [
             HelmReleaseResourceScanner(),
             GitRepositoryResourceScanner(),
@@ -22,14 +23,14 @@ class FluxResourceScanner(ResourceScanner):
         ]
 
     @property
-    def resource_types(self) -> Set[Tuple[str, str]]:
+    def resource_types(self) -> set[tuple[str, str]]:
         """Return the set of (api_version, kind) tuples this scanner handles"""
         resource_types = set()
         for scanner in self.scanners:
             resource_types.update(scanner.resource_types)
         return resource_types
-    
-    def parse_document(self, filepath: str, document: Dict[str, Any]) -> ResourceData:
+
+    def parse_document(self, filepath: str, document: dict[str, Any]) -> ResourceData:
         """Parse a Flux resource document and return ResourceData"""
         for scanner in self.scanners:
             if scanner.is_supported_resource(
@@ -45,11 +46,11 @@ class FluxResourceScanner(ResourceScanner):
             if scanner.is_supported_resource(api_version, kind):
                 return scanner
 
-    def extract_additional_data(self, document: Dict[str, Any]) -> dict:
+    def extract_additional_data(self, document: dict[str, Any]) -> dict:
         """Extract additional data for Flux resources"""
         return {}
 
-    def post_process(self, resources: List[ResourceData]):
+    def post_process(self, resources: list[ResourceData]):
         path_ns_map = {}
         oci_versions = {}
         for resource in resources:
