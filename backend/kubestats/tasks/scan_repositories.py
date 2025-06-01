@@ -12,7 +12,6 @@ from sqlmodel import Session
 
 from kubestats.celery_app import celery_app
 from kubestats.core.db import engine
-from kubestats.core.yaml_scanner import YAMLScanner
 from kubestats.models import Repository, SyncStatus
 from kubestats.tasks.save_repository_metrics import save_repository_metrics
 
@@ -60,17 +59,7 @@ def perform_yaml_scan(
 ) -> Any:
     """Perform YAML scanning on the repository."""
     logger.info(f"Starting YAML scanning for repository {repository.full_name}")
-    scanner = YAMLScanner(session)
-    scan_result = scanner.scan_repository(repository, repo_workdir)
-
-    logger.info(
-        f"Scanned repository {repository.full_name}: "
-        f"{scan_result.created_count} created, "
-        f"{scan_result.modified_count} modified, "
-        f"{scan_result.deleted_count} deleted, "
-        f"{scan_result.total_resources} total resources"
-    )
-    return scan_result
+    return
 
 
 def trigger_metrics_task(
@@ -133,24 +122,6 @@ def scan_repository(
 
             update_scan_status(session, repository, SyncStatus.SYNCING)
 
-            scan_result = perform_yaml_scan(session, repository, repo_workdir)
-
-            repository.last_scan_total_resources = scan_result.total_resources
-            update_scan_status(session, repository, SyncStatus.SUCCESS)
-
-            trigger_metrics_task(repository, scan_result, github_stats)
-            return {
-                "repository_id": repository_id,
-                "repository_name": repository.full_name,
-                "working_directory": str(repo_workdir),
-                "status": "success",
-                "scan_result": {
-                    "total_resources": scan_result.total_resources,
-                    "created_count": scan_result.created_count,
-                    "modified_count": scan_result.modified_count,
-                    "deleted_count": scan_result.deleted_count,
-                    "scan_duration_seconds": scan_result.scan_duration_seconds,
-                },
-            }
+            return perform_yaml_scan(session, repository, repo_workdir)
     except Exception as exc:
         return handle_scan_error(repository_id, exc, self)
