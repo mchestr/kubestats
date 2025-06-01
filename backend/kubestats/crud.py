@@ -280,3 +280,137 @@ def search_repositories_with_latest_metrics(
         result.append(repo_public)
 
     return result
+
+
+# Kubernetes Resource CRUD operations
+
+
+def get_kubernetes_resources_by_repository(
+    *, session: Session, repository_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list["KubernetesResource"]:
+    """Get Kubernetes resources for a specific repository."""
+    from kubestats.models import KubernetesResource
+    
+    statement = (
+        select(KubernetesResource)
+        .where(KubernetesResource.repository_id == repository_id)
+        .where(KubernetesResource.current_status == "ACTIVE")
+        .offset(skip)
+        .limit(limit)
+    )
+    return list(session.exec(statement).all())
+
+
+def cleanup_kubernetes_resources(
+    *, session: Session, repository_id: uuid.UUID
+) -> int:
+    """Remove all Kubernetes resources for a repository."""
+    from kubestats.models import KubernetesResource
+    
+    # Count existing resources before deletion
+    count_stmt = select(KubernetesResource).where(
+        KubernetesResource.repository_id == repository_id
+    )
+    existing_count = len(list(session.exec(count_stmt).all()))
+    
+    # Delete all resources for this repository
+    from sqlmodel import delete
+    delete_stmt = delete(KubernetesResource).where(
+        KubernetesResource.repository_id == repository_id
+    )
+    session.exec(delete_stmt)
+    
+    return existing_count
+
+
+def get_kubernetes_resource_by_id(
+    *, session: Session, resource_id: uuid.UUID
+) -> "KubernetesResource | None":
+    """Get a Kubernetes resource by ID."""
+    from kubestats.models import KubernetesResource
+    
+    statement = select(KubernetesResource).where(KubernetesResource.id == resource_id)
+    return session.exec(statement).first()
+
+
+def get_kubernetes_resources_stats(
+    *, session: Session, repository_id: uuid.UUID | None = None
+) -> dict[str, Any]:
+    """Get statistics for Kubernetes resources."""
+    from kubestats.models import KubernetesResource
+    
+    base_query = select(KubernetesResource).where(
+        KubernetesResource.current_status == "ACTIVE"
+    )
+    
+    if repository_id:
+        base_query = base_query.where(
+            KubernetesResource.repository_id == repository_id
+        )
+    
+    resources = list(session.exec(base_query).all())
+    
+    # Calculate statistics
+    total_resources = len(resources)
+    
+    # Group by kind
+    kind_counts = {}
+    namespace_counts = {}
+    
+    for resource in resources:
+        # Count by kind
+        kind_key = f"{resource.api_version}/{resource.kind}"
+        kind_counts[kind_key] = kind_counts.get(kind_key, 0) + 1
+        
+        # Count by namespace
+        namespace = resource.namespace or "<cluster-scoped>"
+        namespace_counts[namespace] = namespace_counts.get(namespace, 0) + 1
+    
+    return {
+        "total_resources": total_resources,
+        "resource_types": kind_counts,
+        "namespaces": namespace_counts,
+    }
+
+
+def search_kubernetes_resources(
+    *, 
+    session: Session, 
+    query: str,
+    repository_id: uuid.UUID | None = None,
+    kind: str | None = None,
+    namespace: str | None = None,
+    skip: int = 0, 
+    limit: int = 100
+) -> list["KubernetesResource"]:
+    """Search Kubernetes resources with filters."""
+    from kubestats.models import KubernetesResource
+    
+    search_term = f"%{query}%"
+    
+    statement = (
+        select(KubernetesResource)
+        .where(KubernetesResource.current_status == "ACTIVE")
+        .where(
+            or_(
+                KubernetesResource.name.ilike(search_term),  # type: ignore[attr-defined]
+                KubernetesResource.file_path.ilike(search_term),  # type: ignore[attr-defined]
+                KubernetesResource.kind.ilike(search_term),  # type: ignore[attr-defined]
+            )
+        )
+    )
+    
+    if repository_id:
+        statement = statement.where(
+            KubernetesResource.repository_id == repository_id
+        )
+    
+    if kind:
+        statement = statement.where(KubernetesResource.kind == kind)
+    
+    if namespace:
+        statement = statement.where(KubernetesResource.namespace == namespace)
+    
+    statement = statement.offset(skip).limit(limit)
+    
+    return list(session.exec(statement).all())
