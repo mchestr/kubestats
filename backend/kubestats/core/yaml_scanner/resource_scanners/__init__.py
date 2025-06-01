@@ -16,9 +16,15 @@ class ResourceScanner(ABC):
 
     def parse_document(self, filepath: str, document: dict[str, Any]) -> ResourceData:
         """Parse a YAML document and return resource data"""
+        api_version = document.get("apiVersion")
+        kind = document.get("kind")
+
+        if not api_version or not kind:
+            raise ValueError("Document missing required apiVersion or kind")
+
         return ResourceData(
-            api_version=document.get("apiVersion"),
-            kind=document.get("kind"),
+            api_version=api_version,
+            kind=kind,
             file_hash=hashlib.sha256(str(document).encode("utf-8")).hexdigest(),
             file_path=filepath,
             name=document.get("metadata", {}).get("name"),
@@ -43,15 +49,17 @@ class ResourceScanner(ABC):
         for prefix, resource_kind in self.resource_types:
             if api_version.startswith(prefix) and kind == resource_kind:
                 return self
+        return None
 
     @abstractmethod
     def post_process(self, resources: list[ResourceData]) -> None:
         """Post-process resources after scanning. Override in subclasses if needed."""
         pass
 
-    def extract_additional_data(self, document: dict[str, Any]) -> dict:
+    def extract_additional_data(self, document: dict[str, Any]) -> dict[str, Any]:
         """Extract additional data for Flux resources"""
-        return document.get("spec", {})
+        spec = document.get("spec", {})
+        return spec if spec else {}
 
     def validate_resource(self, resource_data: ResourceData) -> bool:
         """Validate resource-specific requirements. Override in subclasses if needed."""

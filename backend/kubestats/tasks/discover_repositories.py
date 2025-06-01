@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from celery import group
+from celery import group  # type: ignore[import-untyped]
 from sqlmodel import Session, select
 
 from kubestats.celery_app import celery_app

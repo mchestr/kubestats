@@ -2,7 +2,7 @@ import uuid
 from typing import Any
 
 from sqlalchemy import desc, func, or_
-from sqlmodel import Session, select
+from sqlmodel import Session, col, delete, select
 
 from kubestats.core.security import get_password_hash, verify_password
 from kubestats.models import (
@@ -295,7 +295,7 @@ def get_kubernetes_resources_by_repository(
     statement = (
         select(KubernetesResource)
         .where(KubernetesResource.repository_id == repository_id)
-        .where(KubernetesResource.current_status == "ACTIVE")
+        .where(KubernetesResource.status == "ACTIVE")
         .offset(skip)
         .limit(limit)
     )
@@ -307,18 +307,18 @@ def cleanup_kubernetes_resources(*, session: Session, repository_id: uuid.UUID) 
     from kubestats.models import KubernetesResource
 
     # Count existing resources before deletion
-    count_stmt = select(KubernetesResource).where(
-        KubernetesResource.repository_id == repository_id
+    count_stmt = (
+        select(func.count())
+        .select_from(KubernetesResource)
+        .where(KubernetesResource.repository_id == repository_id)
     )
-    existing_count = len(list(session.exec(count_stmt).all()))
+    existing_count = session.exec(count_stmt).one()
 
     # Delete all resources for this repository
-    from sqlmodel import delete
-
     delete_stmt = delete(KubernetesResource).where(
-        KubernetesResource.repository_id == repository_id
+        col(KubernetesResource.repository_id) == repository_id
     )
-    session.exec(delete_stmt)
+    session.execute(delete_stmt)
 
     return existing_count
 
@@ -339,9 +339,7 @@ def get_kubernetes_resources_stats(
     """Get statistics for Kubernetes resources."""
     from kubestats.models import KubernetesResource
 
-    base_query = select(KubernetesResource).where(
-        KubernetesResource.current_status == "ACTIVE"
-    )
+    base_query = select(KubernetesResource).where(KubernetesResource.status == "ACTIVE")
 
     if repository_id:
         base_query = base_query.where(KubernetesResource.repository_id == repository_id)
@@ -352,8 +350,8 @@ def get_kubernetes_resources_stats(
     total_resources = len(resources)
 
     # Group by kind
-    kind_counts = {}
-    namespace_counts = {}
+    kind_counts: dict[str, int] = {}
+    namespace_counts: dict[str, int] = {}
 
     for resource in resources:
         # Count by kind
@@ -388,7 +386,7 @@ def search_kubernetes_resources(
 
     statement = (
         select(KubernetesResource)
-        .where(KubernetesResource.current_status == "ACTIVE")
+        .where(KubernetesResource.status == "ACTIVE")
         .where(
             or_(
                 KubernetesResource.name.ilike(search_term),  # type: ignore[attr-defined]

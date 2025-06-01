@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import EmailStr
 from sqlalchemy import JSON, Column, UniqueConstraint
@@ -239,7 +239,7 @@ class KubernetesResource(SQLModel, table=True):
     file_path: str = Field(max_length=500)
     file_hash: str = Field(max_length=64)  # SHA256 of file content
     version: str | None = Field(max_length=100)  # Resource version if specified
-    data: dict = Field(
+    data: dict[str, Any] = Field(
         default_factory=dict, sa_column=Column(JSON)
     )  # Full resource spec
 
@@ -307,7 +307,7 @@ class KubernetesResourceEvent(SQLModel, table=True):
     changes_detected: list[str] = Field(default_factory=list, sa_column=Column(JSON))
 
     # Resource snapshot at time of event
-    resource_data: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    resource_data: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
 
     # Scan grouping
     sync_run_id: uuid.UUID = Field(index=True)
@@ -330,7 +330,7 @@ class KubernetesResourcePublic(SQLModel):
     file_path: str
     file_hash: str
     version: str | None
-    data: dict
+    data: dict[str, Any]
     status: str
     created_at: datetime
     updated_at: datetime

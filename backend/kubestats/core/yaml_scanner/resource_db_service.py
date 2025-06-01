@@ -2,6 +2,7 @@
 Database service for managing Flux resources and change tracking.
 """
 
+import logging
 import uuid
 from datetime import datetime, timezone
 
@@ -14,6 +15,8 @@ from kubestats.core.yaml_scanner.models import (
     ScanResult,
 )
 from kubestats.models import KubernetesResource, KubernetesResourceEvent
+
+log = logging.getLogger(__name__)
 
 
 class ResourceDatabaseService:
@@ -88,7 +91,7 @@ class ResourceDatabaseService:
         Returns:
             ChangeSet object containing all detected changes
         """
-        changeset = ChangeSet()
+        changeset: ChangeSet = ChangeSet()
         scanned_keys = set()
 
         # Check each scanned resource for creates/updates
@@ -195,6 +198,9 @@ class ResourceDatabaseService:
 
             # Process created resources
             for change in changeset.created:
+                if change.resource_data is None:
+                    log.warning("Skipping created change with no resource_data")
+                    continue
                 resource, event = self._create_resource(
                     session, repository_id, change.resource_data, sync_run_id
                 )
@@ -203,6 +209,9 @@ class ResourceDatabaseService:
 
             # Process modified resources
             for change in changeset.modified:
+                if change.existing_resource is None or change.resource_data is None:
+                    log.warning("Skipping modified change with missing data")
+                    continue
                 if change.type == "RESURRECTED":
                     resource, event = self._resurrect_resource(
                         session,
@@ -222,6 +231,9 @@ class ResourceDatabaseService:
 
             # Process deleted resources
             for change in changeset.deleted:
+                if change.existing_resource is None:
+                    log.warning("Skipping deleted change with no existing_resource")
+                    continue
                 resource, event = self._delete_resource(
                     session, change.existing_resource, sync_run_id
                 )

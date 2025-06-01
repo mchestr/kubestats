@@ -7,19 +7,18 @@ from pathlib import Path
 from typing import Any
 
 from ruamel.yaml import YAML
-from ruamel.yaml.composer import ReusedAnchorWarning
 
 from kubestats.core.yaml_scanner.models import ResourceData
 from kubestats.core.yaml_scanner.resource_scanners.flux import FluxResourceScanner
 
-# Suppress ruamel.yaml ReusedAnchorWarning
-warnings.filterwarnings("ignore", category=ReusedAnchorWarning)
+# Suppress ruamel.yaml warnings
+warnings.filterwarnings("ignore", module="ruamel.yaml")
 
 
 class RepositoryScanner:
     """Scans repository directories for YAML files and parses Flux resources."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.flux_scanner = FluxResourceScanner()
         # Configure ruamel.yaml with safe loading and permissive duplicate key handling
         self.yaml = YAML(typ="safe")
@@ -61,7 +60,7 @@ class RepositoryScanner:
         Returns:
             List of Path objects for YAML files
         """
-        yaml_files = []
+        yaml_files: list[Path] = []
 
         # Look for .yaml and .yml files recursively
         for pattern in ["**/*.yaml", "**/*.yml"]:
@@ -201,7 +200,7 @@ class RepositoryScanner:
         Returns:
             True if valid, False otherwise
         """
-        return (
+        return bool(
             resource_data.api_version
             and resource_data.kind
             and resource_data.name

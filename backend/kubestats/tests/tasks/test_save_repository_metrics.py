@@ -4,6 +4,7 @@ Tests for repository metrics saving tasks.
 
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -17,7 +18,7 @@ from kubestats.tasks.save_repository_metrics import (
 
 
 @pytest.fixture
-def mock_github_data():
+def mock_github_data() -> dict[str, Any]:
     """Mock GitHub API response data."""
     return {
         "id": 12345,
@@ -34,7 +35,7 @@ def mock_github_data():
 
 
 @pytest.fixture
-def test_repository(db):
+def test_repository(db: Any) -> Repository:
     """Create a test repository."""
     # Generate unique IDs to avoid conflicts
     unique_id = uuid.uuid4()
@@ -57,7 +58,7 @@ def test_repository(db):
     return repository
 
 
-def test_parse_github_stats(mock_github_data):
+def test_parse_github_stats(mock_github_data: dict[str, Any]) -> None:
     """Test parsing GitHub repository data to metrics format."""
     metrics = parse_github_stats(mock_github_data)
 
@@ -70,7 +71,7 @@ def test_parse_github_stats(mock_github_data):
     assert isinstance(metrics["pushed_at"], datetime)
 
 
-def test_parse_github_stats_no_pushed_at():
+def test_parse_github_stats_no_pushed_at() -> None:
     """Test parsing GitHub data when pushed_at is None."""
     data = {
         "stargazers_count": 10,

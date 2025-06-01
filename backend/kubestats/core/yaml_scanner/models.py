@@ -53,7 +53,7 @@ class ResourceChange:
 
     @property
     def resource_name(self) -> str:
-        if self.resource_data:
+        if self.resource_data and self.resource_data.name:
             return self.resource_data.name
         elif self.existing_resource:
             return self.existing_resource.name
@@ -100,7 +100,7 @@ class ChangeSet:
     modified: list[ResourceChange]
     deleted: list[ResourceChange]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.created = []
         self.modified = []
         self.deleted = []

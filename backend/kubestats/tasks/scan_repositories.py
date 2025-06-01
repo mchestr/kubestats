@@ -67,7 +67,7 @@ def perform_yaml_scan(
     from kubestats.core.yaml_scanner.resource_db_service import ResourceDatabaseService
 
     # Initialize scanner services
-    repo_scanner = RepositoryScanner()
+    repo_scanner: RepositoryScanner = RepositoryScanner()
     db_service = ResourceDatabaseService()
 
     # Scan the repository directory for Flux resources

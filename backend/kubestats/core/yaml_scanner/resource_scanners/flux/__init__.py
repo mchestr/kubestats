@@ -14,7 +14,7 @@ class FluxResourceScanner(ResourceScanner):
     """Scanner for Flux CD resources"""
 
     @property
-    def scanners(self) -> set[tuple[str, str]]:
+    def scanners(self) -> list[ResourceScanner]:
         return [
             HelmReleaseResourceScanner(),
             GitRepositoryResourceScanner(),
@@ -32,11 +32,18 @@ class FluxResourceScanner(ResourceScanner):
 
     def parse_document(self, filepath: str, document: dict[str, Any]) -> ResourceData:
         """Parse a Flux resource document and return ResourceData"""
+        api_version = document.get("apiVersion")
+        kind = document.get("kind")
+
+        if not api_version or not kind:
+            raise ValueError(
+                f"Document missing required apiVersion or kind: {document}"
+            )
+
         for scanner in self.scanners:
-            if scanner.is_supported_resource(
-                document.get("apiVersion"), document.get("kind")
-            ):
+            if scanner.is_supported_resource(api_version, kind):
                 return scanner.parse_document(filepath, document)
+        raise ValueError(f"No scanner found for document: {api_version}/{kind}")
 
     def is_supported_resource(
         self, api_version: str, kind: str
@@ -45,12 +52,13 @@ class FluxResourceScanner(ResourceScanner):
         for scanner in self.scanners:
             if scanner.is_supported_resource(api_version, kind):
                 return scanner
+        return None
 
-    def extract_additional_data(self, document: dict[str, Any]) -> dict:
+    def extract_additional_data(self, document: dict[str, Any]) -> dict[str, Any]:
         """Extract additional data for Flux resources"""
         return {}
 
-    def post_process(self, resources: list[ResourceData]):
+    def post_process(self, resources: list[ResourceData]) -> None:
         path_ns_map = {}
         oci_versions = {}
         for resource in resources:
@@ -58,7 +66,10 @@ class FluxResourceScanner(ResourceScanner):
                 resource.api_version.startswith("kustomize.toolkit.fluxcd.io")
                 and resource.kind == "Kustomization"
             ):
-                path_ns_map[resource.file_path] = resource.data.get("targetNamespace")
+                if resource.data:
+                    path_ns_map[resource.file_path] = resource.data.get(
+                        "targetNamespace"
+                    )
             if (
                 resource.api_version.startswith("source.toolkit.fluxcd.io")
                 and resource.kind == "OCIRepository"
@@ -75,6 +86,7 @@ class FluxResourceScanner(ResourceScanner):
                 resource.version is None
                 and resource.api_version.startswith("helm.toolkit.fluxcd.io")
                 and resource.kind == "HelmRelease"
+                and resource.data
             ):
                 resource.version = oci_versions.get(
                     resource.data.get("chartRef", {}).get("name"),
