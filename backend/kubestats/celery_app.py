@@ -34,11 +34,11 @@ celery_app.conf.update(
     beat_schedule={
         "discover-repositories": {
             "task": "kubestats.tasks.discover_repositories.discover_repositories",
-            "schedule": crontab(hour=0),  # Run once a day at midnight
+            "schedule": crontab(minute=0, hour=0),  # Run once a day at midnight
         },
         "cleanup-repository-workdirs": {
             "task": "kubestats.tasks.sync_repositories.cleanup_repository_workdirs",
-            "schedule": crontab(hour=2, minute=0),  # Run daily at 2 AM
+            "schedule": crontab(minute=0, hour=2),  # Run daily at 2 AM
         },
     },
 )

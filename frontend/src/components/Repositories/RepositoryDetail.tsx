@@ -70,7 +70,6 @@ function RepositoryDetail() {
   })
 
   const repositoryData = repository?.data as RepositoryPublic | undefined
-  const metrics = metricsData?.data as RepositoryMetricsPublic[] | undefined
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -322,12 +321,12 @@ function RepositoryDetail() {
           <Card.Body>
             {isLoadingMetrics ? (
               <Skeleton height="400px" />
-            ) : isMetricsError || !metrics ? (
+            ) : isMetricsError || !metricsData?.data ? (
               <Box textAlign="center" py={12}>
                 <Text color="fg.muted">Unable to load metrics data</Text>
               </Box>
             ) : (
-              <MetricsChart metrics={ metrics } />
+              <MetricsChart metrics={ (metricsData.data as {data: any[]})?.data } />
             )}
           </Card.Body>
         </Card.Root>

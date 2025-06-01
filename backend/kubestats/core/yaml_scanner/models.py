@@ -15,13 +15,13 @@ class ResourceData:
 
     api_version: str
     kind: str
-    name: str
-    namespace: str | None
     file_path: str
     file_hash: str
-    metadata: dict[str, Any]
-    spec: dict[str, Any]
-    raw_content: dict[str, Any]
+
+    name: str | None = None
+    namespace: str | None = None
+    version: str | None = None
+    data: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -30,8 +30,8 @@ class ResourceData:
             "name": self.name,
             "namespace": self.namespace,
             "file_path": self.file_path,
-            "metadata": self.metadata,
-            "spec": self.spec,
+            "version": self.version,
+            "data": self.data,
         }
 
     def resource_key(self) -> str:

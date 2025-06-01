@@ -29,7 +29,7 @@ function MetricsChart({ metrics }: MetricsChartProps) {
   console.log(metrics);
 
   const getFilteredData = () => {
-    if (!metrics.data.length) return []
+    if (!metrics.length) return []
 
     const now = new Date()
     let cutoffDate: Date
@@ -54,7 +54,7 @@ function MetricsChart({ metrics }: MetricsChartProps) {
         cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
     }
 
-    return metrics.data
+    return metrics
       .filter((metric) => new Date(metric.recorded_at) >= cutoffDate)
       .sort(
         (a, b) =>
@@ -114,7 +114,7 @@ function MetricsChart({ metrics }: MetricsChartProps) {
     return null
   }
 
-  if (!metrics.data.length) {
+  if (!metrics.length) {
     return (
       <Box textAlign="center" py={12}>
         <Text color="fg.muted">No metrics data available</Text>
