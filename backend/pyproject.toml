@@ -76,5 +76,5 @@ keep-runtime-typing = true
 
 [tool.pytest.ini_options]
 env = [
-    "POSTGRES_DB=test_db",
+    "POSTGRES_DB=testdb",
 ]
