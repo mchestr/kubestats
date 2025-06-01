@@ -4,12 +4,14 @@ import {
   Grid,
   HStack,
   Heading,
+  Link,
   Stat,
   Table,
   Text,
   VStack,
 } from "@chakra-ui/react"
 import { useQuery } from "@tanstack/react-query"
+import { Link as TanstackLink } from "@tanstack/react-router"
 
 import { AdminService } from "@/client"
 
@@ -35,6 +37,23 @@ interface DatabaseStats {
   total_records: number
 }
 
+interface RecentActiveRepository {
+  repository_id: string
+  name: string
+  full_name: string
+  owner: string
+  description: string | null
+  total_events: number
+  last_activity: string | null
+  event_breakdown: Record<string, number>
+}
+
+interface RecentActiveRepositories {
+  recent_active_repositories: RecentActiveRepository[]
+  period_days: number
+  cutoff_date: string
+}
+
 function getDatabaseStatsQueryOptions() {
   return {
     queryFn: async () => {
@@ -42,6 +61,17 @@ function getDatabaseStatsQueryOptions() {
       return response.data as unknown as DatabaseStats
     },
     queryKey: ["admin", "database-stats"],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  }
+}
+
+function getRecentActiveRepositoriesQueryOptions() {
+  return {
+    queryFn: async () => {
+      const response = await AdminService.adminGetRecentActiveRepositories()
+      return response.data as unknown as RecentActiveRepositories
+    },
+    queryKey: ["admin", "recent-active-repositories"],
     refetchInterval: 30000, // Refresh every 30 seconds
   }
 }
@@ -199,10 +229,111 @@ function EventTypeBreakdown({ data }: { data: Record<string, number> }) {
   )
 }
 
-export default function DatabaseStats() {
-  const { data, isLoading, error } = useQuery(getDatabaseStatsQueryOptions())
+function RecentActiveRepositoriesTable({
+  data,
+}: { data: RecentActiveRepository[] }) {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A"
+    return new Date(dateString).toLocaleString()
+  }
 
-  if (isLoading) {
+  const getEventTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "created":
+        return "green"
+      case "modified":
+        return "orange"
+      case "deleted":
+        return "red"
+      default:
+        return "gray"
+    }
+  }
+
+  return (
+    <Table.Root size="sm">
+      <Table.Header>
+        <Table.Row>
+          <Table.ColumnHeader>Repository</Table.ColumnHeader>
+          <Table.ColumnHeader>Total Events</Table.ColumnHeader>
+          <Table.ColumnHeader>Event Breakdown</Table.ColumnHeader>
+          <Table.ColumnHeader>Last Activity</Table.ColumnHeader>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
+        {data.map((repo) => (
+          <Table.Row key={repo.repository_id}>
+            <Table.Cell>
+              <VStack align="start" gap={1}>
+                <Link
+                  asChild
+                  fontWeight="bold"
+                  color="blue.500"
+                  _hover={{ color: "blue.600" }}
+                >
+                  <TanstackLink
+                    to="/repositories/$repositoryId"
+                    params={{ repositoryId: repo.repository_id }}
+                  >
+                    {repo.name}
+                  </TanstackLink>
+                </Link>
+                <Text fontSize="xs" color="gray.600">
+                  {repo.owner}/{repo.name}
+                </Text>
+                {repo.description && (
+                  <Text fontSize="xs" color="gray.500" truncate>
+                    {repo.description}
+                  </Text>
+                )}
+              </VStack>
+            </Table.Cell>
+            <Table.Cell>
+              <Text fontWeight="bold" fontSize="lg">
+                {repo.total_events.toLocaleString()}
+              </Text>
+            </Table.Cell>
+            <Table.Cell>
+              <HStack gap={2} wrap="wrap">
+                {Object.entries(repo.event_breakdown).map(([type, count]) => (
+                  <HStack key={type} gap={1}>
+                    <Box
+                      w={2}
+                      h={2}
+                      bg={`${getEventTypeColor(type)}.500`}
+                      borderRadius="full"
+                    />
+                    <Text fontSize="xs" fontWeight="medium">
+                      {type}: {count}
+                    </Text>
+                  </HStack>
+                ))}
+              </HStack>
+            </Table.Cell>
+            <Table.Cell>
+              <Text fontSize="xs">{formatDate(repo.last_activity)}</Text>
+            </Table.Cell>
+          </Table.Row>
+        ))}
+      </Table.Body>
+    </Table.Root>
+  )
+}
+
+export default function DatabaseStats() {
+  const {
+    data: databaseStatsData,
+    isLoading: isLoadingDatabaseStats,
+    error: errorDatabaseStats,
+  } = useQuery(getDatabaseStatsQueryOptions())
+
+  const {
+    data: recentActiveRepositoriesData,
+    isLoading: isLoadingRecentActiveRepositories,
+    error: errorRecentActiveRepositories,
+  } = useQuery(getRecentActiveRepositoriesQueryOptions())
+
+  if (isLoadingDatabaseStats || isLoadingRecentActiveRepositories) {
     return (
       <VStack gap={6} align="start">
         <Heading size="lg">Database Statistics</Heading>
@@ -211,7 +342,7 @@ export default function DatabaseStats() {
     )
   }
 
-  if (error) {
+  if (errorDatabaseStats || errorRecentActiveRepositories) {
     return (
       <VStack gap={6} align="start">
         <Heading size="lg">Database Statistics</Heading>
@@ -220,7 +351,7 @@ export default function DatabaseStats() {
     )
   }
 
-  if (!data) {
+  if (!databaseStatsData || !recentActiveRepositoriesData) {
     return null
   }
 
@@ -229,7 +360,8 @@ export default function DatabaseStats() {
       <VStack align="start" gap={2}>
         <Heading size="lg">Database Statistics</Heading>
         <Text color="gray.600">
-          Total records across all tables: {data.total_records.toLocaleString()}
+          Total records across all tables:{" "}
+          {databaseStatsData.total_records.toLocaleString()}
         </Text>
       </VStack>
 
@@ -237,17 +369,20 @@ export default function DatabaseStats() {
         <Heading size="md" mb={4}>
           Table Record Counts
         </Heading>
-        <TableCountsGrid data={data.table_counts} />
+        <TableCountsGrid data={databaseStatsData.table_counts} />
       </Box>
 
       <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={6} w="full">
         <Box>
           <Heading size="md" mb={4}>
-            Recent Sync Runs ({data.sync_run_stats.total_sync_runs} total)
+            Recent Sync Runs ({databaseStatsData.sync_run_stats.total_sync_runs}{" "}
+            total)
           </Heading>
           <Card.Root>
             <Card.Body p={0}>
-              <SyncRunsTable data={data.sync_run_stats.recent_sync_runs} />
+              <SyncRunsTable
+                data={databaseStatsData.sync_run_stats.recent_sync_runs}
+              />
             </Card.Body>
           </Card.Root>
         </Box>
@@ -259,12 +394,29 @@ export default function DatabaseStats() {
           <Card.Root>
             <Card.Body>
               <EventTypeBreakdown
-                data={data.sync_run_stats.event_type_breakdown}
+                data={databaseStatsData.sync_run_stats.event_type_breakdown}
               />
             </Card.Body>
           </Card.Root>
         </Box>
       </Grid>
+
+      <Box w="full">
+        <Heading size="md" mb={4}>
+          Most Recently Changed Repositories (Last 3 Days)
+        </Heading>
+        <Text color="gray.600" mb={4}>
+          Top 10 repositories with the most Kubernetes resource changes in the
+          last {recentActiveRepositoriesData.period_days} days
+        </Text>
+        <Card.Root>
+          <Card.Body p={0}>
+            <RecentActiveRepositoriesTable
+              data={recentActiveRepositoriesData.recent_active_repositories}
+            />
+          </Card.Body>
+        </Card.Root>
+      </Box>
     </VStack>
   )
 }

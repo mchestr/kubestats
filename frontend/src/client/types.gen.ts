@@ -814,6 +814,25 @@ export type AdminGetDatabaseStatsResponses = {
 
 export type AdminGetDatabaseStatsResponse = AdminGetDatabaseStatsResponses[keyof AdminGetDatabaseStatsResponses];
 
+export type AdminGetRecentActiveRepositoriesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/recent-active-repositories';
+};
+
+export type AdminGetRecentActiveRepositoriesResponses = {
+    /**
+     * Response Admin-Get Recent Active Repositories
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type AdminGetRecentActiveRepositoriesResponse = AdminGetRecentActiveRepositoriesResponses[keyof AdminGetRecentActiveRepositoriesResponses];
+
 export type RepositoriesReadRepositoriesData = {
     body?: never;
     path?: never;
