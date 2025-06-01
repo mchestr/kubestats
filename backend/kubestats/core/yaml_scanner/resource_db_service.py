@@ -43,14 +43,38 @@ class ResourceDatabaseService:
             
         logger.info(f"Found {len(resource_map)} existing active resources for repository {repository_id}")
         return resource_map
+    
+    def get_deleted_resource(self, session: Session, repository_id: uuid.UUID, resource_data: ResourceData) -> KubernetesResource | None:
+        """
+        Get a deleted resource that matches the given ResourceData for resurrection.
+        
+        Args:
+            session: Database session
+            repository_id: UUID of the repository
+            resource_data: ResourceData to match against
+            
+        Returns:
+            KubernetesResource if found, None otherwise
+        """
+        stmt = select(KubernetesResource).where(
+            KubernetesResource.repository_id == repository_id,
+            KubernetesResource.api_version == resource_data.api_version,
+            KubernetesResource.kind == resource_data.kind,
+            KubernetesResource.name == resource_data.name,
+            KubernetesResource.namespace == resource_data.namespace,
+            KubernetesResource.status == "DELETED"
+        )
+        return session.exec(stmt).first()
 
-    def compare_resources(self, existing_resources: Dict[str, KubernetesResource], scanned_resources: List[ResourceData]) -> ChangeSet:
+    def compare_resources(self, existing_resources: Dict[str, KubernetesResource], scanned_resources: List[ResourceData], session: Session, repository_id: uuid.UUID) -> ChangeSet:
         """
         Compare existing resources with scanned resources to detect changes.
         
         Args:
             existing_resources: Map of resource keys to existing KubernetesResource objects
             scanned_resources: List of ResourceData from current scan
+            session: Database session for checking deleted resources
+            repository_id: UUID of the repository
             
         Returns:
             ChangeSet object containing all detected changes
@@ -79,15 +103,28 @@ class ResourceDatabaseService:
                     logger.debug(f"Modified resource detected: {resource_key}")
                 # If hashes match, no change needed
             else:
-                # New resource
-                changeset.created.append(ResourceChange(
-                    type="CREATED",
-                    resource_data=resource_data,
-                    existing_resource=None,
-                    file_hash_before=None,
-                    file_hash_after=resource_data.file_hash
-                ))
-                logger.debug(f"New resource detected: {resource_key}")
+                # Resource not found in active resources - check if there's a deleted resource to resurrect
+                deleted_resource = self.get_deleted_resource(session, repository_id, resource_data)
+                if deleted_resource:
+                    # This is a resurrection - update the existing deleted resource instead of creating new
+                    changeset.modified.append(ResourceChange(
+                        type="RESURRECTED",
+                        resource_data=resource_data,
+                        existing_resource=deleted_resource,
+                        file_hash_before=deleted_resource.file_hash,
+                        file_hash_after=resource_data.file_hash
+                    ))
+                    logger.debug(f"Resurrected resource detected: {resource_key}")
+                else:
+                    # New resource
+                    changeset.created.append(ResourceChange(
+                        type="CREATED",
+                        resource_data=resource_data,
+                        existing_resource=None,
+                        file_hash_before=None,
+                        file_hash_after=resource_data.file_hash
+                    ))
+                    logger.debug(f"New resource detected: {resource_key}")
         
         # Check for deleted resources
         for resource_key, existing_resource in existing_resources.items():
@@ -140,7 +177,7 @@ class ResourceDatabaseService:
             existing_resources = self.get_existing_resources(session, repository_id)
             
             # Step 2: Detect changes
-            changeset = self.compare_resources(existing_resources, resources)
+            changeset = self.compare_resources(existing_resources, resources, session, repository_id)
             
             # Step 3: Apply changes and create lifecycle events
             created_resources = []
@@ -156,7 +193,10 @@ class ResourceDatabaseService:
             
             # Process modified resources  
             for change in changeset.modified:
-                resource, event = self._update_resource(session, change.existing_resource, change.resource_data, sync_run_id)
+                if change.type == "RESURRECTED":
+                    resource, event = self._resurrect_resource(session, change.existing_resource, change.resource_data, sync_run_id)
+                else:
+                    resource, event = self._update_resource(session, change.existing_resource, change.resource_data, sync_run_id)
                 modified_resources.append(resource)
                 all_lifecycle_events.append(event)
             
@@ -231,7 +271,7 @@ class ResourceDatabaseService:
         )
         
         session.add(kubernetes_resource)
-        session.flush()  # Get the ID for the lifecycle event
+        session.flush()
         
         # Create lifecycle event
         lifecycle_event = KubernetesResourceEvent(
@@ -255,6 +295,56 @@ class ResourceDatabaseService:
         
         logger.debug(f"Created resource {resource_data.resource_key()}")
         return kubernetes_resource, lifecycle_event
+    
+    def _resurrect_resource(self, session: Session, existing_resource: KubernetesResource, resource_data: ResourceData, sync_run_id: uuid.UUID) -> tuple[KubernetesResource, KubernetesResourceEvent]:
+        """
+        Resurrect a deleted KubernetesResource and create its lifecycle event.
+        
+        Args:
+            session: Database session
+            existing_resource: Previously deleted KubernetesResource to resurrect
+            resource_data: New ResourceData to update the resource with
+            sync_run_id: UUID of current sync run
+            
+        Returns:
+            Tuple of (resurrected_resource, lifecycle_event)
+        """
+        now = datetime.now(timezone.utc)
+        old_hash = existing_resource.file_hash
+        
+        # Update the resource with new data and mark as active
+        existing_resource.file_path = resource_data.file_path
+        existing_resource.file_hash = resource_data.file_hash
+        existing_resource.version = resource_data.version
+        existing_resource.data = resource_data.data or {}
+        existing_resource.status = "ACTIVE"
+        existing_resource.deleted_at = None
+        existing_resource.updated_at = now
+        
+        session.add(existing_resource)
+        
+        # Create lifecycle event
+        lifecycle_event = KubernetesResourceEvent(
+            resource_id=existing_resource.id,
+            repository_id=existing_resource.repository_id,
+            event_type="RESURRECTED",
+            event_timestamp=now,
+            resource_name=existing_resource.name,
+            resource_namespace=existing_resource.namespace,
+            resource_kind=existing_resource.kind,
+            resource_api_version=existing_resource.api_version,
+            file_path=resource_data.file_path,
+            file_hash_before=old_hash,
+            file_hash_after=resource_data.file_hash,
+            changes_detected=["resource_resurrected"],
+            resource_data=resource_data.data or {},
+            sync_run_id=sync_run_id
+        )
+        
+        session.add(lifecycle_event)
+        
+        logger.debug(f"Resurrected resource {resource_data.resource_key()}")
+        return existing_resource, lifecycle_event
 
     def _update_resource(self, session: Session, existing_resource: KubernetesResource, resource_data: ResourceData, sync_run_id: uuid.UUID) -> tuple[KubernetesResource, KubernetesResourceEvent]:
         """

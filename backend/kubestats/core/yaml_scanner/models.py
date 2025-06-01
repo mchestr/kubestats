@@ -37,7 +37,7 @@ class ResourceData:
     def resource_key(self) -> str:
         """Generate unique key for this resource within repository"""
         namespace_part = f"{self.namespace}:" if self.namespace else ""
-        return f"{self.api_version}:{self.kind}:{namespace_part}{self.name}"
+        return f"{self.api_version}:{self.kind}:{namespace_part}{self.name}:{self.file_path}"
 
 
 @dataclass

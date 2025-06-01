@@ -257,7 +257,7 @@ class KubernetesResource(SQLModel, table=True):
         back_populates="resource", cascade_delete=True
     )
 
-    # Unique constraint: one resource per name/namespace/kind/apiVersion per repository
+    # Unique constraint: one resource per name/namespace/kind/apiVersion/file_path per repository
     __table_args__ = (
         UniqueConstraint(
             "repository_id",
@@ -265,6 +265,7 @@ class KubernetesResource(SQLModel, table=True):
             "kind",
             "name",
             "namespace",
+            "file_path",
             name="uq_kubernetes_resource_per_repo",
         ),
     )
@@ -272,7 +273,7 @@ class KubernetesResource(SQLModel, table=True):
     def resource_key(self) -> str:
         """Generate unique key matching ResourceData.resource_key() format"""
         namespace_part = f"{self.namespace}:" if self.namespace else ""
-        return f"{self.api_version}:{self.kind}:{namespace_part}{self.name}"
+        return f"{self.api_version}:{self.kind}:{namespace_part}{self.name}:{self.file_path}"
 
 
 class KubernetesResourceEvent(SQLModel, table=True):

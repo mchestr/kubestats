@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
 from kubestats.core.yaml_scanner.models import ResourceData
 from kubestats.core.yaml_scanner.resource_scanners import ResourceScanner
@@ -66,7 +67,7 @@ class FluxResourceScanner(ResourceScanner):
         for resource in resources:
             if resource.namespace is None:
                 for path, namespace in path_ns_map.items():
-                    if resource.file_path.is_relative_to(path):
+                    if Path(resource.file_path).is_relative_to(path):
                         resource.namespace = namespace
                         break
             if (

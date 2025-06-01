@@ -425,4 +425,6 @@ def downgrade():
     op.drop_index(op.f("ix_repository_github_id"), table_name="repository")
     op.drop_index(op.f("ix_repository_full_name"), table_name="repository")
     op.drop_table("repository")
+
+    op.execute("DROP TYPE syncstatus")
     # ### end Alembic commands ###

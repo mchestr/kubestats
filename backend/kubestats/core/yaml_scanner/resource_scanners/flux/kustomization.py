@@ -16,5 +16,4 @@ class KustomizationResourceScanner(ResourceScanner):
 
     def extract_additional_data(self, resource_data: ResourceData) -> dict:
         """Extract additional Kustomization-specific data"""
-        log.info("Extracting additional data for Kustomization resource")
         return {}

@@ -33,9 +33,12 @@ def update_scan_status(
     session.commit()
 
 
-def get_repository_by_id(session: Session, repository_id: str) -> Repository:
+def get_repository_by_id(session: Session, repository_id: str | uuid.UUID) -> Repository:
     """Get repository by ID with error handling."""
-    repo_uuid = uuid.UUID(repository_id)
+    if isinstance(repository_id, str):
+        repo_uuid = uuid.UUID(repository_id)
+    else:
+        repo_uuid = repository_id
     repository = session.get(Repository, repo_uuid)
     if not repository:
         raise ValueError(f"Repository {repository_id} not found")
