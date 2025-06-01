@@ -110,8 +110,6 @@ def sync_repository(
         repository_id: UUID string of the repository to sync
         repo_stats: Optional repository metrics data to pass to scan task
     """
-    logger.info(f"Starting sync for repository {repository_id}")
-
     try:
         with Session(engine) as session:
             repository = get_repository_by_id(session, repository_id)
