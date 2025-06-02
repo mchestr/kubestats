@@ -1,6 +1,6 @@
-import { Box, Flex, Icon, Text } from "@chakra-ui/react"
+import { Box, Flex, Stack, Text } from "@chakra-ui/react"
 import { useQueryClient } from "@tanstack/react-query"
-import { Link as RouterLink } from "@tanstack/react-router"
+import { Link as RouterLink, useRouterState } from "@tanstack/react-router"
 import { FiActivity, FiGitBranch, FiHome } from "react-icons/fi"
 import type { IconType } from "react-icons/lib"
 
@@ -18,9 +18,73 @@ interface Item {
   path: string
 }
 
+interface NavItemProps {
+  item: Item
+  isActive: boolean
+  onClose?: () => void
+}
+
+const NavItem = ({ item, isActive, onClose }: NavItemProps) => {
+  const { icon: Icon, title, path } = item
+
+  return (
+    <RouterLink to={path} onClick={onClose}>
+      <Flex
+        align="center"
+        gap={3}
+        px={3}
+        py={2.5}
+        rounded="md"
+        transition="all 0.2s"
+        bg={isActive ? "bg.emphasized" : "transparent"}
+        color={isActive ? "fg.emphasized" : "fg.default"}
+        fontWeight={isActive ? "semibold" : "medium"}
+        borderLeft={isActive ? "3px solid" : "3px solid transparent"}
+        borderColor={isActive ? "ui.main" : "transparent"}
+        position="relative"
+        _hover={{
+          bg: isActive ? "bg.emphasized" : "bg.subtle",
+          color: "fg.emphasized",
+          transform: "translateX(2px)",
+        }}
+        _focus={{
+          outline: "2px solid",
+          outlineColor: "ui.main",
+          outlineOffset: "2px",
+        }}
+        _active={{
+          transform: "translateX(0)",
+        }}
+        cursor="pointer"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            onClose?.()
+          }
+        }}
+      >
+        <Icon size="18px" />
+        <Text fontSize="sm">{title}</Text>
+        {isActive && (
+          <Box
+            position="absolute"
+            right={3}
+            w="6px"
+            h="6px"
+            bg="ui.main"
+            rounded="full"
+          />
+        )}
+      </Flex>
+    </RouterLink>
+  )
+}
+
 const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   const queryClient = useQueryClient()
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
+  const routerState = useRouterState()
+  const currentPath = routerState.location.pathname
 
   const finalItems: Item[] = currentUser?.is_superuser
     ? [
@@ -30,31 +94,30 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
       ]
     : items
 
-  const listItems = finalItems.map(({ icon, title, path }) => (
-    <RouterLink key={title} to={path} onClick={onClose}>
-      <Flex
-        gap={4}
-        px={4}
-        py={2}
-        _hover={{
-          background: "gray.subtle",
-        }}
-        alignItems="center"
-        fontSize="sm"
-      >
-        <Icon as={icon} alignSelf="center" />
-        <Text ml={2}>{title}</Text>
-      </Flex>
-    </RouterLink>
-  ))
-
   return (
-    <>
-      <Text fontSize="xs" px={4} py={2} fontWeight="bold">
-        Menu
+    <Stack gap={1}>
+      <Text
+        fontSize="xs"
+        px={3}
+        py={2}
+        fontWeight="semibold"
+        color="fg.muted"
+        textTransform="uppercase"
+        letterSpacing="wider"
+      >
+        Navigation
       </Text>
-      <Box>{listItems}</Box>
-    </>
+      <Stack gap={1}>
+        {finalItems.map((item) => (
+          <NavItem
+            key={item.title}
+            item={item}
+            isActive={currentPath === item.path}
+            onClose={onClose}
+          />
+        ))}
+      </Stack>
+    </Stack>
   )
 }
 

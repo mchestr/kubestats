@@ -8,9 +8,14 @@ import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "../ui/menu"
 
 const UserMenu = () => {
   const { user, logout } = useAuth()
-  const menuBgColor = useColorModeValue("white", "gray.800")
+  const menuBg = useColorModeValue("white", "gray.800")
   const menuBorderColor = useColorModeValue("gray.200", "gray.700")
-  const avatarBgColor = useColorModeValue("teal.500", "teal.400")
+  const avatarBg = useColorModeValue("teal.500", "teal.400")
+  const textSecondary = useColorModeValue("gray.600", "gray.400")
+  const shadowColor = useColorModeValue(
+    "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+    "0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2)",
+  )
 
   const handleLogout = async () => {
     logout()
@@ -29,75 +34,143 @@ const UserMenu = () => {
   }
 
   return (
-    <Flex>
-      <MenuRoot>
-        <MenuTrigger asChild>
-          <Button
-            size="sm"
-            bg={avatarBgColor}
+    <MenuRoot>
+      <MenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          cursor="pointer"
+          data-testid="user-menu"
+          p={1}
+          borderRadius="full"
+          transition="all 0.2s"
+          _hover={{
+            bg: "bg.subtle",
+            transform: "scale(1.05)",
+          }}
+          _active={{ transform: "scale(0.95)" }}
+        >
+          <Flex
+            align="center"
+            justify="center"
+            w="32px"
+            h="32px"
+            bg={avatarBg}
             color="white"
-            cursor="pointer"
-            data-testid="user-menu"
-            _hover={{ opacity: 0.9 }}
+            fontWeight="medium"
             fontSize="sm"
             borderRadius="full"
-            minW="36px"
-            height="36px"
-            p={0}
           >
             {getInitials()}
-          </Button>
-        </MenuTrigger>
+          </Flex>
+        </Button>
+      </MenuTrigger>
 
-        <MenuContent
-          bg={menuBgColor}
+      <MenuContent
+        bg={menuBg}
+        borderColor={menuBorderColor}
+        borderWidth="1px"
+        borderRadius="lg"
+        boxShadow={shadowColor}
+        minW="220px"
+        p={1}
+      >
+        {/* User Info Header */}
+        <Box
+          px={3}
+          py={3}
+          mb={1}
+          borderBottom="1px solid"
           borderColor={menuBorderColor}
-          minW="200px"
         >
-          <Box
-            px={4}
-            py={2}
-            borderBottom="1px solid"
-            borderColor={menuBorderColor}
-          >
-            <Text fontWeight="medium">{user?.full_name || "User"}</Text>
-            <Text
+          <Flex align="center" gap={3}>
+            <Flex
+              align="center"
+              justify="center"
+              w="28px"
+              h="28px"
+              bg={avatarBg}
+              color="white"
+              fontWeight="medium"
               fontSize="xs"
-              color="gray.500"
-              overflow="hidden"
-              textOverflow="ellipsis"
-              whiteSpace="nowrap"
+              borderRadius="full"
             >
-              {user?.email || ""}
-            </Text>
-          </Box>
+              {getInitials()}
+            </Flex>
+            <Box flex="1" minW={0}>
+              <Text
+                fontWeight="semibold"
+                fontSize="sm"
+                lineHeight="short"
+                textOverflow="ellipsis"
+                overflow="hidden"
+                whiteSpace="nowrap"
+              >
+                {user?.full_name || "User"}
+              </Text>
+              <Text
+                fontSize="xs"
+                color={textSecondary}
+                lineHeight="short"
+                textOverflow="ellipsis"
+                overflow="hidden"
+                whiteSpace="nowrap"
+              >
+                {user?.email || ""}
+              </Text>
+            </Box>
+          </Flex>
+        </Box>
 
-          <Link to="settings">
+        {/* Menu Items */}
+        <Box p={1}>
+          <Link to="/settings">
             <MenuItem
               closeOnSelect
               value="user-settings"
-              gap={2}
-              py={2}
-              style={{ cursor: "pointer" }}
+              borderRadius="md"
+              py={2.5}
+              px={3}
+              transition="all 0.2s"
+              _hover={{ bg: "bg.subtle" }}
+              cursor="pointer"
             >
-              <FiSettings fontSize="16px" />
-              <Box flex="1">Settings</Box>
+              <Flex align="center" gap={3}>
+                <Box color={textSecondary}>
+                  <FiSettings size={16} />
+                </Box>
+                <Text fontWeight="medium" fontSize="sm">
+                  Settings
+                </Text>
+              </Flex>
             </MenuItem>
           </Link>
 
           <MenuItem
             value="logout"
-            gap={2}
-            py={2}
+            borderRadius="md"
+            py={2.5}
+            px={3}
+            transition="all 0.2s"
+            _hover={{
+              bg: "red.50",
+              _dark: { bg: "red.900/20" },
+            }}
             onClick={handleLogout}
-            style={{ cursor: "pointer" }}
+            cursor="pointer"
           >
-            <FiLogOut fontSize="16px" />
-            <Box flex="1">Log Out</Box>
+            <Flex align="center" gap={3}>
+              <Box color="red.500">
+                <FiLogOut size={16} />
+              </Box>
+              <Text fontWeight="medium" fontSize="sm" color="red.500">
+                Log Out
+              </Text>
+            </Flex>
           </MenuItem>
-        </MenuContent>
-      </MenuRoot>
-    </Flex>
+        </Box>
+      </MenuContent>
+    </MenuRoot>
   )
 }
 

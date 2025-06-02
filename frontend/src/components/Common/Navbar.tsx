@@ -1,43 +1,61 @@
-import { Flex, Heading, useBreakpointValue } from "@chakra-ui/react"
-import { Link } from "@tanstack/react-router"
+import { Box, Flex, IconButton } from "@chakra-ui/react"
+import { FiMoon, FiSun } from "react-icons/fi"
 
-import { ColorModeButton, useColorModeValue } from "../ui/color-mode"
+import { useColorMode, useColorModeValue } from "../ui/color-mode"
 import UserMenu from "./UserMenu"
 
 function Navbar() {
-  const display = useBreakpointValue({ base: "none", md: "flex" })
-  const logoColor = useColorModeValue("teal.600", "teal.300")
+  const { colorMode, toggleColorMode } = useColorMode()
+  const navBg = useColorModeValue("white", "gray.800")
+  const borderColor = useColorModeValue("gray.200", "gray.700")
+  const shadowColor = useColorModeValue(
+    "0 1px 3px 0 rgb(0 0 0 / 0.1)",
+    "0 1px 3px 0 rgb(0 0 0 / 0.2)",
+  )
 
   return (
-    <Flex
-      display={display}
-      justify="space-between"
+    <Box
+      as="nav"
       position="sticky"
-      align="center"
-      bg="bg.muted"
-      w="100%"
       top={0}
-      p={4}
+      zIndex={10}
+      bg={navBg}
+      borderBottomWidth="1px"
+      borderBottomColor={borderColor}
+      boxShadow={shadowColor}
+      backdropFilter="blur(8px)"
     >
-      <Link to="/">
-        <Heading
-          as="h1"
-          size="xl"
-          fontWeight="bold"
-          color={logoColor}
-          letterSpacing="tight"
-          _hover={{ opacity: 0.9 }}
-          cursor="pointer"
-          py={1}
-        >
-          KubeStats
-        </Heading>
-      </Link>
-      <Flex gap={4} alignItems="center">
-        <ColorModeButton />
-        <UserMenu />
+      <Flex
+        align="center"
+        justify="flex-end"
+        maxW="100%"
+        mx="auto"
+        px={{ base: 4, md: 6 }}
+        py={3}
+        minH="64px"
+      >
+        {/* Right Side Actions */}
+        <Flex align="center" gap={2}>
+          {/* Theme Toggle */}
+          <IconButton
+            variant="ghost"
+            size="sm"
+            aria-label={`Switch to ${colorMode === "light" ? "dark" : "light"} mode`}
+            onClick={toggleColorMode}
+            transition="all 0.2s"
+            _hover={{
+              bg: "bg.subtle",
+              transform: "scale(1.05)",
+            }}
+          >
+            {colorMode === "light" ? <FiMoon size={18} /> : <FiSun size={18} />}
+          </IconButton>
+
+          {/* User Menu */}
+          <UserMenu />
+        </Flex>
       </Flex>
-    </Flex>
+    </Box>
   )
 }
 

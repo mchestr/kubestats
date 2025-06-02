@@ -5,6 +5,7 @@ import {
   HStack,
   Heading,
   Link,
+  Stack,
   Stat,
   Table,
   Text,
@@ -331,26 +332,21 @@ function RecentActiveRepositoriesTable({
     }
   }
 
-  return (
-    <Table.Root size="sm">
-      <Table.Header>
-        <Table.Row>
-          <Table.ColumnHeader>Repository</Table.ColumnHeader>
-          <Table.ColumnHeader>Total Events</Table.ColumnHeader>
-          <Table.ColumnHeader>Event Breakdown</Table.ColumnHeader>
-          <Table.ColumnHeader>Last Activity</Table.ColumnHeader>
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        {data.map((repo) => (
-          <Table.Row key={repo.repository_id}>
-            <Table.Cell>
+  // Mobile Card Layout (for screens smaller than 768px)
+  const MobileLayout = () => (
+    <Stack gap={4} display={{ base: "flex", md: "none" }}>
+      {data.map((repo) => (
+        <Card.Root key={repo.repository_id} variant="outline">
+          <Card.Body p={4}>
+            <VStack align="stretch" gap={3}>
+              {/* Repository Info */}
               <VStack align="start" gap={1}>
                 <Link
                   asChild
                   fontWeight="bold"
                   color="blue.500"
                   _hover={{ color: "blue.600" }}
+                  fontSize="md"
                 >
                   <TanstackLink
                     to="/repositories/$repositoryId"
@@ -359,45 +355,157 @@ function RecentActiveRepositoriesTable({
                     {repo.name}
                   </TanstackLink>
                 </Link>
-                <Text fontSize="xs" color="gray.600">
+                <Text fontSize="sm" color="gray.600">
                   {repo.owner}/{repo.name}
                 </Text>
                 {repo.description && (
-                  <Text fontSize="xs" color="gray.500" truncate>
+                  <Text fontSize="sm" color="gray.500" lineClamp={2}>
                     {repo.description}
                   </Text>
                 )}
               </VStack>
-            </Table.Cell>
-            <Table.Cell>
-              <Text fontWeight="bold" fontSize="lg">
-                {repo.total_events.toLocaleString()}
-              </Text>
-            </Table.Cell>
-            <Table.Cell>
-              <HStack gap={2} wrap="wrap">
-                {Object.entries(repo.event_breakdown).map(([type, count]) => (
-                  <HStack key={type} gap={1}>
-                    <Box
-                      w={2}
-                      h={2}
-                      bg={`${getEventTypeColor(type)}.500`}
-                      borderRadius="full"
-                    />
-                    <Text fontSize="xs" fontWeight="medium">
-                      {type}: {count}
-                    </Text>
-                  </HStack>
-                ))}
+
+              {/* Stats Row */}
+              <HStack justify="space-between" align="center">
+                <VStack align="start" gap={0}>
+                  <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                    Total Events
+                  </Text>
+                  <Text fontWeight="bold" fontSize="lg" color="blue.600">
+                    {repo.total_events.toLocaleString()}
+                  </Text>
+                </VStack>
+                <VStack align="end" gap={0}>
+                  <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                    Last Activity
+                  </Text>
+                  <Text fontSize="xs" color="gray.600">
+                    {formatDate(repo.last_activity)}
+                  </Text>
+                </VStack>
               </HStack>
-            </Table.Cell>
-            <Table.Cell>
-              <Text fontSize="xs">{formatDate(repo.last_activity)}</Text>
-            </Table.Cell>
+
+              {/* Event Breakdown */}
+              <VStack align="stretch" gap={2}>
+                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                  Event Breakdown
+                </Text>
+                <Stack gap={2}>
+                  {Object.entries(repo.event_breakdown).map(([type, count]) => (
+                    <HStack key={type} justify="space-between">
+                      <HStack gap={2}>
+                        <Box
+                          w={3}
+                          h={3}
+                          bg={`${getEventTypeColor(type)}.500`}
+                          borderRadius="full"
+                        />
+                        <Text fontSize="sm" fontWeight="medium">
+                          {type}
+                        </Text>
+                      </HStack>
+                      <Text fontSize="sm" fontWeight="bold">
+                        {count}
+                      </Text>
+                    </HStack>
+                  ))}
+                </Stack>
+              </VStack>
+            </VStack>
+          </Card.Body>
+        </Card.Root>
+      ))}
+    </Stack>
+  )
+
+  // Desktop Table Layout (for screens 768px and larger)
+  const DesktopLayout = () => (
+    <Box overflowX="auto" display={{ base: "none", md: "block" }}>
+      <Table.Root size="sm" minW="600px">
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeader minW="200px">Repository</Table.ColumnHeader>
+            <Table.ColumnHeader minW="100px" textAlign="center">
+              Total Events
+            </Table.ColumnHeader>
+            <Table.ColumnHeader minW="200px">
+              Event Breakdown
+            </Table.ColumnHeader>
+            <Table.ColumnHeader minW="140px">Last Activity</Table.ColumnHeader>
           </Table.Row>
-        ))}
-      </Table.Body>
-    </Table.Root>
+        </Table.Header>
+        <Table.Body>
+          {data.map((repo) => (
+            <Table.Row key={repo.repository_id}>
+              <Table.Cell>
+                <VStack align="start" gap={1}>
+                  <Link
+                    asChild
+                    fontWeight="bold"
+                    color="blue.500"
+                    _hover={{ color: "blue.600" }}
+                  >
+                    <TanstackLink
+                      to="/repositories/$repositoryId"
+                      params={{ repositoryId: repo.repository_id }}
+                    >
+                      {repo.name}
+                    </TanstackLink>
+                  </Link>
+                  <Text fontSize="xs" color="gray.600">
+                    {repo.owner}/{repo.name}
+                  </Text>
+                  {repo.description && (
+                    <Text fontSize="xs" color="gray.500" lineClamp={1}>
+                      {repo.description}
+                    </Text>
+                  )}
+                </VStack>
+              </Table.Cell>
+              <Table.Cell textAlign="center">
+                <Text fontWeight="bold" fontSize="lg" color="blue.600">
+                  {repo.total_events.toLocaleString()}
+                </Text>
+              </Table.Cell>
+              <Table.Cell>
+                <Stack gap={1} maxW="180px">
+                  {Object.entries(repo.event_breakdown).map(([type, count]) => (
+                    <HStack key={type} gap={2} justify="space-between">
+                      <HStack gap={1}>
+                        <Box
+                          w={2}
+                          h={2}
+                          bg={`${getEventTypeColor(type)}.500`}
+                          borderRadius="full"
+                        />
+                        <Text fontSize="xs" fontWeight="medium">
+                          {type}
+                        </Text>
+                      </HStack>
+                      <Text fontSize="xs" fontWeight="bold">
+                        {count}
+                      </Text>
+                    </HStack>
+                  ))}
+                </Stack>
+              </Table.Cell>
+              <Table.Cell>
+                <Text fontSize="xs" color="gray.600">
+                  {formatDate(repo.last_activity)}
+                </Text>
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
+    </Box>
+  )
+
+  return (
+    <>
+      <MobileLayout />
+      <DesktopLayout />
+    </>
   )
 }
 
