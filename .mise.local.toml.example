@@ -1,0 +1,54 @@
+# Local mise configuration template
+# Copy this file to .mise.local.toml and customize for your local environment
+# This file should be added to .gitignore
+
+[env]
+PROJECT_NAME = "kubestat"
+DOMAIN = "example.com"
+DOCKER_IMAGE_BACKEND = "kubestat-backend"
+DOCKER_IMAGE_FRONTEND = "kubestat-frontend"
+FRONTEND_HOST = "kubestats.example.com"
+
+# Database Configuration (customize for your local setup)
+DATABASE_URL = "postgresql://postgres:changethis@localhost:5432/app"
+POSTGRES_SERVER = "localhost"
+POSTGRES_PORT = "5432"
+POSTGRES_DB = "app"
+POSTGRES_USER = "postgres"
+POSTGRES_PASSWORD = "changethis"
+
+# FastAPI Backend Configuration
+SECRET_KEY = "changethis"
+FIRST_SUPERUSER = "admin@example.com"
+FIRST_SUPERUSER_PASSWORD = "changethis"
+BACKEND_CORS_ORIGINS = '["http://localhost:3000", "http://localhost:5173"]'
+
+# Email Configuration (optional for local development)
+SMTP_TLS = "true"
+SMTP_SSL = "false"
+SMTP_PORT = "587"
+SMTP_HOST = ""
+SMTP_USER = ""
+SMTP_PASSWORD = ""
+EMAILS_FROM_EMAIL = "info@example.com"
+
+# Frontend Configuration
+VITE_API_URL = "http://localhost:8000"
+
+# Cloudflare Configuration
+CLOUDFLARE_TUNNEL_TOKEN = "token"
+
+# Development Tools
+# Uncomment and modify if you prefer different ports
+# BACKEND_PORT = "8000"
+# FRONTEND_PORT = "5173"
+
+# Optional: Custom tool versions
+# [tools]
+# python = "3.11"  # Override if you need a different Python version
+# node = "18"      # Override if you need a different Node version
+
+# Optional: Custom local tasks
+# [tasks.my-local-task]
+# description = "My custom local development task"
+# run = "echo 'This is my local task'"

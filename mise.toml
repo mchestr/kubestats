@@ -1,0 +1,153 @@
+[tools]
+python = "3.13"
+node = "22"
+uv = "latest"
+
+[env]
+# Python/FastAPI Backend Environment
+PYTHONPATH = "./backend"
+PYTHONDONTWRITEBYTECODE = "1"
+PYTHONUNBUFFERED = "1"
+_.python.venv = { path = "./backend/.venv", create = true }
+
+# Node.js/React Frontend Environment
+NODE_ENV = "development"
+
+# Project paths
+BACKEND_DIR = "./backend"
+FRONTEND_DIR = "./frontend"
+REPO_WORKDIR = "./data"
+
+[tasks.setup-frontend]
+description = "Install frontend dependencies"
+dir = "{{ config_root }}/frontend"
+run = "npm install"
+
+[tasks.setup-backend]
+description = "Install backend dependencies"
+dir = "{{ config_root }}/backend"
+run = "uv sync"
+
+[tasks.setup]
+depends = ["setup-backend", "setup-frontend"]
+description = "Install all dependencies for both backend and frontend"
+
+[tasks.backend]
+description = "Start FastAPI backend development server"
+dir = "{{ config_root }}/backend"
+run = "uv run fastapi dev kubestats/main.py --host 0.0.0.0 --port 8000"
+
+[tasks.celery]
+description = "Start FastAPI backend development server"
+dir = "{{ config_root }}/backend"
+run = "uv run celery -A kubestats.celery_app worker -l info"
+
+[tasks.frontend]
+description = "Start React frontend development server"
+dir = "{{ config_root }}/frontend"
+run = "npm run dev"
+
+[tasks.dev]
+depends = ["backend", "frontend"]
+description = "Start both backend and frontend development servers"
+
+[tasks.test-backend]
+description = "Run backend tests"
+dir = "{{ config_root }}/backend"
+run = "uv run pytest"
+
+[tasks.test-frontend]
+description = "Run frontend tests"
+dir = "{{ config_root }}/frontend"
+run = "npm run test"
+
+[tasks.test]
+depends = ["test-backend", "test-frontend"]
+description = "Run tests for both backend and frontend"
+
+
+[tasks.lint-backend]
+description = "Lint backend Python code"
+dir = "{{ config_root }}/backend"
+run = [
+    "uv run ruff format .",
+    "uv run ruff check . --fix", 
+    "uv run mypy ."
+]
+
+[tasks.lint-frontend]
+description = "Lint frontend TypeScript/React code"
+dir = "{{ config_root }}/frontend"
+run = "npm run lint"
+
+[tasks.lint]
+depends = ["lint-backend", "lint-frontend"]
+description = "Lint both backend and frontend code"
+
+[tasks.generate-client]
+description = "Generate API client from OpenAPI schema"
+dir = "{{ config_root }}/frontend"
+run = [
+    "curl -o openapi.json http://localhost:8000/api/v1/openapi.json",
+    "npm run generate-client"
+]
+
+[tasks.clean-backend]
+description = "Clean backend build artifacts and dependencies"
+dir = "{{ config_root }}/backend"
+run = [
+    "echo 'Cleaning backend...'",
+    "rm -rf .venv .pytest_cache .mypy_cache .coverage .ruff_cache htmlcov data/* .ropeproject",
+    "find . -type d -name '__pycache__' -exec rm -rf {} +",
+]
+
+[tasks.clean-frontend]
+description = "Clean frontend build artifacts and dependencies"
+dir = "{{ config_root }}/frontend"
+run = [
+    "echo 'Cleaning frontend...'",
+    "rm -rf node_modules dist .vite test-results playwright-report blob-report"
+]
+
+[tasks.clean]
+depends = ["clean-backend", "clean-frontend"]
+description = "Clean build artifacts and dependencies"
+
+[tasks.db-seed]
+description = "Reset database and run migrations"
+dir = "{{ config_root }}/backend"
+run = [
+    "uv run alembic upgrade head",
+    "uv run python kubestats/initial_data.py",
+]
+
+[tasks.db-reset]
+description = "Reset database and run migrations"
+dir = "{{ config_root }}/backend"
+run = [
+    "uv run alembic downgrade base",
+    "uv run alembic upgrade head",
+    "uv run python kubestats/initial_data.py",
+]
+
+[tasks.docker-build-backend]
+description = "Build Docker image for backend service"
+dir = "{{ config_root }}/backend"
+run = "docker build -t kubestats-backend ."
+
+[tasks.docker-build-frontend]
+description = "Build Docker image for frontend service"
+dir = "{{ config_root }}/frontend"
+run = "docker build -t kubestats-frontend ."
+
+[tasks.docker-build]
+depends = ["docker-build-backend", "docker-build-frontend"]
+description = "Build Docker images for both services"
+
+[tasks.docker-up]
+description = "Start development environment with Docker Compose"
+run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build"
+
+[tasks.docker-dev]
+description = "Start development environment with Docker Compose"
+run = "docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build db redis celery-beat celery-worker"

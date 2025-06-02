@@ -1,0 +1,97 @@
+# Docker ignore file for backend optimization
+# Excludes unnecessary files from build context
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Development files
+.env*
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing and coverage
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+.hypothesis/
+.cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+.spyderproject
+.spyproject
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+
+# Database files (should use external DB in production)
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker files (avoid recursion)
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Development tools
+.pre-commit-config.yaml
+.mypy_cache/
+.ruff_cache/
+
+# Backup files
+*.bak
+*.backup

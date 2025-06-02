@@ -1,0 +1,153 @@
+services:
+  db:
+    image: postgres:17
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    volumes:
+      - app-db-data:/var/lib/postgresql/data/pgdata
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+
+  redis:
+    image: redis:8-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
+    restart: always
+    networks:
+      - public
+      - default
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL?Variable not set}
+        - NODE_ENV=production
+
+  backend:
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    restart: always
+    networks:
+      - public
+      - default
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    environment:
+      - DOMAIN=${DOMAIN}
+      - PROJECT_NAME=${PROJECT_NAME?Variable not set}
+      - FRONTEND_HOST=${FRONTEND_HOST?Variable not set}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+      - SECRET_KEY=${SECRET_KEY?Variable not set}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+    healthcheck:
+      test: ["CMD", "/app/.venv/bin/python", "-c", "import requests; requests.get('http://localhost:8000/api/v1/utils/health-check/', timeout=10)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    build:
+      context: ./backend
+
+  celery-worker:
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    restart: always
+    entrypoint: ["python"]
+    command: ["-m", "celery", "-A", "kubestats.celery_app", "worker", "-l", "info"]
+    networks:
+      - default
+    deploy:
+      replicas: 1
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+        restart: true
+    environment:
+      - DOMAIN=${DOMAIN}
+      - PROJECT_NAME=${PROJECT_NAME?Variable not set}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      - SECRET_KEY=${SECRET_KEY?Variable not set}
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    build:
+      context: ./backend
+
+  celery-beat:
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    restart: always
+    entrypoint: ["python"]
+    command: ["-m", "celery", "-A", "kubestats.celery_app", "beat", "-l", "info"]
+    networks:
+      - default
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+        restart: true
+    environment:
+      - DOMAIN=${DOMAIN}
+      - PROJECT_NAME=${PROJECT_NAME?Variable not set}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - SECRET_KEY=${SECRET_KEY?Variable not set}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TZ=${TZ?Variable not set}
+    build:
+      context: ./backend
+
+volumes:
+  app-db-data:
+  repos:
+
+networks:
+  public:
+    # Allow setting it to false for testing
+    external: true
