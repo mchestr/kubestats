@@ -4,7 +4,7 @@ from typing import Any
 
 import redis  # type: ignore[import-untyped]
 from fastapi import APIRouter
-from sqlmodel import func, select
+from sqlmodel import select
 
 from kubestats.api.deps import SessionDep
 from kubestats.core.config import settings
@@ -25,7 +25,8 @@ def system_health_check(session: SessionDep) -> dict[str, Any]:
     try:
         r = redis.Redis.from_url(settings.REDIS_URL)
         redis_status = r.ping()
-        session.exec(select(func.literal(1)))
+        # Simple database connectivity test
+        session.exec(select(1))
         health_data = {
             "timestamp": start_time.isoformat(),
             "redis_status": "healthy" if redis_status else "unhealthy",
