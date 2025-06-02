@@ -2,7 +2,6 @@ import { Flex } from "@chakra-ui/react"
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router"
 
 import Breadcrumb from "@/components/Common/Breadcrumb"
-import Navbar from "@/components/Common/Navbar"
 import Sidebar from "@/components/Common/Sidebar"
 import { isLoggedIn } from "@/hooks/useAuth"
 
@@ -22,11 +21,11 @@ function Layout() {
     <Flex h="100vh" overflow="hidden">
       <Sidebar />
       <Flex flex="1" direction="column" overflow="hidden">
-        <Navbar />
         <Flex
           flex="1"
           direction="column"
           p={{ base: 4, md: 6 }}
+          pt={{ base: 16, md: 6 }}
           overflowY="auto"
           bg="bg.default"
         >

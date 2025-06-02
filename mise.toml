@@ -85,7 +85,7 @@ depends = ["lint-backend", "lint-frontend"]
 description = "Lint both backend and frontend code"
 
 [tasks.ci]
-depends = ["generate-client", "lint", "test-backend"]
+depends = ["generate-client", "lint", "test-backend", "build-frontend"]
 description = "Run CI tasks: generate client, lint, and test backend"
 
 [tasks.generate-client]
@@ -95,6 +95,11 @@ run = [
     "curl -o openapi.json http://localhost:8000/api/v1/openapi.json",
     "npm run generate-client"
 ]
+
+[tasks.build-frontend]
+description = "Build frontend for production"
+dir = "{{ config_root }}/frontend"
+run = "npm run build"
 
 [tasks.clean-backend]
 description = "Clean backend build artifacts and dependencies"

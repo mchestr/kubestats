@@ -525,7 +525,7 @@ export default function DatabaseStats() {
   if (isLoadingDatabaseStats || isLoadingRecentActiveRepositories) {
     return (
       <VStack gap={6} align="start">
-        <Heading size="lg">Database Statistics</Heading>
+        <Heading size="lg">Dashboard</Heading>
         <Text>Loading database statistics...</Text>
       </VStack>
     )
@@ -534,7 +534,7 @@ export default function DatabaseStats() {
   if (errorDatabaseStats || errorRecentActiveRepositories) {
     return (
       <VStack gap={6} align="start">
-        <Heading size="lg">Database Statistics</Heading>
+        <Heading size="lg">Dashboard</Heading>
         <Text color="red.500">Failed to load database statistics</Text>
       </VStack>
     )
@@ -547,7 +547,7 @@ export default function DatabaseStats() {
   return (
     <VStack gap={8} align="start" w="full">
       <VStack align="start" gap={2}>
-        <Heading size="lg">Database Statistics</Heading>
+        <Heading size="lg">Dashboard</Heading>
         <Text color="gray.600">
           Total records across all tables:{" "}
           {databaseStatsData.total_records.toLocaleString()}
