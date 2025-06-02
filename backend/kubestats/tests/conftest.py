@@ -37,11 +37,11 @@ def prep_db() -> None:
     with engine.connect() as conn:
         try:
             # Ensure the database is created
-            conn.execute(text("DROP DATABASE IF EXISTS test_db"))
+            conn.execute(text("DROP DATABASE IF EXISTS testdb"))
         except Exception as e:
             print(f"Error dropping database: {e}")
 
-        conn.execute(text("CREATE DATABASE test_db"))
+        conn.execute(text("CREATE DATABASE testdb"))
 
 
 def apply_migrations() -> None:
@@ -65,7 +65,7 @@ def engine() -> Generator[Engine, None, None]:
             password=settings.POSTGRES_PASSWORD,
             host=settings.POSTGRES_SERVER,
             port=settings.POSTGRES_PORT,
-            path="test_db",
+            path="testdb",
         )
     )
     test_engine = create_engine(db_url)
