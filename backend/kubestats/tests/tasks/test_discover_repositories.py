@@ -150,15 +150,17 @@ def test_sync_repository_called_for_all_discovered_repositories(
     with patch(
         "kubestats.tasks.discover_repositories.create_or_update_repository"
     ) as mock_create_update:
-        # Return Repository objects (not tuples)
-        mock_create_update.side_effect = [repo1_mock, repo2_mock]
+        # Return Repository objects with is_new flags (both as new to trigger sync)
+        mock_create_update.side_effect = [(repo1_mock, True), (repo2_mock, True)]
 
         result = discover_repositories()
 
     # Verify the task completed successfully
     assert result["repositories_found"] == 2
+    assert result["new_repositories"] == 2
+    assert result["repositories_synced"] == 2
 
-    # Verify group was called with sync tasks
+    # Verify group was called with sync tasks (since both repos are new)
     assert mock_group.call_count == 1
 
     # Verify apply_async was called on the group
@@ -206,3 +208,65 @@ def test_individual_topic_queries_and_deduplication(mock_search_func: Mock) -> N
     assert len(all_repos) == 2
     assert 1 in all_repos  # repo1
     assert 2 in all_repos  # repo2
+
+
+@patch("kubestats.tasks.discover_repositories.Session")
+@patch("kubestats.tasks.discover_repositories.group")
+@patch("kubestats.tasks.discover_repositories.search_repositories")
+def test_sync_repository_not_called_for_existing_repositories(
+    mock_search: Mock, mock_group: Mock, mock_session_class: Mock
+) -> None:
+    """Test that sync_repository.delay is not called for existing repositories."""
+    from unittest.mock import Mock
+
+    from kubestats.models import Repository
+    from kubestats.tasks.discover_repositories import discover_repositories
+
+    # Mock GitHub API response with one repository
+    mock_search.return_value = {
+        "items": [
+            {
+                "id": 123456,
+                "name": "repo1",
+                "full_name": "mchestr/repo1",
+                "owner": {"login": "mchestr"},
+                "description": "A test repository",
+                "language": "Python",
+                "topics": ["kubesearch"],
+                "license": {"name": "MIT"},
+                "default_branch": "main",
+                "created_at": "2023-01-01T00:00:00Z",
+                "updated_at": "2023-01-02T00:00:00Z",
+                "stargazers_count": 100,
+                "forks_count": 20,
+                "watchers_count": 100,
+                "open_issues_count": 5,
+                "size": 1024,
+            }
+        ]
+    }
+
+    # Mock database session
+    mock_session = Mock()
+    mock_session_class.return_value.__enter__.return_value = mock_session
+
+    # Mock repository object
+    repo1_mock = Mock(spec=Repository)
+    repo1_mock.id = "repo1-uuid"
+
+    # Mock the create_or_update_repository behavior by patching it directly
+    with patch(
+        "kubestats.tasks.discover_repositories.create_or_update_repository"
+    ) as mock_create_update:
+        # Return existing repository (is_new=False)
+        mock_create_update.return_value = (repo1_mock, False)
+
+        result = discover_repositories()
+
+    # Verify the task completed successfully
+    assert result["repositories_found"] == 1
+    assert result["new_repositories"] == 0
+    assert result["repositories_synced"] == 0
+
+    # Verify group was NOT called since no new repositories
+    assert mock_group.call_count == 0

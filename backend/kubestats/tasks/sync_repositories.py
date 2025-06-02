@@ -221,3 +221,43 @@ def cleanup_repository_workdirs() -> dict[str, Any]:
     except Exception as exc:
         logger.error(f"Repository cleanup failed: {str(exc)}", exc_info=True)
         return {"message": f"Cleanup failed: {str(exc)}", "cleaned": 0}
+
+
+@celery_app.task()  # type: ignore[misc]
+def sync_all_repositories() -> dict[str, Any]:
+    """
+    Sync all repositories in the database.
+
+    This task retrieves all repositories from the database and dispatches
+    individual sync tasks for each one using Celery groups for parallel execution.
+    """
+    from celery import group  # type: ignore[import-untyped]
+
+    with Session(engine) as session:
+        # Get all repositories from the database
+        repositories = session.exec(select(Repository)).all()
+
+        if not repositories:
+            logger.info("No repositories found in database")
+            return {
+                "repositories_found": 0,
+                "repositories_synced": 0,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+        logger.info(f"Found {len(repositories)} repositories to sync")
+
+        # Create sync tasks for all repositories
+        sync_tasks = group(
+            sync_repository.s(str(repository.id)) for repository in repositories
+        )
+
+        # Execute all sync tasks in parallel
+        sync_tasks.apply_async()
+        logger.info(f"Dispatched {len(repositories)} sync tasks")
+
+        return {
+            "repositories_found": len(repositories),
+            "repositories_synced": len(repositories),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }

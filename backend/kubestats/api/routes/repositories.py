@@ -149,20 +149,23 @@ def trigger_repository_discovery() -> Any:
     dependencies=[Depends(get_current_active_superuser)],
     response_model=Message,
 )
-def trigger_repository_sync_all(
-    db: Session = Depends(get_db),
-) -> Any:
+def trigger_repository_sync_all() -> Any:
     """
     Trigger sync for all repositories.
     """
-    from kubestats.tasks.sync_repositories import sync_repository
+    from kubestats.tasks.sync_repositories import sync_all_repositories
 
-    repositories = crud.get_repositories(session=db)
-    for repository in repositories:
-        sync_repository.delay(str(repository.id))
-    return Message(
-        message=f"Repository sync task started for {len(repositories)} repositories."
-    )
+    try:
+        # Trigger the sync all repositories task asynchronously
+        task = sync_all_repositories.delay()
+        return Message(
+            message=f"Repository sync task started for all repositories: {task.id}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to start repository sync task: {str(e)}",
+        )
 
 
 @router.post(

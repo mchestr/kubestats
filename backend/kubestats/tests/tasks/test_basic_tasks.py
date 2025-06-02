@@ -17,7 +17,7 @@ def test_system_health_check_success(
     """Test successful system health check."""
     # Mock datetime
     timestamp = datetime(2024, 1, 1, 12, 0, 0)
-    mock_datetime.utcnow.return_value = timestamp
+    mock_datetime.datetime.now.return_value = timestamp
 
     # Mock dependencies
     mock_redis_instance = Mock()
@@ -47,7 +47,7 @@ def test_system_health_check_redis_failure(mock_datetime: Any, mock_redis: Any) 
     """Test system health check with Redis failure."""
     # Mock datetime
     timestamp = datetime(2024, 1, 1, 12, 0, 0)
-    mock_datetime.utcnow.return_value = timestamp
+    mock_datetime.datetime.now.return_value = timestamp
 
     # Mock Redis connection failure
     mock_redis.side_effect = Exception("Redis connection failed")
@@ -68,7 +68,7 @@ def test_system_health_check_psutil_failure(
     """Test system health check with psutil failure."""
     # Mock datetime
     timestamp = datetime(2024, 1, 1, 12, 0, 0)
-    mock_datetime.utcnow.return_value = timestamp
+    mock_datetime.datetime.now.return_value = timestamp
 
     # Mock Redis to be successful
     mock_redis_instance = Mock()

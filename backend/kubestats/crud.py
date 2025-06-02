@@ -484,12 +484,12 @@ def get_repository_events_daily_counts(
     days: int = 30,
 ) -> list[dict[str, Any]]:
     """Get daily event counts for a repository over the specified number of days."""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
 
     from kubestats.models import KubernetesResourceEvent
 
     # Calculate the start date
-    start_date = datetime.utcnow() - timedelta(days=days)
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
     # Query for daily counts
     statement = (

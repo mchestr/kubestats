@@ -13,6 +13,7 @@ from sqlmodel import Session
 from kubestats.models import Repository, SyncStatus
 from kubestats.tasks.sync_repositories import (
     cleanup_repository_workdirs,
+    sync_all_repositories,
     sync_repository,
 )
 
@@ -299,3 +300,60 @@ def test_cleanup_repository_workdirs_error_handling(
             # Should not fail completely, but report 0 cleaned
             assert result["cleaned"] == 0
             assert "Cleaned up 0 orphaned repository directories" in result["message"]
+
+
+@patch("kubestats.tasks.sync_repositories.Session")
+@patch("celery.group")
+def test_sync_all_repositories_success(
+    mock_group: Mock,
+    mock_session_class: Mock,
+    db: Session,
+    sample_repository: Repository,
+) -> None:
+    """Test successful sync of all repositories."""
+    # Mock database session
+    mock_session = Mock()
+    mock_session_class.return_value.__enter__.return_value = mock_session
+
+    # Create mock repositories
+    repo1_mock = Mock(spec=Repository)
+    repo1_mock.id = "repo1-uuid"
+
+    repo2_mock = Mock(spec=Repository)
+    repo2_mock.id = "repo2-uuid"
+
+    # Mock exec to return repositories
+    mock_session.exec.return_value.all.return_value = [repo1_mock, repo2_mock]
+
+    # Mock group and apply_async
+    mock_group_instance = Mock()
+    mock_group.return_value = mock_group_instance
+
+    result = sync_all_repositories()
+
+    # Verify result
+    assert result["repositories_found"] == 2
+    assert result["repositories_synced"] == 2
+    assert "timestamp" in result
+
+    # Verify group was called with sync tasks
+    mock_group.assert_called_once()
+    mock_group_instance.apply_async.assert_called_once()
+
+
+@patch("kubestats.tasks.sync_repositories.Session")
+def test_sync_all_repositories_no_repositories(mock_session_class: Mock) -> None:
+    """Test sync all repositories when no repositories exist."""
+    # Mock database session
+    mock_session = Mock()
+    mock_session_class.return_value.__enter__.return_value = mock_session
+
+    # Mock exec to return empty list
+    mock_session.exec.return_value.all.return_value = []
+
+    result = sync_all_repositories()
+
+    # Verify result
+    assert result["repositories_found"] == 0
+    assert result["repositories_synced"] == 0
+    assert "timestamp" in result

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -139,7 +139,7 @@ def get_recent_active_repositories(session: SessionDep) -> Any:
     Only accessible by superusers.
     """
     # Calculate the cutoff date (3 days ago)
-    three_days_ago = datetime.utcnow() - timedelta(days=3)
+    three_days_ago = datetime.now(timezone.utc) - timedelta(days=3)
 
     # Query to get repositories with the most resource events in the last 3 days
     recent_activity_query = (

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
@@ -9,6 +9,11 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from datetime import datetime
+
+
+def utc_now() -> datetime:
+    """Helper function to get current UTC time, replacing deprecated datetime.utcnow()."""
+    return datetime.now(timezone.utc)
 
 
 # Shared properties
@@ -102,7 +107,7 @@ class RepositoryBase(SQLModel):
 class Repository(RepositoryBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     github_id: int = Field(unique=True, index=True)
-    discovered_at: datetime = Field(default_factory=datetime.utcnow)
+    discovered_at: datetime = Field(default_factory=utc_now)
 
     # Sync tracking fields
     last_sync_at: datetime | None = Field(default=None, index=True)
@@ -149,7 +154,7 @@ class RepositoryMetrics(SQLModel, table=True):
     pushed_at: datetime | None  # last push
 
     # Snapshot metadata
-    recorded_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    recorded_at: datetime = Field(default_factory=utc_now, index=True)
 
     # Relationships
     repository: Repository = Relationship(back_populates="metrics")
@@ -248,8 +253,8 @@ class KubernetesResource(SQLModel, table=True):
     deleted_at: datetime | None = Field(index=True)
 
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    created_at: datetime = Field(default_factory=utc_now, index=True)
+    updated_at: datetime = Field(default_factory=utc_now, index=True)
 
     # Relationships
     repository: Repository = Relationship(back_populates="kubernetes_resources")
@@ -292,7 +297,7 @@ class KubernetesResourceEvent(SQLModel, table=True):
 
     # Event details
     event_type: str = Field(max_length=20, index=True)  # CREATED, MODIFIED, DELETED
-    event_timestamp: datetime = Field(default_factory=datetime.utcnow, index=True)
+    event_timestamp: datetime = Field(default_factory=utc_now, index=True)
 
     # Resource identification (denormalized for fast queries)
     resource_name: str = Field(max_length=255, index=True)
