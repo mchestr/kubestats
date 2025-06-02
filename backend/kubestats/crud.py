@@ -433,9 +433,13 @@ def get_repository_events(
     if event_type:
         statement = statement.where(KubernetesResourceEvent.event_type == event_type)
     if resource_kind:
-        statement = statement.where(KubernetesResourceEvent.resource_kind == resource_kind)
+        statement = statement.where(
+            KubernetesResourceEvent.resource_kind == resource_kind
+        )
     if resource_namespace:
-        statement = statement.where(KubernetesResourceEvent.resource_namespace == resource_namespace)
+        statement = statement.where(
+            KubernetesResourceEvent.resource_namespace == resource_namespace
+        )
 
     statement = statement.offset(skip).limit(limit)
 
@@ -453,16 +457,22 @@ def get_repository_events_count(
     """Get total count of repository events with optional filters."""
     from kubestats.models import KubernetesResourceEvent
 
-    statement = select(func.count()).select_from(KubernetesResourceEvent).where(
-        KubernetesResourceEvent.repository_id == repository_id
+    statement = (
+        select(func.count())
+        .select_from(KubernetesResourceEvent)
+        .where(KubernetesResourceEvent.repository_id == repository_id)
     )
 
     if event_type:
         statement = statement.where(KubernetesResourceEvent.event_type == event_type)
     if resource_kind:
-        statement = statement.where(KubernetesResourceEvent.resource_kind == resource_kind)
+        statement = statement.where(
+            KubernetesResourceEvent.resource_kind == resource_kind
+        )
     if resource_namespace:
-        statement = statement.where(KubernetesResourceEvent.resource_namespace == resource_namespace)
+        statement = statement.where(
+            KubernetesResourceEvent.resource_namespace == resource_namespace
+        )
 
     return session.exec(statement).one()
 

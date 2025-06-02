@@ -69,7 +69,9 @@ def search_repositories(query: str) -> dict[str, Any]:
         headers["Authorization"] = f"Bearer {settings.GITHUB_TOKEN}"
         logger.debug("Using authenticated GitHub API request")
     else:
-        logger.debug("Using unauthenticated GitHub API request (60 requests/hour limit)")
+        logger.debug(
+            "Using unauthenticated GitHub API request (60 requests/hour limit)"
+        )
 
     # Make the API request using synchronous client
     with httpx.Client(timeout=30.0) as client:

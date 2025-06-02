@@ -268,9 +268,15 @@ def read_repository_events(
     session: Session = Depends(get_db),
     skip: int = 0,
     limit: int = Query(default=100, le=1000),
-    event_type: str | None = Query(default=None, description="Filter by event type (CREATED, MODIFIED, DELETED)"),
-    resource_kind: str | None = Query(default=None, description="Filter by resource kind"),
-    resource_namespace: str | None = Query(default=None, description="Filter by resource namespace"),
+    event_type: str | None = Query(
+        default=None, description="Filter by event type (CREATED, MODIFIED, DELETED)"
+    ),
+    resource_kind: str | None = Query(
+        default=None, description="Filter by resource kind"
+    ),
+    resource_namespace: str | None = Query(
+        default=None, description="Filter by resource namespace"
+    ),
 ) -> Any:
     """
     Get events for a specific repository with pagination and filters.
@@ -308,11 +314,15 @@ def read_repository_events(
     return KubernetesResourceEventsPublic(data=events_public, count=total_count)
 
 
-@router.get("/{repository_id}/events/daily-counts", response_model=EventDailyCountsPublic)
+@router.get(
+    "/{repository_id}/events/daily-counts", response_model=EventDailyCountsPublic
+)
 def read_repository_events_daily_counts(
     repository_id: uuid.UUID,
     session: Session = Depends(get_db),
-    days: int = Query(default=30, le=365, description="Number of days to include in the chart"),
+    days: int = Query(
+        default=30, le=365, description="Number of days to include in the chart"
+    ),
 ) -> Any:
     """
     Get daily event counts for a repository over the specified number of days.

@@ -91,7 +91,10 @@ def test_parse_github_stats_no_pushed_at() -> None:
 
 @patch("kubestats.tasks.save_repository_metrics.get_repository")
 def test_save_repository_metrics_success(
-    mock_get_repo: Mock, test_repository: Repository, db: Session, mock_github_data: dict[str, Any]
+    mock_get_repo: Mock,
+    test_repository: Repository,
+    db: Session,
+    mock_github_data: dict[str, Any],
 ) -> None:
     """Test successful repository metrics saving."""
     mock_get_repo.return_value = mock_github_data
@@ -205,7 +208,9 @@ def test_save_repository_metrics_repository_not_found(db: Session) -> None:
         save_repository_metrics(non_existent_id, kubernetes_resources_count=1)
 
 
-def test_save_repository_metrics_with_provided_github_stats(test_repository: Repository, db: Session) -> None:
+def test_save_repository_metrics_with_provided_github_stats(
+    test_repository: Repository, db: Session
+) -> None:
     """Test metrics saving when GitHub stats are provided directly."""
     # Provide GitHub stats directly (no API call needed)
     github_stats = {
@@ -244,7 +249,10 @@ def test_save_repository_metrics_with_provided_github_stats(test_repository: Rep
 
 @patch("kubestats.tasks.save_repository_metrics.get_repository")
 def test_save_repository_metrics_zero_kubernetes_resources(
-    mock_get_repo: Mock, test_repository: Repository, db: Session, mock_github_data: dict[str, Any]
+    mock_get_repo: Mock,
+    test_repository: Repository,
+    db: Session,
+    mock_github_data: dict[str, Any],
 ) -> None:
     """Test metrics saving with zero Kubernetes resources."""
     mock_get_repo.return_value = mock_github_data
@@ -272,7 +280,10 @@ def test_save_repository_metrics_zero_kubernetes_resources(
 
 @patch("kubestats.tasks.save_repository_metrics.get_repository")
 def test_save_repository_metrics_with_incomplete_github_stats(
-    mock_get_repo: Mock, test_repository: Repository, db: Session, mock_github_data: dict[str, Any]
+    mock_get_repo: Mock,
+    test_repository: Repository,
+    db: Session,
+    mock_github_data: dict[str, Any],
 ) -> None:
     """Test that missing fields in provided GitHub stats are fetched from API."""
     mock_get_repo.return_value = mock_github_data
