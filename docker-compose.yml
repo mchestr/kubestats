@@ -19,15 +19,6 @@ services:
   redis:
     image: redis:8-alpine
     restart: always
-    ports:
-      - "6379:6379"
-    networks:
-      - default
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   frontend:
     image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
@@ -47,11 +38,7 @@ services:
     networks:
       - public
       - default
-    depends_on:
-      db:
-        condition: service_healthy
-        restart: true
-    environment:
+    environment: &env
       - DOMAIN=${DOMAIN}
       - PROJECT_NAME=${PROJECT_NAME?Variable not set}
       - FRONTEND_HOST=${FRONTEND_HOST?Variable not set}
@@ -68,13 +55,6 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
 
-    healthcheck:
-      test: ["CMD", "/app/.venv/bin/python", "-c", "import requests; requests.get('http://localhost:8000/api/v1/utils/health-check/', timeout=10)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
     build:
       context: ./backend
 
@@ -83,31 +63,7 @@ services:
     restart: always
     entrypoint: ["python"]
     command: ["-m", "celery", "-A", "kubestats.celery_app", "worker", "-l", "info"]
-    networks:
-      - default
-    deploy:
-      replicas: 1
-    depends_on:
-      db:
-        condition: service_healthy
-        restart: true
-      redis:
-        condition: service_healthy
-        restart: true
-    environment:
-      - DOMAIN=${DOMAIN}
-      - PROJECT_NAME=${PROJECT_NAME?Variable not set}
-      - ENVIRONMENT=${ENVIRONMENT}
-      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
-      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
-      - SECRET_KEY=${SECRET_KEY?Variable not set}
-      - POSTGRES_SERVER=db
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+    environment: *env
     build:
       context: ./backend
 
@@ -116,35 +72,11 @@ services:
     restart: always
     entrypoint: ["python"]
     command: ["-m", "celery", "-A", "kubestats.celery_app", "beat", "-l", "info"]
-    networks:
-      - default
-    depends_on:
-      db:
-        condition: service_healthy
-        restart: true
-      redis:
-        condition: service_healthy
-        restart: true
-    environment:
-      - DOMAIN=${DOMAIN}
-      - PROJECT_NAME=${PROJECT_NAME?Variable not set}
-      - ENVIRONMENT=${ENVIRONMENT}
-      - SECRET_KEY=${SECRET_KEY?Variable not set}
-      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
-      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
-      - POSTGRES_SERVER=db
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - TZ=${TZ?Variable not set}
+    environment: *env
     build:
       context: ./backend
 
 volumes:
-  app-db-data:
   repos:
 
 networks:
