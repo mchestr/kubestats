@@ -76,5 +76,8 @@ keep-runtime-typing = true
 
 [tool.pytest.ini_options]
 env = [
+    "FIRST_SUPERUSER=testuser",
+    "FIRST_SUPERUSER_PASSWORD=testpassword",
     "POSTGRES_DB=testdb",
+    "POSTGRES_SERVER=localhost",
 ]
