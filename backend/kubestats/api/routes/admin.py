@@ -10,7 +10,6 @@ from kubestats.models import (
     KubernetesResourceEvent,
     Repository,
     RepositoryMetrics,
-    User,
 )
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -42,7 +41,6 @@ def get_database_stats(session: SessionDep) -> Any:
     """
 
     # Get table counts
-    users_count = session.exec(select(func.count()).select_from(User)).one()
     repositories_count = session.exec(
         select(func.count()).select_from(Repository)
     ).one()
@@ -54,6 +52,21 @@ def get_database_stats(session: SessionDep) -> Any:
     ).one()
     kubernetes_events_count = session.exec(
         select(func.count()).select_from(KubernetesResourceEvent)
+    ).one()
+
+    # Get new repositories discovered in the last 7 days
+    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    new_repositories_count = session.exec(
+        select(func.count())
+        .select_from(Repository)
+        .where(Repository.discovered_at >= seven_days_ago)
+    ).one()
+
+    # Get resource changes in the last 7 days
+    resource_changes_count = session.exec(
+        select(func.count())
+        .select_from(KubernetesResourceEvent)
+        .where(KubernetesResourceEvent.event_timestamp >= seven_days_ago)
     ).one()
 
     # Get sync run statistics
@@ -88,8 +101,7 @@ def get_database_stats(session: SessionDep) -> Any:
 
     # Calculate total records across all tables
     total_records = (
-        users_count
-        + repositories_count
+        repositories_count
         + repository_metrics_count
         + kubernetes_resources_count
         + kubernetes_events_count
@@ -97,11 +109,14 @@ def get_database_stats(session: SessionDep) -> Any:
 
     return {
         "table_counts": {
-            "users": users_count,
             "repositories": repositories_count,
             "repository_metrics": repository_metrics_count,
             "kubernetes_resources": kubernetes_resources_count,
             "kubernetes_resource_events": kubernetes_events_count,
+        },
+        "recent_stats": {
+            "new_repositories_last_7_days": new_repositories_count,
+            "resource_changes_last_7_days": resource_changes_count,
         },
         "sync_run_stats": {
             "total_sync_runs": total_sync_runs,
@@ -113,8 +128,10 @@ def get_database_stats(session: SessionDep) -> Any:
                     "completed_at": run[3].isoformat()
                     if run[3]
                     else None,  # completed_at
-                    "duration_seconds": (
-                        (run[3] - run[2]).total_seconds() if run[2] and run[3] else None
+                    "duration_milliseconds": (
+                        (run[3] - run[2]).total_seconds() * 1000
+                        if run[2] and run[3]
+                        else None
                     ),
                 }
                 for run in sync_runs_data

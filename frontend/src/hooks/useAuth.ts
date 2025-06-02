@@ -7,7 +7,6 @@ import {
   LoginService,
   type Token,
   type UserPublic,
-  UsersService,
 } from "@/client"
 import { handleError } from "@/utils"
 
@@ -21,7 +20,7 @@ const useAuth = () => {
   const { data: user } = useQuery<UserPublic | null, Error>({
     queryKey: ["currentUser"],
     queryFn: async () => {
-      const response = await UsersService.usersReadUserMe()
+      const response = await LoginService.loginWhoami()
       return response.data as unknown as UserPublic
     },
     enabled: isLoggedIn(),

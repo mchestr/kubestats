@@ -7,7 +7,6 @@ from pydantic import BaseModel, field_validator
 from kubestats.api.deps import get_current_active_superuser
 from kubestats.celery_app import celery_app
 from kubestats.models import User
-from kubestats.tasks.basic_tasks import system_health_check
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -74,30 +73,6 @@ class WorkerStatusResponse(BaseModel):
     reserved: dict[str, Any]
     stats: dict[str, Any]
     periodic_tasks: list[PeriodicTaskResponse]
-
-
-@router.post("/health-check", response_model=TaskResponse)
-def trigger_health_check(
-    current_user: User = Depends(get_current_active_superuser),
-) -> TaskResponse:
-    """
-    Trigger a system health check task (superuser only).
-    """
-    try:
-        result = system_health_check.delay()
-
-        logger.info(f"Health check triggered by user {current_user.id}: {result.id}")
-
-        return TaskResponse(
-            task_id=result.id,
-            status="PENDING",
-            message="Health check task triggered successfully",
-        )
-    except Exception as e:
-        logger.error(f"Error triggering health check: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to trigger health check: {str(e)}"
-        )
 
 
 @router.post("/trigger-periodic/{task_name}", response_model=TaskResponse)

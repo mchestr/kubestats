@@ -419,46 +419,6 @@ export type Token = {
 };
 
 /**
- * UpdatePassword
- */
-export type UpdatePassword = {
-    /**
-     * Current Password
-     */
-    current_password: string;
-    /**
-     * New Password
-     */
-    new_password: string;
-};
-
-/**
- * UserCreate
- */
-export type UserCreate = {
-    /**
-     * Email
-     */
-    email: string;
-    /**
-     * Is Active
-     */
-    is_active?: boolean;
-    /**
-     * Is Superuser
-     */
-    is_superuser?: boolean;
-    /**
-     * Full Name
-     */
-    full_name?: string | null;
-    /**
-     * Password
-     */
-    password: string;
-};
-
-/**
  * UserPublic
  */
 export type UserPublic = {
@@ -482,60 +442,6 @@ export type UserPublic = {
      * Id
      */
     id: string;
-};
-
-/**
- * UserUpdate
- */
-export type UserUpdate = {
-    /**
-     * Email
-     */
-    email?: string | null;
-    /**
-     * Is Active
-     */
-    is_active?: boolean;
-    /**
-     * Is Superuser
-     */
-    is_superuser?: boolean;
-    /**
-     * Full Name
-     */
-    full_name?: string | null;
-    /**
-     * Password
-     */
-    password?: string | null;
-};
-
-/**
- * UserUpdateMe
- */
-export type UserUpdateMe = {
-    /**
-     * Full Name
-     */
-    full_name?: string | null;
-    /**
-     * Email
-     */
-    email?: string | null;
-};
-
-/**
- * UsersPublic
- */
-export type UsersPublic = {
-    /**
-     * Data
-     */
-    data: Array<UserPublic>;
-    /**
-     * Count
-     */
-    count: number;
 };
 
 /**
@@ -615,269 +521,21 @@ export type LoginLoginAccessTokenResponses = {
 
 export type LoginLoginAccessTokenResponse = LoginLoginAccessTokenResponses[keyof LoginLoginAccessTokenResponses];
 
-export type LoginTestTokenData = {
+export type LoginWhoamiData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/login/test-token';
+    url: '/api/v1/me';
 };
 
-export type LoginTestTokenResponses = {
+export type LoginWhoamiResponses = {
     /**
      * Successful Response
      */
     200: UserPublic;
 };
 
-export type LoginTestTokenResponse = LoginTestTokenResponses[keyof LoginTestTokenResponses];
-
-export type UsersReadUsersData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Skip
-         */
-        skip?: number;
-        /**
-         * Limit
-         */
-        limit?: number;
-    };
-    url: '/api/v1/users/';
-};
-
-export type UsersReadUsersErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UsersReadUsersError = UsersReadUsersErrors[keyof UsersReadUsersErrors];
-
-export type UsersReadUsersResponses = {
-    /**
-     * Successful Response
-     */
-    200: UsersPublic;
-};
-
-export type UsersReadUsersResponse = UsersReadUsersResponses[keyof UsersReadUsersResponses];
-
-export type UsersCreateUserData = {
-    body: UserCreate;
-    path?: never;
-    query?: never;
-    url: '/api/v1/users/';
-};
-
-export type UsersCreateUserErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UsersCreateUserError = UsersCreateUserErrors[keyof UsersCreateUserErrors];
-
-export type UsersCreateUserResponses = {
-    /**
-     * Successful Response
-     */
-    200: UserPublic;
-};
-
-export type UsersCreateUserResponse = UsersCreateUserResponses[keyof UsersCreateUserResponses];
-
-export type UsersDeleteUserMeData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/users/me';
-};
-
-export type UsersDeleteUserMeResponses = {
-    /**
-     * Successful Response
-     */
-    200: Message;
-};
-
-export type UsersDeleteUserMeResponse = UsersDeleteUserMeResponses[keyof UsersDeleteUserMeResponses];
-
-export type UsersReadUserMeData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/users/me';
-};
-
-export type UsersReadUserMeResponses = {
-    /**
-     * Successful Response
-     */
-    200: UserPublic;
-};
-
-export type UsersReadUserMeResponse = UsersReadUserMeResponses[keyof UsersReadUserMeResponses];
-
-export type UsersUpdateUserMeData = {
-    body: UserUpdateMe;
-    path?: never;
-    query?: never;
-    url: '/api/v1/users/me';
-};
-
-export type UsersUpdateUserMeErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UsersUpdateUserMeError = UsersUpdateUserMeErrors[keyof UsersUpdateUserMeErrors];
-
-export type UsersUpdateUserMeResponses = {
-    /**
-     * Successful Response
-     */
-    200: UserPublic;
-};
-
-export type UsersUpdateUserMeResponse = UsersUpdateUserMeResponses[keyof UsersUpdateUserMeResponses];
-
-export type UsersUpdatePasswordMeData = {
-    body: UpdatePassword;
-    path?: never;
-    query?: never;
-    url: '/api/v1/users/me/password';
-};
-
-export type UsersUpdatePasswordMeErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UsersUpdatePasswordMeError = UsersUpdatePasswordMeErrors[keyof UsersUpdatePasswordMeErrors];
-
-export type UsersUpdatePasswordMeResponses = {
-    /**
-     * Successful Response
-     */
-    200: Message;
-};
-
-export type UsersUpdatePasswordMeResponse = UsersUpdatePasswordMeResponses[keyof UsersUpdatePasswordMeResponses];
-
-export type UsersDeleteUserData = {
-    body?: never;
-    path: {
-        /**
-         * User Id
-         */
-        user_id: string;
-    };
-    query?: never;
-    url: '/api/v1/users/{user_id}';
-};
-
-export type UsersDeleteUserErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UsersDeleteUserError = UsersDeleteUserErrors[keyof UsersDeleteUserErrors];
-
-export type UsersDeleteUserResponses = {
-    /**
-     * Successful Response
-     */
-    200: Message;
-};
-
-export type UsersDeleteUserResponse = UsersDeleteUserResponses[keyof UsersDeleteUserResponses];
-
-export type UsersReadUserByIdData = {
-    body?: never;
-    path: {
-        /**
-         * User Id
-         */
-        user_id: string;
-    };
-    query?: never;
-    url: '/api/v1/users/{user_id}';
-};
-
-export type UsersReadUserByIdErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UsersReadUserByIdError = UsersReadUserByIdErrors[keyof UsersReadUserByIdErrors];
-
-export type UsersReadUserByIdResponses = {
-    /**
-     * Successful Response
-     */
-    200: UserPublic;
-};
-
-export type UsersReadUserByIdResponse = UsersReadUserByIdResponses[keyof UsersReadUserByIdResponses];
-
-export type UsersUpdateUserData = {
-    body: UserUpdate;
-    path: {
-        /**
-         * User Id
-         */
-        user_id: string;
-    };
-    query?: never;
-    url: '/api/v1/users/{user_id}';
-};
-
-export type UsersUpdateUserErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UsersUpdateUserError = UsersUpdateUserErrors[keyof UsersUpdateUserErrors];
-
-export type UsersUpdateUserResponses = {
-    /**
-     * Successful Response
-     */
-    200: UserPublic;
-};
-
-export type UsersUpdateUserResponse = UsersUpdateUserResponses[keyof UsersUpdateUserResponses];
-
-export type UtilsHealthCheckData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/utils/health-check/';
-};
-
-export type UtilsHealthCheckResponses = {
-    /**
-     * Response Utils-Health Check
-     * Successful Response
-     */
-    200: boolean;
-};
-
-export type UtilsHealthCheckResponse = UtilsHealthCheckResponses[keyof UtilsHealthCheckResponses];
+export type LoginWhoamiResponse = LoginWhoamiResponses[keyof LoginWhoamiResponses];
 
 export type AdminGetDatabaseStatsData = {
     body?: never;
@@ -1282,22 +940,6 @@ export type RepositoriesReadRepositoryEventsDailyCountsResponses = {
 
 export type RepositoriesReadRepositoryEventsDailyCountsResponse = RepositoriesReadRepositoryEventsDailyCountsResponses[keyof RepositoriesReadRepositoryEventsDailyCountsResponses];
 
-export type TasksTriggerHealthCheckData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/tasks/health-check';
-};
-
-export type TasksTriggerHealthCheckResponses = {
-    /**
-     * Successful Response
-     */
-    200: TaskResponse;
-};
-
-export type TasksTriggerHealthCheckResponse = TasksTriggerHealthCheckResponses[keyof TasksTriggerHealthCheckResponses];
-
 export type TasksTriggerPeriodicTaskData = {
     body?: never;
     path: {
@@ -1373,6 +1015,25 @@ export type TasksGetWorkerStatusResponses = {
 };
 
 export type TasksGetWorkerStatusResponse = TasksGetWorkerStatusResponses[keyof TasksGetWorkerStatusResponses];
+
+export type HealthSystemHealthCheckData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/health';
+};
+
+export type HealthSystemHealthCheckResponses = {
+    /**
+     * Response Health-System Health Check
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type HealthSystemHealthCheckResponse = HealthSystemHealthCheckResponses[keyof HealthSystemHealthCheckResponses];
 
 export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});

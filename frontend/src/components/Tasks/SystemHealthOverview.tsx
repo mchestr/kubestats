@@ -1,5 +1,4 @@
 import {
-  Badge,
   Box,
   Card,
   HStack,
@@ -11,7 +10,6 @@ import {
 import {
   FiActivity,
   FiAlertCircle,
-  FiDatabase,
   FiList,
   FiUsers,
   FiZap,
@@ -33,24 +31,7 @@ export function SystemHealthOverview({
           <Text>System Health</Text>
         </HStack>
       </Heading>
-      <SimpleGrid columns={{ base: 2, md: 5 }} gap={4}>
-        {/* Redis Status */}
-        <Card.Root>
-          <Card.Body>
-            <VStack gap={2}>
-              <HStack>
-                <FiDatabase color="green" />
-                <Text fontSize="sm" fontWeight="medium">
-                  Redis
-                </Text>
-              </HStack>
-              <Badge colorPalette="green" size="sm">
-                {systemHealth.redis_status}
-              </Badge>
-            </VStack>
-          </Card.Body>
-        </Card.Root>
-
+      <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
         {/* Active Workers */}
         <Card.Root>
           <Card.Body>

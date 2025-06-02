@@ -17,11 +17,14 @@ import { AdminService } from "@/client"
 
 interface DatabaseStats {
   table_counts: {
-    users: number
     repositories: number
     repository_metrics: number
     kubernetes_resources: number
     kubernetes_resource_events: number
+  }
+  recent_stats: {
+    new_repositories_last_7_days: number
+    resource_changes_last_7_days: number
   }
   sync_run_stats: {
     total_sync_runs: number
@@ -30,7 +33,7 @@ interface DatabaseStats {
       event_count: number
       started_at: string | null
       completed_at: string | null
-      duration_seconds: number | null
+      duration_milliseconds: number | null
     }>
     event_type_breakdown: Record<string, number>
   }
@@ -78,7 +81,6 @@ function getRecentActiveRepositoriesQueryOptions() {
 
 function TableCountsGrid({ data }: { data: DatabaseStats["table_counts"] }) {
   const tableData = [
-    { label: "Users", count: data.users, color: "blue" },
     { label: "Repositories", count: data.repositories, color: "green" },
     {
       label: "Repository Metrics",
@@ -101,8 +103,8 @@ function TableCountsGrid({ data }: { data: DatabaseStats["table_counts"] }) {
     <Grid
       templateColumns={{
         base: "1fr",
-        md: "repeat(3, 1fr)",
-        lg: "repeat(5, 1fr)",
+        md: "repeat(2, 1fr)",
+        lg: "repeat(4, 1fr)",
       }}
       gap={4}
     >
@@ -128,12 +130,58 @@ function TableCountsGrid({ data }: { data: DatabaseStats["table_counts"] }) {
   )
 }
 
+function RecentStatsGrid({ data }: { data: DatabaseStats["recent_stats"] }) {
+  const statsData = [
+    {
+      label: "New Repositories (7 days)",
+      count: data.new_repositories_last_7_days,
+      color: "blue",
+    },
+    {
+      label: "Resource Changes (7 days)",
+      count: data.resource_changes_last_7_days,
+      color: "green",
+    },
+  ]
+
+  return (
+    <Grid
+      templateColumns={{
+        base: "1fr",
+        md: "repeat(2, 1fr)",
+      }}
+      gap={4}
+    >
+      {statsData.map((stat) => (
+        <Card.Root key={stat.label} p={4}>
+          <Card.Body>
+            <Stat.Root>
+              <Stat.Label fontSize="sm" color="gray.600">
+                {stat.label}
+              </Stat.Label>
+              <Stat.ValueText
+                fontSize="2xl"
+                fontWeight="bold"
+                color={`${stat.color}.500`}
+              >
+                {stat.count.toLocaleString()}
+              </Stat.ValueText>
+            </Stat.Root>
+          </Card.Body>
+        </Card.Root>
+      ))}
+    </Grid>
+  )
+}
+
 function SyncRunsTable({
   data,
 }: { data: DatabaseStats["sync_run_stats"]["recent_sync_runs"] }) {
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return "N/A"
-    if (seconds < 60) return `${Math.round(seconds)}s`
+  const formatDuration = (milliseconds: number | null) => {
+    if (!milliseconds) return "N/A"
+    if (milliseconds < 1000) return `${Math.round(milliseconds)}ms`
+    const seconds = milliseconds / 1000
+    if (seconds < 60) return `${Math.round(seconds * 10) / 10}s`
     if (seconds < 3600) return `${Math.round(seconds / 60)}m`
     return `${Math.round(seconds / 3600)}h`
   }
@@ -169,7 +217,7 @@ function SyncRunsTable({
             <Table.Cell>
               <Text fontSize="xs">{formatDate(run.completed_at)}</Text>
             </Table.Cell>
-            <Table.Cell>{formatDuration(run.duration_seconds)}</Table.Cell>
+            <Table.Cell>{formatDuration(run.duration_milliseconds)}</Table.Cell>
           </Table.Row>
         ))}
       </Table.Body>
@@ -364,6 +412,13 @@ export default function DatabaseStats() {
           {databaseStatsData.total_records.toLocaleString()}
         </Text>
       </VStack>
+
+      <Box w="full">
+        <Heading size="md" mb={4}>
+          Recent Activity
+        </Heading>
+        <RecentStatsGrid data={databaseStatsData.recent_stats} />
+      </Box>
 
       <Box w="full">
         <Heading size="md" mb={4}>

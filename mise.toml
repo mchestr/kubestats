@@ -84,6 +84,10 @@ run = "npm run lint"
 depends = ["lint-backend", "lint-frontend"]
 description = "Lint both backend and frontend code"
 
+[tasks.ci]
+depends = ["generate-client", "lint", "test-backend"]
+description = "Run CI tasks: generate client, lint, and test backend"
+
 [tasks.generate-client]
 description = "Generate API client from OpenAPI schema"
 dir = "{{ config_root }}/frontend"

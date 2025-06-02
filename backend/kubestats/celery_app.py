@@ -10,7 +10,6 @@ celery_app = Celery(
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
     include=[
-        "kubestats.tasks.basic_tasks",
         "kubestats.tasks.discover_repositories",
         "kubestats.tasks.sync_repositories",
         "kubestats.tasks.scan_repositories",

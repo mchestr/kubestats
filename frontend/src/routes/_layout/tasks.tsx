@@ -2,7 +2,6 @@ import { TasksService } from "@/client"
 import {
   ActiveTasksMonitor,
   PeriodicTasks,
-  QuickActions,
   type SystemHealth,
   SystemHealthOverview,
   TaskDetailsModal,
@@ -28,21 +27,6 @@ function Tasks() {
     useState<WorkerData | null>(null)
   const [workerStatsModalOpen, setWorkerStatsModalOpen] = useState(false)
   const [taskDetailsModalOpen, setTaskDetailsModalOpen] = useState(false)
-
-  // Health check mutation
-  const healthCheckMutation = useMutation({
-    mutationFn: () => TasksService.tasksTriggerHealthCheck(),
-    onSuccess: (data: any) => {
-      showSuccessToast(`Health check ${data.task_id} started`)
-      setSelectedTaskId(data.task_id)
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["workers"] })
-    },
-    onError: (err: any) => {
-      const errDetail = (err.body as any)?.detail
-      showErrorToast(`${errDetail}`)
-    },
-  })
 
   // Trigger periodic task mutation
   const triggerPeriodicTaskMutation = useMutation({
@@ -95,17 +79,8 @@ function Tasks() {
     refetchInterval: 5000, // Refetch every 5 seconds
   })
 
-  // Handler functions
-  const handleHealthCheck = () => {
-    healthCheckMutation.mutate()
-  }
-
   const handleTriggerPeriodicTask = (taskName: string) => {
     triggerPeriodicTaskMutation.mutate(taskName)
-  }
-
-  const handleRefreshAll = () => {
-    queryClient.invalidateQueries({ queryKey: ["workers"] })
   }
 
   const handleRefreshWorkers = () => {
@@ -165,7 +140,6 @@ function Tasks() {
 
   // Calculate system health metrics
   const systemHealth: SystemHealth = {
-    redis_status: "healthy", // Would come from backend
     active_workers: workerStatus?.active
       ? Object.keys(workerStatus.active).length
       : 0,
@@ -197,14 +171,6 @@ function Tasks() {
             <Text color="gray.500">
               Monitor workers, tasks, and system health
             </Text>
-          </Box>
-          <Box alignSelf={{ base: "center", md: "auto" }}>
-            <QuickActions
-              onHealthCheck={handleHealthCheck}
-              onRefreshAll={handleRefreshAll}
-              healthCheckLoading={healthCheckMutation.isPending}
-              workersLoading={workersLoading}
-            />
           </Box>
         </Flex>
 

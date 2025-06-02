@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 
+from kubestats.api.health import health_router
 from kubestats.api.main import api_router
 from kubestats.core.config import settings
 
@@ -27,3 +28,4 @@ if settings.all_cors_origins:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(health_router, tags=["health"])

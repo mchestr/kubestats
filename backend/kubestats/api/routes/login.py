@@ -35,8 +35,8 @@ def login_access_token(
     )
 
 
-@router.post("/login/test-token", response_model=UserPublic)
-def test_token(current_user: CurrentUser) -> Any:
+@router.get("/me", response_model=UserPublic)
+def whoami(current_user: CurrentUser) -> Any:
     """
     Test access token
     """

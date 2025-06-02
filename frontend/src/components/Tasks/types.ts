@@ -1,5 +1,4 @@
 export interface SystemHealth {
-  redis_status: string
   active_workers: number
   running_tasks: number
   queue_depth: number
