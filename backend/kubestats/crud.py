@@ -50,8 +50,9 @@ def get_user_by_email(*, session: Session, email: str) -> User | None:
 
 def authenticate(*, session: Session, email: str, password: str) -> User | None:
     db_user = get_user_by_email(session=session, email=email)
-    print(f"Authenticating user: {email}, found: {db_user is not None}")
     if not db_user:
+        return None
+    if not db_user.is_active:
         return None
     if not verify_password(password, db_user.hashed_password):
         return None
