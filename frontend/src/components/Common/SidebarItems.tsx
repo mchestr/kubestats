@@ -5,18 +5,12 @@ import {
   FiActivity,
   FiGitBranch,
   FiHome,
-  FiSettings,
-  FiUsers,
 } from "react-icons/fi"
 import type { IconType } from "react-icons/lib"
 
 import type { UserPublic } from "@/client"
 
-const items = [
-  { icon: FiHome, title: "Dashboard", path: "/" },
-  { icon: FiGitBranch, title: "Repositories", path: "/repositories" },
-  { icon: FiSettings, title: "User Settings", path: "/settings" },
-]
+const items = [{ icon: FiHome, title: "Dashboard", path: "/" }]
 
 interface SidebarItemsProps {
   onClose?: () => void
@@ -36,7 +30,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
     ? [
         ...items,
         { icon: FiActivity, title: "Tasks", path: "/tasks" },
-        { icon: FiUsers, title: "Admin", path: "/admin" },
+        { icon: FiGitBranch, title: "Repositories", path: "/repositories" },
       ]
     : items
 

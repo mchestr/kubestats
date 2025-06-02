@@ -1,25 +1,109 @@
-import { Box, Container, Text } from "@chakra-ui/react"
+import { Badge, Container, Heading, Table, VStack } from "@chakra-ui/react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { z } from "zod"
 
-import useAuth from "@/hooks/useAuth"
+import { type UserPublic, type UsersPublic, UsersService } from "@/client"
+import AddUser from "@/components/Admin/AddUser"
+import DatabaseStats from "@/components/Admin/DatabaseStats"
+import { UserActionsMenu } from "@/components/Common/UserActionsMenu"
+import PendingUsers from "@/components/Pending/PendingUsers"
 
-export const Route = createFileRoute("/_layout/")({
-  component: Dashboard,
+const usersSearchSchema = z.object({
+  page: z.number().catch(1),
 })
 
-function Dashboard() {
-  const { user: currentUser } = useAuth()
+const PER_PAGE = 5
+
+function getUsersQueryOptions({ page }: { page: number }) {
+  return {
+    queryFn: async () => {
+      const response = await UsersService.usersReadUsers({
+        query: { skip: (page - 1) * PER_PAGE, limit: PER_PAGE },
+      })
+      return response.data as unknown as UsersPublic
+    },
+    queryKey: ["users", { page }],
+  }
+}
+
+export const Route = createFileRoute("/_layout/")({
+  component: Admin,
+  validateSearch: (search) => usersSearchSchema.parse(search),
+})
+
+function UsersTable() {
+  const queryClient = useQueryClient()
+  const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
+  const { page } = Route.useSearch()
+
+  const { data, isLoading, isPlaceholderData } = useQuery({
+    ...getUsersQueryOptions({ page }),
+    placeholderData: (prevData) => prevData,
+  })
+
+  const users = data?.data.slice(0, PER_PAGE) ?? []
+
+  if (isLoading) {
+    return <PendingUsers />
+  }
 
   return (
     <>
-      <Container maxW="full">
-        <Box pt={12} m={4}>
-          <Text fontSize="2xl" truncate maxW="sm">
-            Hi, {currentUser?.full_name || currentUser?.email} 👋🏼
-          </Text>
-          <Text>Welcome back, nice to see you again!</Text>
-        </Box>
-      </Container>
+      <Table.Root size={{ base: "sm", md: "md" }}>
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeader w="sm">Full name</Table.ColumnHeader>
+            <Table.ColumnHeader w="sm">Email</Table.ColumnHeader>
+            <Table.ColumnHeader w="sm">Role</Table.ColumnHeader>
+            <Table.ColumnHeader w="sm">Status</Table.ColumnHeader>
+            <Table.ColumnHeader w="sm">Actions</Table.ColumnHeader>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {users?.map((user: UserPublic) => (
+            <Table.Row key={user.id} opacity={isPlaceholderData ? 0.5 : 1}>
+              <Table.Cell color={!user.full_name ? "gray" : "inherit"}>
+                {user.full_name || "N/A"}
+                {currentUser?.id === user.id && (
+                  <Badge ml="1" colorScheme="teal">
+                    You
+                  </Badge>
+                )}
+              </Table.Cell>
+              <Table.Cell truncate maxW="sm">
+                {user.email}
+              </Table.Cell>
+              <Table.Cell>
+                {user.is_superuser ? "Superuser" : "User"}
+              </Table.Cell>
+              <Table.Cell>{user.is_active ? "Active" : "Inactive"}</Table.Cell>
+              <Table.Cell>
+                <UserActionsMenu
+                  user={user}
+                  disabled={currentUser?.id === user.id}
+                />
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
     </>
+  )
+}
+
+function Admin() {
+  return (
+    <Container maxW="full">
+      <VStack gap={8} align="start" py={8}>
+        <DatabaseStats />
+
+        <VStack align="start" w="full" gap={4}>
+          <Heading size="lg">Users Management</Heading>
+          <AddUser />
+          <UsersTable />
+        </VStack>
+      </VStack>
+    </Container>
   )
 }

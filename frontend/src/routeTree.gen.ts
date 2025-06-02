@@ -15,9 +15,7 @@ import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as LayoutTasksImport } from './routes/_layout/tasks'
-import { Route as LayoutSettingsImport } from './routes/_layout/settings'
 import { Route as LayoutRepositoriesImport } from './routes/_layout/repositories'
-import { Route as LayoutAdminImport } from './routes/_layout/admin'
 import { Route as LayoutRepositoriesIndexImport } from './routes/_layout/repositories/index'
 import { Route as LayoutRepositoriesRepositoryIdImport } from './routes/_layout/repositories/$repositoryId'
 
@@ -46,21 +44,9 @@ const LayoutTasksRoute = LayoutTasksImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
-const LayoutSettingsRoute = LayoutSettingsImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => LayoutRoute,
-} as any)
-
 const LayoutRepositoriesRoute = LayoutRepositoriesImport.update({
   id: '/repositories',
   path: '/repositories',
-  getParentRoute: () => LayoutRoute,
-} as any)
-
-const LayoutAdminRoute = LayoutAdminImport.update({
-  id: '/admin',
-  path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -95,25 +81,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
-    '/_layout/admin': {
-      id: '/_layout/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof LayoutAdminImport
-      parentRoute: typeof LayoutImport
-    }
     '/_layout/repositories': {
       id: '/_layout/repositories'
       path: '/repositories'
       fullPath: '/repositories'
       preLoaderRoute: typeof LayoutRepositoriesImport
-      parentRoute: typeof LayoutImport
-    }
-    '/_layout/settings': {
-      id: '/_layout/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof LayoutSettingsImport
       parentRoute: typeof LayoutImport
     }
     '/_layout/tasks': {
@@ -163,17 +135,13 @@ const LayoutRepositoriesRouteWithChildren =
   LayoutRepositoriesRoute._addFileChildren(LayoutRepositoriesRouteChildren)
 
 interface LayoutRouteChildren {
-  LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutRepositoriesRoute: typeof LayoutRepositoriesRouteWithChildren
-  LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutTasksRoute: typeof LayoutTasksRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
-  LayoutAdminRoute: LayoutAdminRoute,
   LayoutRepositoriesRoute: LayoutRepositoriesRouteWithChildren,
-  LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutTasksRoute: LayoutTasksRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
@@ -184,9 +152,7 @@ const LayoutRouteWithChildren =
 export interface FileRoutesByFullPath {
   '': typeof LayoutRouteWithChildren
   '/login': typeof LoginRoute
-  '/admin': typeof LayoutAdminRoute
   '/repositories': typeof LayoutRepositoriesRouteWithChildren
-  '/settings': typeof LayoutSettingsRoute
   '/tasks': typeof LayoutTasksRoute
   '/': typeof LayoutIndexRoute
   '/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
@@ -195,8 +161,6 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
-  '/admin': typeof LayoutAdminRoute
-  '/settings': typeof LayoutSettingsRoute
   '/tasks': typeof LayoutTasksRoute
   '/': typeof LayoutIndexRoute
   '/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
@@ -207,9 +171,7 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/_layout': typeof LayoutRouteWithChildren
   '/login': typeof LoginRoute
-  '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/repositories': typeof LayoutRepositoriesRouteWithChildren
-  '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/tasks': typeof LayoutTasksRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
@@ -221,9 +183,7 @@ export interface FileRouteTypes {
   fullPaths:
     | ''
     | '/login'
-    | '/admin'
     | '/repositories'
-    | '/settings'
     | '/tasks'
     | '/'
     | '/repositories/$repositoryId'
@@ -231,8 +191,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
-    | '/admin'
-    | '/settings'
     | '/tasks'
     | '/'
     | '/repositories/$repositoryId'
@@ -241,9 +199,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_layout'
     | '/login'
-    | '/_layout/admin'
     | '/_layout/repositories'
-    | '/_layout/settings'
     | '/_layout/tasks'
     | '/_layout/'
     | '/_layout/repositories/$repositoryId'
@@ -278,19 +234,13 @@ export const routeTree = rootRoute
     "/_layout": {
       "filePath": "_layout.tsx",
       "children": [
-        "/_layout/admin",
         "/_layout/repositories",
-        "/_layout/settings",
         "/_layout/tasks",
         "/_layout/"
       ]
     },
     "/login": {
       "filePath": "login.tsx"
-    },
-    "/_layout/admin": {
-      "filePath": "_layout/admin.tsx",
-      "parent": "/_layout"
     },
     "/_layout/repositories": {
       "filePath": "_layout/repositories.tsx",
@@ -299,10 +249,6 @@ export const routeTree = rootRoute
         "/_layout/repositories/$repositoryId",
         "/_layout/repositories/"
       ]
-    },
-    "/_layout/settings": {
-      "filePath": "_layout/settings.tsx",
-      "parent": "/_layout"
     },
     "/_layout/tasks": {
       "filePath": "_layout/tasks.tsx",

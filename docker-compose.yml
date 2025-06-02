@@ -77,7 +77,7 @@ services:
       context: ./backend
 
 volumes:
-  repos:
+  app-db-data:
 
 networks:
   public:
