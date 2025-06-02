@@ -158,7 +158,7 @@ def discover_repositories() -> dict[str, Any]:
         to_sync = []
         new_repos_count = 0
         for repo_data in all_repos.values():
-            if 'mchestr' not in str(repo_data):
+            if "mchestr" not in str(repo_data):
                 continue
             try:
                 parsed_repo_data = parse_github_repo(repo_data)

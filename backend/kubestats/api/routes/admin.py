@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends
-from sqlmodel import col, func, select
+from sqlmodel import func, select
 
 from kubestats.api.deps import SessionDep, get_current_active_superuser
 from kubestats.models import (
@@ -69,15 +69,22 @@ def get_database_stats(session: SessionDep) -> Any:
         .where(KubernetesResourceEvent.event_timestamp >= seven_days_ago)
     ).one()
 
-    # Get sync run statistics
+    # Get sync run statistics with repository names
     sync_runs_query = (
-        select(
+        select(  # type: ignore[call-overload]
             KubernetesResourceEvent.sync_run_id,
             func.count().label("event_count"),
             func.min(KubernetesResourceEvent.event_timestamp).label("started_at"),
             func.max(KubernetesResourceEvent.event_timestamp).label("completed_at"),
+            Repository.name.label("repository_name"),  # type: ignore[attr-defined]
+            Repository.full_name.label("repository_full_name"),  # type: ignore[attr-defined]
         )
-        .group_by(col(KubernetesResourceEvent.sync_run_id))
+        .join(Repository, KubernetesResourceEvent.repository_id == Repository.id)
+        .group_by(
+            KubernetesResourceEvent.sync_run_id,
+            Repository.name,
+            Repository.full_name,
+        )
         .order_by(func.max(KubernetesResourceEvent.event_timestamp).desc())
         .limit(10)
     )
@@ -122,7 +129,8 @@ def get_database_stats(session: SessionDep) -> Any:
             "total_sync_runs": total_sync_runs,
             "recent_sync_runs": [
                 {
-                    "sync_run_id": str(run[0]),  # sync_run_id
+                    "repository_name": run[4],  # repository_name
+                    "repository_full_name": run[5],  # repository_full_name
                     "event_count": run[1],  # event_count
                     "started_at": run[2].isoformat() if run[2] else None,  # started_at
                     "completed_at": run[3].isoformat()
@@ -161,13 +169,13 @@ def get_recent_active_repositories(session: SessionDep) -> Any:
     # Query to get repositories with the most resource events in the last 3 days
     recent_activity_query = (
         select(  # type: ignore[call-overload]
-            col(KubernetesResourceEvent.repository_id),
+            KubernetesResourceEvent.repository_id,
             func.count().label("event_count"),
             func.max(KubernetesResourceEvent.event_timestamp).label("last_activity"),
-            col(Repository.name),
-            col(Repository.full_name),
-            col(Repository.owner),
-            col(Repository.description),
+            Repository.name,
+            Repository.full_name,
+            Repository.owner,
+            Repository.description,
         )
         .join(Repository, KubernetesResourceEvent.repository_id == Repository.id)
         .where(KubernetesResourceEvent.event_timestamp >= three_days_ago)

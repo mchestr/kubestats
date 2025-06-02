@@ -9,74 +9,75 @@ import {
   Table,
   Text,
   VStack,
-} from "@chakra-ui/react";
-import { useQuery } from "@tanstack/react-query";
-import { Link as TanstackLink } from "@tanstack/react-router";
+} from "@chakra-ui/react"
+import { useQuery } from "@tanstack/react-query"
+import { Link as TanstackLink } from "@tanstack/react-router"
 
-import { AdminService } from "@/client";
+import { AdminService } from "@/client"
 
 interface DatabaseStats {
   table_counts: {
-    repositories: number;
-    repository_metrics: number;
-    kubernetes_resources: number;
-    kubernetes_resource_events: number;
-  };
+    repositories: number
+    repository_metrics: number
+    kubernetes_resources: number
+    kubernetes_resource_events: number
+  }
   recent_stats: {
-    new_repositories_last_7_days: number;
-    resource_changes_last_7_days: number;
-  };
+    new_repositories_last_7_days: number
+    resource_changes_last_7_days: number
+  }
   sync_run_stats: {
-    total_sync_runs: number;
+    total_sync_runs: number
     recent_sync_runs: Array<{
-      sync_run_id: string;
-      event_count: number;
-      started_at: string | null;
-      completed_at: string | null;
-      duration_milliseconds: number | null;
-    }>;
-    event_type_breakdown: Record<string, number>;
-  };
-  total_records: number;
+      repository_name: string
+      repository_full_name: string
+      event_count: number
+      started_at: string | null
+      completed_at: string | null
+      duration_milliseconds: number | null
+    }>
+    event_type_breakdown: Record<string, number>
+  }
+  total_records: number
 }
 
 interface RecentActiveRepository {
-  repository_id: string;
-  name: string;
-  full_name: string;
-  owner: string;
-  description: string | null;
-  total_events: number;
-  last_activity: string | null;
-  event_breakdown: Record<string, number>;
+  repository_id: string
+  name: string
+  full_name: string
+  owner: string
+  description: string | null
+  total_events: number
+  last_activity: string | null
+  event_breakdown: Record<string, number>
 }
 
 interface RecentActiveRepositories {
-  recent_active_repositories: RecentActiveRepository[];
-  period_days: number;
-  cutoff_date: string;
+  recent_active_repositories: RecentActiveRepository[]
+  period_days: number
+  cutoff_date: string
 }
 
 function getDatabaseStatsQueryOptions() {
   return {
     queryFn: async () => {
-      const response = await AdminService.adminGetDatabaseStats();
-      return response.data as unknown as DatabaseStats;
+      const response = await AdminService.adminGetDatabaseStats()
+      return response.data as unknown as DatabaseStats
     },
     queryKey: ["admin", "database-stats"],
     refetchInterval: 30000, // Refresh every 30 seconds
-  };
+  }
 }
 
 function getRecentActiveRepositoriesQueryOptions() {
   return {
     queryFn: async () => {
-      const response = await AdminService.adminGetRecentActiveRepositories();
-      return response.data as unknown as RecentActiveRepositories;
+      const response = await AdminService.adminGetRecentActiveRepositories()
+      return response.data as unknown as RecentActiveRepositories
     },
     queryKey: ["admin", "recent-active-repositories"],
     refetchInterval: 30000, // Refresh every 30 seconds
-  };
+  }
 }
 
 function TableCountsGrid({ data }: { data: DatabaseStats["table_counts"] }) {
@@ -97,7 +98,7 @@ function TableCountsGrid({ data }: { data: DatabaseStats["table_counts"] }) {
       count: data.kubernetes_resource_events,
       color: "red",
     },
-  ];
+  ]
 
   return (
     <Grid
@@ -127,7 +128,7 @@ function TableCountsGrid({ data }: { data: DatabaseStats["table_counts"] }) {
         </Card.Root>
       ))}
     </Grid>
-  );
+  )
 }
 
 function RecentStatsGrid({ data }: { data: DatabaseStats["recent_stats"] }) {
@@ -146,7 +147,7 @@ function RecentStatsGrid({ data }: { data: DatabaseStats["recent_stats"] }) {
       color: "green",
       icon: "🔄",
     },
-  ];
+  ]
 
   return (
     <Grid
@@ -177,33 +178,33 @@ function RecentStatsGrid({ data }: { data: DatabaseStats["recent_stats"] }) {
         </Card.Root>
       ))}
     </Grid>
-  );
+  )
 }
 
 function SyncRunsTable({
   data,
 }: {
-  data: DatabaseStats["sync_run_stats"]["recent_sync_runs"];
+  data: DatabaseStats["sync_run_stats"]["recent_sync_runs"]
 }) {
   const formatDuration = (milliseconds: number | null) => {
-    if (!milliseconds) return "N/A";
-    if (milliseconds < 1000) return `${Math.round(milliseconds)}ms`;
-    const seconds = milliseconds / 1000;
-    if (seconds < 60) return `${Math.round(seconds * 10) / 10}s`;
-    if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
-    return `${Math.round(seconds / 3600)}h`;
-  };
+    if (!milliseconds) return "N/A"
+    if (milliseconds < 1000) return `${Math.round(milliseconds)}ms`
+    const seconds = milliseconds / 1000
+    if (seconds < 60) return `${Math.round(seconds * 10) / 10}s`
+    if (seconds < 3600) return `${Math.round(seconds / 60)}m`
+    return `${Math.round(seconds / 3600)}h`
+  }
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString();
-  };
+    if (!dateString) return "N/A"
+    return new Date(dateString).toLocaleString()
+  }
 
   return (
     <Table.Root size="sm">
       <Table.Header>
         <Table.Row>
-          <Table.ColumnHeader>Sync Run ID</Table.ColumnHeader>
+          <Table.ColumnHeader>Repository</Table.ColumnHeader>
           <Table.ColumnHeader>Events</Table.ColumnHeader>
           <Table.ColumnHeader>Started</Table.ColumnHeader>
           <Table.ColumnHeader>Completed</Table.ColumnHeader>
@@ -212,10 +213,14 @@ function SyncRunsTable({
       </Table.Header>
       <Table.Body>
         {data.map((run) => (
-          <Table.Row key={run.sync_run_id}>
+          <Table.Row key={run.repository_full_name}>
             <Table.Cell>
-              <Text fontFamily="mono" fontSize="xs">
-                {run.sync_run_id.substring(0, 8)}...
+              <Text
+                fontFamily="mono"
+                fontSize="xs"
+                title={run.repository_full_name}
+              >
+                {run.repository_full_name}
               </Text>
             </Table.Cell>
             <Table.Cell>{run.event_count.toLocaleString()}</Table.Cell>
@@ -230,7 +235,7 @@ function SyncRunsTable({
         ))}
       </Table.Body>
     </Table.Root>
-  );
+  )
 }
 
 function EventTypeBreakdown({ data }: { data: Record<string, number> }) {
@@ -240,23 +245,23 @@ function EventTypeBreakdown({ data }: { data: Record<string, number> }) {
     percentage:
       Object.values(data).reduce((sum, c) => sum + c, 0) > 0
         ? Math.round(
-            (count / Object.values(data).reduce((sum, c) => sum + c, 0)) * 100
+            (count / Object.values(data).reduce((sum, c) => sum + c, 0)) * 100,
           )
         : 0,
-  }));
+  }))
 
   const getEventTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
       case "created":
-        return "green";
+        return "green"
       case "modified":
-        return "orange";
+        return "orange"
       case "deleted":
-        return "red";
+        return "red"
       default:
-        return "gray";
+        return "gray"
     }
-  };
+  }
 
   return (
     <Grid
@@ -300,31 +305,31 @@ function EventTypeBreakdown({ data }: { data: Record<string, number> }) {
         </Card.Root>
       ))}
     </Grid>
-  );
+  )
 }
 
 function RecentActiveRepositoriesTable({
   data,
 }: {
-  data: RecentActiveRepository[];
+  data: RecentActiveRepository[]
 }) {
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString();
-  };
+    if (!dateString) return "N/A"
+    return new Date(dateString).toLocaleString()
+  }
 
   const getEventTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
       case "created":
-        return "green";
+        return "green"
       case "modified":
-        return "orange";
+        return "orange"
       case "deleted":
-        return "red";
+        return "red"
       default:
-        return "gray";
+        return "gray"
     }
-  };
+  }
 
   return (
     <Table.Root size="sm">
@@ -393,7 +398,7 @@ function RecentActiveRepositoriesTable({
         ))}
       </Table.Body>
     </Table.Root>
-  );
+  )
 }
 
 export default function DatabaseStats() {
@@ -401,13 +406,13 @@ export default function DatabaseStats() {
     data: databaseStatsData,
     isLoading: isLoadingDatabaseStats,
     error: errorDatabaseStats,
-  } = useQuery(getDatabaseStatsQueryOptions());
+  } = useQuery(getDatabaseStatsQueryOptions())
 
   const {
     data: recentActiveRepositoriesData,
     isLoading: isLoadingRecentActiveRepositories,
     error: errorRecentActiveRepositories,
-  } = useQuery(getRecentActiveRepositoriesQueryOptions());
+  } = useQuery(getRecentActiveRepositoriesQueryOptions())
 
   if (isLoadingDatabaseStats || isLoadingRecentActiveRepositories) {
     return (
@@ -415,7 +420,7 @@ export default function DatabaseStats() {
         <Heading size="lg">Database Statistics</Heading>
         <Text>Loading database statistics...</Text>
       </VStack>
-    );
+    )
   }
 
   if (errorDatabaseStats || errorRecentActiveRepositories) {
@@ -424,11 +429,11 @@ export default function DatabaseStats() {
         <Heading size="lg">Database Statistics</Heading>
         <Text color="red.500">Failed to load database statistics</Text>
       </VStack>
-    );
+    )
   }
 
   if (!databaseStatsData || !recentActiveRepositoriesData) {
-    return null;
+    return null
   }
 
   return (
@@ -499,5 +504,5 @@ export default function DatabaseStats() {
         </Card.Root>
       </Box>
     </VStack>
-  );
+  )
 }
