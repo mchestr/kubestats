@@ -25,8 +25,8 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   const finalItems: Item[] = currentUser?.is_superuser
     ? [
         ...items,
-        { icon: FiActivity, title: "Tasks", path: "/tasks" },
         { icon: FiGitBranch, title: "Repositories", path: "/repositories" },
+        { icon: FiActivity, title: "Tasks", path: "/tasks" },
       ]
     : items
 
