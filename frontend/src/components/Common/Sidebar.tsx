@@ -6,6 +6,7 @@ import { FiLogOut } from "react-icons/fi"
 
 import type { UserPublic } from "@/client"
 import useAuth from "@/hooks/useAuth"
+import { ColorModeButton } from "../ui/color-mode"
 import {
   DrawerBackdrop,
   DrawerBody,
@@ -62,6 +63,10 @@ const Sidebar = () => {
                 >
                   <FiLogOut />
                   <Text>Log Out</Text>
+                </Flex>
+                <Flex alignItems="center" gap={4} px={4} py={2}>
+                  <ColorModeButton />
+                  <Text>Toggle Theme</Text>
                 </Flex>
               </Box>
               {currentUser?.email && (
