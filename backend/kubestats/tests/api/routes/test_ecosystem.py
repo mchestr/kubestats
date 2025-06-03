@@ -3,6 +3,7 @@ Tests for ecosystem stats API routes.
 """
 
 from datetime import date, datetime, timedelta
+from unittest.mock import Mock, patch
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
@@ -462,10 +463,18 @@ def test_trigger_ecosystem_stats_not_superuser(
     assert response.status_code == 403
 
 
+@patch("kubestats.tasks.aggregate_ecosystem_stats.aggregate_daily_ecosystem_stats")
 def test_trigger_ecosystem_stats_superuser(
-    client: TestClient, superuser_token_headers: dict[str, str]
+    mock_aggregate_task: Mock,
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
 ) -> None:
     """Test triggering ecosystem stats aggregation as superuser."""
+    # Mock the Celery task
+    mock_task = Mock()
+    mock_task.id = "test-task-id"
+    mock_aggregate_task.delay.return_value = mock_task
+
     response = client.post(
         f"{settings.API_V1_STR}/ecosystem/trigger-aggregation",
         headers=superuser_token_headers,
@@ -474,13 +483,24 @@ def test_trigger_ecosystem_stats_superuser(
     data = response.json()
     assert data["status"] == "success"
     assert "Ecosystem aggregation task triggered successfully" in data["message"]
-    assert "task_id" in data
+    assert data["task_id"] == "test-task-id"
+
+    # Verify the task was called
+    mock_aggregate_task.delay.assert_called_once()
 
 
+@patch("kubestats.tasks.aggregate_ecosystem_stats.aggregate_daily_ecosystem_stats")
 def test_trigger_ecosystem_stats_invalid_date(
-    client: TestClient, superuser_token_headers: dict[str, str]
+    mock_aggregate_task: Mock,
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
 ) -> None:
     """Test triggering ecosystem stats aggregation with invalid date parameter."""
+    # Mock the Celery task
+    mock_task = Mock()
+    mock_task.id = "test-task-id"
+    mock_aggregate_task.delay.return_value = mock_task
+
     response = client.post(
         f"{settings.API_V1_STR}/ecosystem/trigger-aggregation?target_date=invalid-date",
         headers=superuser_token_headers,
@@ -489,7 +509,10 @@ def test_trigger_ecosystem_stats_invalid_date(
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "success"
-    assert "task_id" in data
+    assert data["task_id"] == "test-task-id"
+
+    # Verify the task was called with the invalid date
+    mock_aggregate_task.delay.assert_called_once_with("invalid-date")
 
 
 def test_get_ecosystem_trends_empty_database(client: TestClient) -> None:
