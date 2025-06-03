@@ -1,7 +1,13 @@
 import { Box, Flex, Stack, Text } from "@chakra-ui/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Link as RouterLink, useRouterState } from "@tanstack/react-router"
-import { FiActivity, FiGitBranch, FiHome, FiTrendingUp } from "react-icons/fi"
+import {
+  FiActivity,
+  FiDatabase,
+  FiGitBranch,
+  FiHome,
+  FiTrendingUp,
+} from "react-icons/fi"
 import type { IconType } from "react-icons/lib"
 
 import type { UserPublic } from "@/client"
@@ -9,6 +15,7 @@ import type { UserPublic } from "@/client"
 const items = [
   { icon: FiHome, title: "Dashboard", path: "/" },
   { icon: FiTrendingUp, title: "Ecosystem", path: "/ecosystem" },
+  { icon: FiDatabase, title: "Resources", path: "/resources" },
 ]
 
 interface SidebarItemsProps {

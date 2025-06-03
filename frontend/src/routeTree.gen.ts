@@ -15,6 +15,7 @@ import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as LayoutTasksImport } from './routes/_layout/tasks'
+import { Route as LayoutResourcesImport } from './routes/_layout/resources'
 import { Route as LayoutRepositoriesImport } from './routes/_layout/repositories'
 import { Route as LayoutEcosystemImport } from './routes/_layout/ecosystem'
 import { Route as LayoutRepositoriesIndexImport } from './routes/_layout/repositories/index'
@@ -42,6 +43,12 @@ const LayoutIndexRoute = LayoutIndexImport.update({
 const LayoutTasksRoute = LayoutTasksImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutResourcesRoute = LayoutResourcesImport.update({
+  id: '/resources',
+  path: '/resources',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -102,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutRepositoriesImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/resources': {
+      id: '/_layout/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof LayoutResourcesImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/tasks': {
       id: '/_layout/tasks'
       path: '/tasks'
@@ -151,6 +165,7 @@ const LayoutRepositoriesRouteWithChildren =
 interface LayoutRouteChildren {
   LayoutEcosystemRoute: typeof LayoutEcosystemRoute
   LayoutRepositoriesRoute: typeof LayoutRepositoriesRouteWithChildren
+  LayoutResourcesRoute: typeof LayoutResourcesRoute
   LayoutTasksRoute: typeof LayoutTasksRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
@@ -158,6 +173,7 @@ interface LayoutRouteChildren {
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutEcosystemRoute: LayoutEcosystemRoute,
   LayoutRepositoriesRoute: LayoutRepositoriesRouteWithChildren,
+  LayoutResourcesRoute: LayoutResourcesRoute,
   LayoutTasksRoute: LayoutTasksRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
@@ -170,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/ecosystem': typeof LayoutEcosystemRoute
   '/repositories': typeof LayoutRepositoriesRouteWithChildren
+  '/resources': typeof LayoutResourcesRoute
   '/tasks': typeof LayoutTasksRoute
   '/': typeof LayoutIndexRoute
   '/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
@@ -179,6 +196,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/ecosystem': typeof LayoutEcosystemRoute
+  '/resources': typeof LayoutResourcesRoute
   '/tasks': typeof LayoutTasksRoute
   '/': typeof LayoutIndexRoute
   '/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
@@ -191,6 +209,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_layout/ecosystem': typeof LayoutEcosystemRoute
   '/_layout/repositories': typeof LayoutRepositoriesRouteWithChildren
+  '/_layout/resources': typeof LayoutResourcesRoute
   '/_layout/tasks': typeof LayoutTasksRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
@@ -204,6 +223,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/ecosystem'
     | '/repositories'
+    | '/resources'
     | '/tasks'
     | '/'
     | '/repositories/$repositoryId'
@@ -212,6 +232,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/ecosystem'
+    | '/resources'
     | '/tasks'
     | '/'
     | '/repositories/$repositoryId'
@@ -222,6 +243,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_layout/ecosystem'
     | '/_layout/repositories'
+    | '/_layout/resources'
     | '/_layout/tasks'
     | '/_layout/'
     | '/_layout/repositories/$repositoryId'
@@ -258,6 +280,7 @@ export const routeTree = rootRoute
       "children": [
         "/_layout/ecosystem",
         "/_layout/repositories",
+        "/_layout/resources",
         "/_layout/tasks",
         "/_layout/"
       ]
@@ -276,6 +299,10 @@ export const routeTree = rootRoute
         "/_layout/repositories/$repositoryId",
         "/_layout/repositories/"
       ]
+    },
+    "/_layout/resources": {
+      "filePath": "_layout/resources.tsx",
+      "parent": "/_layout"
     },
     "/_layout/tasks": {
       "filePath": "_layout/tasks.tsx",
