@@ -16,6 +16,7 @@ import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as LayoutTasksImport } from './routes/_layout/tasks'
 import { Route as LayoutRepositoriesImport } from './routes/_layout/repositories'
+import { Route as LayoutEcosystemImport } from './routes/_layout/ecosystem'
 import { Route as LayoutRepositoriesIndexImport } from './routes/_layout/repositories/index'
 import { Route as LayoutRepositoriesRepositoryIdImport } from './routes/_layout/repositories/$repositoryId'
 
@@ -50,6 +51,12 @@ const LayoutRepositoriesRoute = LayoutRepositoriesImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutEcosystemRoute = LayoutEcosystemImport.update({
+  id: '/ecosystem',
+  path: '/ecosystem',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 const LayoutRepositoriesIndexRoute = LayoutRepositoriesIndexImport.update({
   id: '/',
   path: '/',
@@ -80,6 +87,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/login'
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
+    }
+    '/_layout/ecosystem': {
+      id: '/_layout/ecosystem'
+      path: '/ecosystem'
+      fullPath: '/ecosystem'
+      preLoaderRoute: typeof LayoutEcosystemImport
+      parentRoute: typeof LayoutImport
     }
     '/_layout/repositories': {
       id: '/_layout/repositories'
@@ -135,12 +149,14 @@ const LayoutRepositoriesRouteWithChildren =
   LayoutRepositoriesRoute._addFileChildren(LayoutRepositoriesRouteChildren)
 
 interface LayoutRouteChildren {
+  LayoutEcosystemRoute: typeof LayoutEcosystemRoute
   LayoutRepositoriesRoute: typeof LayoutRepositoriesRouteWithChildren
   LayoutTasksRoute: typeof LayoutTasksRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
+  LayoutEcosystemRoute: LayoutEcosystemRoute,
   LayoutRepositoriesRoute: LayoutRepositoriesRouteWithChildren,
   LayoutTasksRoute: LayoutTasksRoute,
   LayoutIndexRoute: LayoutIndexRoute,
@@ -152,6 +168,7 @@ const LayoutRouteWithChildren =
 export interface FileRoutesByFullPath {
   '': typeof LayoutRouteWithChildren
   '/login': typeof LoginRoute
+  '/ecosystem': typeof LayoutEcosystemRoute
   '/repositories': typeof LayoutRepositoriesRouteWithChildren
   '/tasks': typeof LayoutTasksRoute
   '/': typeof LayoutIndexRoute
@@ -161,6 +178,7 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/ecosystem': typeof LayoutEcosystemRoute
   '/tasks': typeof LayoutTasksRoute
   '/': typeof LayoutIndexRoute
   '/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
@@ -171,6 +189,7 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/_layout': typeof LayoutRouteWithChildren
   '/login': typeof LoginRoute
+  '/_layout/ecosystem': typeof LayoutEcosystemRoute
   '/_layout/repositories': typeof LayoutRepositoriesRouteWithChildren
   '/_layout/tasks': typeof LayoutTasksRoute
   '/_layout/': typeof LayoutIndexRoute
@@ -183,6 +202,7 @@ export interface FileRouteTypes {
   fullPaths:
     | ''
     | '/login'
+    | '/ecosystem'
     | '/repositories'
     | '/tasks'
     | '/'
@@ -191,6 +211,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/ecosystem'
     | '/tasks'
     | '/'
     | '/repositories/$repositoryId'
@@ -199,6 +220,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_layout'
     | '/login'
+    | '/_layout/ecosystem'
     | '/_layout/repositories'
     | '/_layout/tasks'
     | '/_layout/'
@@ -234,6 +256,7 @@ export const routeTree = rootRoute
     "/_layout": {
       "filePath": "_layout.tsx",
       "children": [
+        "/_layout/ecosystem",
         "/_layout/repositories",
         "/_layout/tasks",
         "/_layout/"
@@ -241,6 +264,10 @@ export const routeTree = rootRoute
     },
     "/login": {
       "filePath": "login.tsx"
+    },
+    "/_layout/ecosystem": {
+      "filePath": "_layout/ecosystem.tsx",
+      "parent": "/_layout"
     },
     "/_layout/repositories": {
       "filePath": "_layout/repositories.tsx",
