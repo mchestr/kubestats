@@ -6,7 +6,7 @@ from datetime import date, datetime, timezone
 from unittest.mock import Mock, patch
 
 import pytest
-from sqlalchemy import delete, text
+from sqlalchemy import delete
 from sqlmodel import Session, select
 
 from kubestats.models import EcosystemStats, KubernetesResource, Repository
@@ -20,8 +20,8 @@ from kubestats.tasks.aggregate_ecosystem_stats import (
 
 
 def _clean_db(db: Session) -> None:
-    db.exec(delete(KubernetesResource))
-    db.exec(delete(Repository))
+    db.execute(delete(KubernetesResource))
+    db.execute(delete(Repository))
     db.commit()
 
 

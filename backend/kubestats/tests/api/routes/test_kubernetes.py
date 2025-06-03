@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi.testclient import TestClient
-from sqlalchemy import text
+from sqlalchemy import delete
 from sqlmodel import Session
 
 from kubestats.core.config import settings
@@ -12,7 +12,7 @@ from kubestats.models import KubernetesResource, Repository
 
 def _clean_kubernetes_resources(db: Session) -> None:
     try:
-        db.exec(text("DELETE FROM kubernetesresource"))
+        db.execute(delete(KubernetesResource))
         db.commit()
     except Exception:
         db.rollback()

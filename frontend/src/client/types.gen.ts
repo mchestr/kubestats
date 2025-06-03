@@ -1366,10 +1366,7 @@ export type EcosystemTriggerEcosystemAggregationResponses = {
 export type EcosystemTriggerEcosystemAggregationResponse = EcosystemTriggerEcosystemAggregationResponses[keyof EcosystemTriggerEcosystemAggregationResponses];
 
 export type KubernetesListKubernetesResourcesData = {
-    /**
-     * Status
-     */
-    body?: string | Array<string> | null;
+    body?: never;
     path?: never;
     query?: {
         /**
@@ -1396,6 +1393,10 @@ export type KubernetesListKubernetesResourcesData = {
          * Namespace
          */
         namespace?: string | null;
+        /**
+         * Status
+         */
+        status?: string | null;
     };
     url: '/api/v1/kubernetes/resources';
 };

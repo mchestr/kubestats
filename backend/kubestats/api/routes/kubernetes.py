@@ -1,5 +1,5 @@
-from typing import Annotated
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
@@ -45,7 +45,7 @@ def list_kubernetes_resources(
     if namespace:
         query = query.where(KubernetesResource.namespace == namespace)
     if status:
-        query = query.where(KubernetesResource.status.in_(status.split(",")))
+        query = query.where(KubernetesResource.status.in_(status.split(",")))  # type: ignore[attr-defined]
 
     # Get total count
     total = db.exec(select(func.count()).select_from(query.subquery())).first()

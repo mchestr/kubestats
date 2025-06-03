@@ -394,11 +394,7 @@ export class KubernetesService {
     public static kubernetesListKubernetesResources<ThrowOnError extends boolean = false>(options?: Options<KubernetesListKubernetesResourcesData, ThrowOnError>) {
         return (options?.client ?? _heyApiClient).get<KubernetesListKubernetesResourcesResponses, KubernetesListKubernetesResourcesErrors, ThrowOnError>({
             url: '/api/v1/kubernetes/resources',
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options?.headers
-            }
+            ...options
         });
     }
     
