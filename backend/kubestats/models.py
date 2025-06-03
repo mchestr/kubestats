@@ -366,3 +366,112 @@ class EventDailyCount(SQLModel):
 
 class EventDailyCountsPublic(SQLModel):
     data: list[EventDailyCount]
+
+
+# Daily Ecosystem Statistics for Trend Analysis
+class EcosystemStats(SQLModel, table=True):
+    """Daily aggregated statistics across all repositories for trend analysis"""
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    date: datetime = Field(index=True)  # Date of the snapshot (start of day)
+
+    # Repository statistics
+    total_repositories: int = Field(default=0)
+    active_repositories: int = Field(default=0)  # Repositories with recent activity
+    repositories_with_resources: int = Field(default=0)
+
+    # Resource statistics
+    total_resources: int = Field(default=0)
+    active_resources: int = Field(default=0)  # Non-deleted resources
+    total_resource_events: int = Field(default=0)
+
+    # Resource breakdown by type
+    resource_type_breakdown: dict[str, int] = Field(
+        default_factory=dict, sa_column=Column(JSON)
+    )  # {kind: count}
+
+    # Popular charts/resources
+    popular_helm_charts: dict[str, int] = Field(
+        default_factory=dict, sa_column=Column(JSON)
+    )  # {chart_name: count}
+
+    # Activity metrics
+    daily_created_resources: int = Field(default=0)
+    daily_modified_resources: int = Field(default=0)
+    daily_deleted_resources: int = Field(default=0)
+
+    # Repository metrics aggregates
+    total_stars: int = Field(default=0)
+    total_forks: int = Field(default=0)
+    total_watchers: int = Field(default=0)
+    total_open_issues: int = Field(default=0)
+
+    # Language distribution
+    language_breakdown: dict[str, int] = Field(
+        default_factory=dict, sa_column=Column(JSON)
+    )  # {language: count}
+
+    # Top topics
+    popular_topics: dict[str, int] = Field(
+        default_factory=dict, sa_column=Column(JSON)
+    )  # {topic: count}
+
+    # Growth metrics (compared to previous day)
+    repository_growth: int = Field(default=0)  # New repositories
+    resource_growth: int = Field(default=0)  # Net resource changes
+    star_growth: int = Field(default=0)  # New stars
+
+    # Metadata
+    calculated_at: datetime = Field(default_factory=utc_now)
+    calculation_duration_seconds: float = Field(default=0.0)
+
+    # Unique constraint to prevent duplicate daily snapshots
+    __table_args__ = (UniqueConstraint("date", name="uq_ecosystem_stats_date"),)
+
+
+# API Response Models for Ecosystem Statistics
+class EcosystemStatsPublic(SQLModel):
+    id: uuid.UUID
+    date: datetime
+    total_repositories: int
+    active_repositories: int
+    repositories_with_resources: int
+    total_resources: int
+    active_resources: int
+    total_resource_events: int
+    resource_type_breakdown: dict[str, int]
+    popular_helm_charts: dict[str, int]
+    daily_created_resources: int
+    daily_modified_resources: int
+    daily_deleted_resources: int
+    total_stars: int
+    total_forks: int
+    total_watchers: int
+    total_open_issues: int
+    language_breakdown: dict[str, int]
+    popular_topics: dict[str, int]
+    repository_growth: int
+    resource_growth: int
+    star_growth: int
+    calculated_at: datetime
+    calculation_duration_seconds: float
+
+
+class EcosystemStatsListPublic(SQLModel):
+    data: list[EcosystemStatsPublic]
+    count: int
+
+
+class EcosystemTrendPublic(SQLModel):
+    """Trend data for a specific metric over time"""
+
+    date: str
+    value: int
+
+
+class EcosystemTrendsPublic(SQLModel):
+    """Collection of trend data for visualization"""
+
+    repository_trends: list[EcosystemTrendPublic]
+    resource_trends: list[EcosystemTrendPublic]
+    activity_trends: list[EcosystemTrendPublic]

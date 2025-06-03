@@ -31,6 +31,164 @@ export type BodyLoginLoginAccessToken = {
 };
 
 /**
+ * EcosystemStatsListPublic
+ */
+export type EcosystemStatsListPublic = {
+    /**
+     * Data
+     */
+    data: Array<EcosystemStatsPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * EcosystemStatsPublic
+ */
+export type EcosystemStatsPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Total Repositories
+     */
+    total_repositories: number;
+    /**
+     * Active Repositories
+     */
+    active_repositories: number;
+    /**
+     * Repositories With Resources
+     */
+    repositories_with_resources: number;
+    /**
+     * Total Resources
+     */
+    total_resources: number;
+    /**
+     * Active Resources
+     */
+    active_resources: number;
+    /**
+     * Total Resource Events
+     */
+    total_resource_events: number;
+    /**
+     * Resource Type Breakdown
+     */
+    resource_type_breakdown: {
+        [key: string]: number;
+    };
+    /**
+     * Popular Helm Charts
+     */
+    popular_helm_charts: {
+        [key: string]: number;
+    };
+    /**
+     * Daily Created Resources
+     */
+    daily_created_resources: number;
+    /**
+     * Daily Modified Resources
+     */
+    daily_modified_resources: number;
+    /**
+     * Daily Deleted Resources
+     */
+    daily_deleted_resources: number;
+    /**
+     * Total Stars
+     */
+    total_stars: number;
+    /**
+     * Total Forks
+     */
+    total_forks: number;
+    /**
+     * Total Watchers
+     */
+    total_watchers: number;
+    /**
+     * Total Open Issues
+     */
+    total_open_issues: number;
+    /**
+     * Language Breakdown
+     */
+    language_breakdown: {
+        [key: string]: number;
+    };
+    /**
+     * Popular Topics
+     */
+    popular_topics: {
+        [key: string]: number;
+    };
+    /**
+     * Repository Growth
+     */
+    repository_growth: number;
+    /**
+     * Resource Growth
+     */
+    resource_growth: number;
+    /**
+     * Star Growth
+     */
+    star_growth: number;
+    /**
+     * Calculated At
+     */
+    calculated_at: string;
+    /**
+     * Calculation Duration Seconds
+     */
+    calculation_duration_seconds: number;
+};
+
+/**
+ * EcosystemTrendPublic
+ * Trend data for a specific metric over time
+ */
+export type EcosystemTrendPublic = {
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Value
+     */
+    value: number;
+};
+
+/**
+ * EcosystemTrendsPublic
+ * Collection of trend data for visualization
+ */
+export type EcosystemTrendsPublic = {
+    /**
+     * Repository Trends
+     */
+    repository_trends: Array<EcosystemTrendPublic>;
+    /**
+     * Resource Trends
+     */
+    resource_trends: Array<EcosystemTrendPublic>;
+    /**
+     * Activity Trends
+     */
+    activity_trends: Array<EcosystemTrendPublic>;
+};
+
+/**
  * EventDailyCount
  */
 export type EventDailyCount = {
@@ -1015,6 +1173,123 @@ export type TasksGetWorkerStatusResponses = {
 };
 
 export type TasksGetWorkerStatusResponse = TasksGetWorkerStatusResponses[keyof TasksGetWorkerStatusResponses];
+
+export type EcosystemGetEcosystemStatsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Days
+         */
+        days?: number;
+    };
+    url: '/api/v1/ecosystem/';
+};
+
+export type EcosystemGetEcosystemStatsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type EcosystemGetEcosystemStatsError = EcosystemGetEcosystemStatsErrors[keyof EcosystemGetEcosystemStatsErrors];
+
+export type EcosystemGetEcosystemStatsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EcosystemStatsListPublic;
+};
+
+export type EcosystemGetEcosystemStatsResponse = EcosystemGetEcosystemStatsResponses[keyof EcosystemGetEcosystemStatsResponses];
+
+export type EcosystemGetLatestEcosystemStatsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/ecosystem/latest';
+};
+
+export type EcosystemGetLatestEcosystemStatsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EcosystemStatsPublic;
+};
+
+export type EcosystemGetLatestEcosystemStatsResponse = EcosystemGetLatestEcosystemStatsResponses[keyof EcosystemGetLatestEcosystemStatsResponses];
+
+export type EcosystemGetEcosystemTrendsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Days
+         */
+        days?: number;
+    };
+    url: '/api/v1/ecosystem/trends';
+};
+
+export type EcosystemGetEcosystemTrendsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type EcosystemGetEcosystemTrendsError = EcosystemGetEcosystemTrendsErrors[keyof EcosystemGetEcosystemTrendsErrors];
+
+export type EcosystemGetEcosystemTrendsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EcosystemTrendsPublic;
+};
+
+export type EcosystemGetEcosystemTrendsResponse = EcosystemGetEcosystemTrendsResponses[keyof EcosystemGetEcosystemTrendsResponses];
+
+export type EcosystemTriggerEcosystemAggregationData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Target Date
+         */
+        target_date?: string | null;
+    };
+    url: '/api/v1/ecosystem/trigger-aggregation';
+};
+
+export type EcosystemTriggerEcosystemAggregationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type EcosystemTriggerEcosystemAggregationError = EcosystemTriggerEcosystemAggregationErrors[keyof EcosystemTriggerEcosystemAggregationErrors];
+
+export type EcosystemTriggerEcosystemAggregationResponses = {
+    /**
+     * Response Ecosystem-Trigger Ecosystem Aggregation
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type EcosystemTriggerEcosystemAggregationResponse = EcosystemTriggerEcosystemAggregationResponses[keyof EcosystemTriggerEcosystemAggregationResponses];
 
 export type HealthSystemHealthCheckData = {
     body?: never;

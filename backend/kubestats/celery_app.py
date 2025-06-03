@@ -14,6 +14,7 @@ celery_app = Celery(
         "kubestats.tasks.sync_repositories",
         "kubestats.tasks.scan_repositories",
         "kubestats.tasks.save_repository_metrics",
+        "kubestats.tasks.aggregate_ecosystem_stats",
     ],
 )
 
@@ -42,6 +43,10 @@ celery_app.conf.update(
         "cleanup-repository-workdirs": {
             "task": "kubestats.tasks.sync_repositories.cleanup_repository_workdirs",
             "schedule": crontab(minute=0, hour="*/2"),  # Run every 2 hours
+        },
+        "aggregate-daily-ecosystem-stats": {
+            "task": "kubestats.tasks.aggregate_ecosystem_stats.aggregate_daily_ecosystem_stats",
+            "schedule": crontab(minute=30, hour=1),  # Run daily at 1:30 AM
         },
     },
 )
