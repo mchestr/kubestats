@@ -100,22 +100,19 @@ def normal_user_token_headers(client: TestClient, db: Session) -> dict[str, str]
 
 
 @pytest.fixture
-def sample_repository(db: Session) -> Repository:
+def sample_repository(db: Session, repository: Repository) -> Repository:
     """Create a sample repository for testing."""
-    # Ensure session is in a good state
-    if db.in_transaction():
-        transaction = db.get_transaction()
-        if transaction is not None and transaction.is_active:
-            try:
-                db.rollback()
-            except Exception:
-                pass
+    db.add(repository)
+    db.commit()
+    db.refresh(repository)
+    return repository
 
-    # Generate unique IDs to avoid conflicts
+
+@pytest.fixture
+def repository() -> Repository:
     unique_id = uuid.uuid4()
     github_id = hash(str(unique_id)) % 10000000  # Generate a positive integer
-
-    repository = Repository(
+    return Repository(
         id=str(unique_id),
         name=f"test-repo-{unique_id.hex[:8]}",
         full_name=f"testuser/test-repo-{unique_id.hex[:8]}",
@@ -127,12 +124,3 @@ def sample_repository(db: Session) -> Repository:
         created_at=datetime.now(timezone.utc),
         discovered_at=datetime.now(timezone.utc),
     )
-
-    try:
-        db.add(repository)
-        db.commit()
-        db.refresh(repository)
-        return repository
-    except Exception:
-        db.rollback()
-        raise

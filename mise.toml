@@ -10,6 +10,8 @@ PYTHONDONTWRITEBYTECODE = "1"
 PYTHONUNBUFFERED = "1"
 _.python.venv = { path = "./backend/.venv", create = true }
 
+_.env = { path = ".env", create = true }
+
 # Node.js/React Frontend Environment
 NODE_ENV = "development"
 
@@ -71,7 +73,7 @@ description = "Lint backend Python code"
 dir = "{{ config_root }}/backend"
 run = [
     "uv run ruff format .",
-    "uv run ruff check . --fix", 
+    "uv run ruff check . --fix",
     "uv run mypy ."
 ]
 

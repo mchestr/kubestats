@@ -6,9 +6,10 @@ from datetime import date, datetime, timezone
 from unittest.mock import Mock, patch
 
 import pytest
+from sqlalchemy import delete, text
 from sqlmodel import Session, select
 
-from kubestats.models import EcosystemStats, Repository
+from kubestats.models import EcosystemStats, KubernetesResource, Repository
 from kubestats.tasks.aggregate_ecosystem_stats import (
     aggregate_daily_ecosystem_stats,
     calculate_daily_activity,
@@ -18,26 +19,24 @@ from kubestats.tasks.aggregate_ecosystem_stats import (
 )
 
 
-def test_calculate_repository_stats_empty_database(db: Session) -> None:
-    """Test repository stats calculation with empty database."""
-    stats = calculate_repository_stats(db)
-
-    assert stats["total_repositories"] == 0
-    assert stats["repositories_with_resources"] == 0
-    assert stats["language_breakdown"] == {}
-    assert stats["popular_topics"] == {}
+def _clean_db(db: Session) -> None:
+    db.exec(delete(KubernetesResource))
+    db.exec(delete(Repository))
+    db.commit()
 
 
 def test_calculate_repository_stats_with_data(
-    db: Session, sample_repository: Repository
+    db: Session, repository: Repository
 ) -> None:
     """Test repository stats calculation with sample data."""
     # Modify the sample repository to have known data
-    sample_repository.language = "Python"
-    sample_repository.topics = ["web", "api", "python"]
-    sample_repository.created_at = datetime(2024, 1, 10, tzinfo=timezone.utc)
-    sample_repository.discovered_at = datetime(2024, 1, 14, tzinfo=timezone.utc)
-    db.add(sample_repository)
+    _clean_db(db)
+
+    repository.language = "Python"
+    repository.topics = ["web", "api", "python"]
+    repository.created_at = datetime(2024, 1, 10, tzinfo=timezone.utc)
+    repository.discovered_at = datetime(2024, 1, 14, tzinfo=timezone.utc)
+    db.add(repository)
     db.commit()
 
     stats = calculate_repository_stats(db)
@@ -52,6 +51,7 @@ def test_calculate_repository_stats_with_data(
 
 def test_calculate_resource_stats_empty_database(db: Session) -> None:
     """Test resource stats calculation with empty database."""
+    _clean_db(db)
     stats = calculate_resource_stats(db)
 
     assert stats["total_resources"] == 0

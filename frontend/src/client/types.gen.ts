@@ -283,6 +283,80 @@ export type KubernetesResourceEventsPublic = {
 };
 
 /**
+ * KubernetesResourcePublic
+ */
+export type KubernetesResourcePublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Repository Id
+     */
+    repository_id: string;
+    /**
+     * Api Version
+     */
+    api_version: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Namespace
+     */
+    namespace: string | null;
+    /**
+     * File Path
+     */
+    file_path: string;
+    /**
+     * File Hash
+     */
+    file_hash: string;
+    /**
+     * Version
+     */
+    version: string | null;
+    /**
+     * Data
+     */
+    data: {
+        [key: string]: unknown;
+    };
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
+ * KubernetesResourcesPublic
+ */
+export type KubernetesResourcesPublic = {
+    /**
+     * Data
+     */
+    data: Array<KubernetesResourcePublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * Message
  */
 export type Message = {
@@ -1290,6 +1364,59 @@ export type EcosystemTriggerEcosystemAggregationResponses = {
 };
 
 export type EcosystemTriggerEcosystemAggregationResponse = EcosystemTriggerEcosystemAggregationResponses[keyof EcosystemTriggerEcosystemAggregationResponses];
+
+export type KubernetesListKubernetesResourcesData = {
+    /**
+     * Status
+     */
+    body?: string | Array<string> | null;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Repository Id
+         */
+        repository_id?: string | null;
+        /**
+         * Kind
+         */
+        kind?: string | null;
+        /**
+         * Api Version
+         */
+        api_version?: string | null;
+        /**
+         * Namespace
+         */
+        namespace?: string | null;
+    };
+    url: '/api/v1/kubernetes/resources';
+};
+
+export type KubernetesListKubernetesResourcesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type KubernetesListKubernetesResourcesError = KubernetesListKubernetesResourcesErrors[keyof KubernetesListKubernetesResourcesErrors];
+
+export type KubernetesListKubernetesResourcesResponses = {
+    /**
+     * Successful Response
+     */
+    200: KubernetesResourcesPublic;
+};
+
+export type KubernetesListKubernetesResourcesResponse = KubernetesListKubernetesResourcesResponses[keyof KubernetesListKubernetesResourcesResponses];
 
 export type HealthSystemHealthCheckData = {
     body?: never;
