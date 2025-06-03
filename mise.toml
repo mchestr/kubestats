@@ -10,7 +10,7 @@ PYTHONDONTWRITEBYTECODE = "1"
 PYTHONUNBUFFERED = "1"
 _.python.venv = { path = "./backend/.venv", create = true }
 
-_.env = { path = ".env", create = true }
+_.file = '.env'
 
 # Node.js/React Frontend Environment
 NODE_ENV = "development"
