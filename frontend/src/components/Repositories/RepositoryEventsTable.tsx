@@ -7,6 +7,7 @@ import {
   Flex,
   HStack,
   Heading,
+  Link,
   Skeleton,
   Stack,
   Table,
@@ -19,15 +20,16 @@ import { FiClock, FiFileText, FiGitCommit } from "react-icons/fi"
 import type {
   KubernetesResourceEventPublic,
   KubernetesResourceEventsPublic,
+  RepositoryPublic,
 } from "../../client"
 import { RepositoriesService } from "../../client"
 import { Pagination } from "../ui/pagination"
 
 interface RepositoryEventsTableProps {
-  repositoryId: string
+  repository: RepositoryPublic
 }
 
-function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
+function RepositoryEventsTable({ repository }: RepositoryEventsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("")
@@ -42,7 +44,7 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
   } = useQuery({
     queryKey: [
       "repository-events",
-      repositoryId,
+      repository.id,
       currentPage,
       itemsPerPage,
       eventTypeFilter,
@@ -51,7 +53,7 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
     ],
     queryFn: () =>
       RepositoriesService.repositoriesReadRepositoryEvents({
-        path: { repository_id: repositoryId },
+        path: { repository_id: repository.id },
         query: {
           skip: (currentPage - 1) * itemsPerPage,
           limit: itemsPerPage,
@@ -60,7 +62,7 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
           resource_namespace: resourceNamespaceFilter || undefined,
         },
       }),
-    enabled: !!repositoryId,
+    enabled: !!repository.id,
   })
 
   const events =
@@ -357,18 +359,23 @@ function RepositoryEventsTable({ repositoryId }: RepositoryEventsTableProps) {
                           </Text>
                         </Table.Cell>
                         <Table.Cell>
-                          <Flex alignItems="center" gap={1}>
-                            <FiFileText size={12} />
-                            <Text
-                              fontSize="xs"
-                              fontFamily="mono"
-                              color="fg.muted"
-                              maxW="200px"
-                              truncate
-                            >
-                              {event.file_path}
-                            </Text>
-                          </Flex>
+                          <Link
+                            href={`https://github.com/${repository.full_name}/blob/${repository.default_branch}/${event.file_path}`}
+                            target="_blank"
+                          >
+                            <Flex alignItems="center" gap={1}>
+                              <FiFileText size={12} />
+                              <Text
+                                fontSize="xs"
+                                fontFamily="mono"
+                                color="fg.muted"
+                                maxW="200px"
+                                truncate
+                              >
+                                {event.file_path}
+                              </Text>
+                            </Flex>
+                          </Link>
                         </Table.Cell>
                         <Table.Cell>
                           <Flex alignItems="center" gap={1}>

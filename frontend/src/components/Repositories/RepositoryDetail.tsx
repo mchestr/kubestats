@@ -9,6 +9,7 @@ import {
   Grid,
   HStack,
   Heading,
+  Link,
   Skeleton,
   Stack,
   Text,
@@ -217,8 +218,18 @@ function RepositoryDetail() {
                 <Flex alignItems="center" gap={3} flexWrap="wrap">
                   <Heading size="xl">
                     <HStack gap={2}>
-                      <FiGitBranch />
-                      <Text>{repositoryData.name}</Text>
+                      <Link
+                        href={`https://github.com/${repositoryData.full_name}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        color="blue.500"
+                        _hover={{ textDecoration: "underline" }}
+                      >
+                        <HStack>
+                          <FiGitBranch />
+                          <Text>{repositoryData.full_name}</Text>
+                        </HStack>
+                      </Link>
                     </HStack>
                   </Heading>
                   {repositoryData.language && (
@@ -228,10 +239,6 @@ function RepositoryDetail() {
                   )}
                   {getSyncStatusBadge(repositoryData)}
                 </Flex>
-
-                <Text color="fg.muted" fontSize="lg">
-                  {repositoryData.full_name}
-                </Text>
 
                 {repositoryData.description && (
                   <Text color="fg.subtle" maxW="2xl">
@@ -339,7 +346,7 @@ function RepositoryDetail() {
         <RepositoryEventsChart repositoryId={repositoryId} />
 
         {/* Events Table */}
-        <RepositoryEventsTable repositoryId={repositoryId} />
+        <RepositoryEventsTable repository={repositoryData} />
 
         {/* Repository Information */}
         <RepositoryInfo repository={repositoryData} />
