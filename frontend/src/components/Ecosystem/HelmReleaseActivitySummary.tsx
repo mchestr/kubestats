@@ -1,4 +1,4 @@
-import { EcosystemService } from "@/client"
+import { EcosystemService, HelmReleaseActivityListPublic } from "@/client";
 import {
   Badge,
   Box,
@@ -10,31 +10,19 @@ import {
   Spinner,
   Stack,
   Text,
-} from "@chakra-ui/react"
-import { Collapse } from "@chakra-ui/transition"
-import { useQuery } from "@tanstack/react-query"
-import { useState } from "react"
+} from "@chakra-ui/react";
+import { Collapse } from "@chakra-ui/transition";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   FiChevronDown,
   FiChevronUp,
   FiFileText,
   FiRefreshCw,
-} from "react-icons/fi"
-
-export type HelmReleaseChange = {
-  change_type: string
-  timestamp: string
-  yaml: string | null
-  user: string | null
-}
-
-export type HelmReleaseActivity = {
-  release_name: string
-  changes: HelmReleaseChange[]
-}
+} from "react-icons/fi";
 
 export function HelmReleaseActivitySummary() {
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<string | null>(null);
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["helm-release-activity"],
     queryFn: () =>
@@ -42,10 +30,10 @@ export function HelmReleaseActivitySummary() {
         query: { limit: 10 },
       }),
     refetchOnWindowFocus: false,
-  })
+  });
 
   // Type assertion for OpenAPI response
-  const activity = data?.data as HelmReleaseActivity[] | undefined
+  const activity = data?.data as HelmReleaseActivityListPublic | undefined;
 
   if (isLoading) {
     return (
@@ -62,7 +50,7 @@ export function HelmReleaseActivitySummary() {
           </Flex>
         </Card.Body>
       </Card.Root>
-    )
+    );
   }
 
   if (isError || !activity) {
@@ -86,12 +74,12 @@ export function HelmReleaseActivitySummary() {
           <Text color="red.500">Failed to load Helm release activity.</Text>
         </Card.Body>
       </Card.Root>
-    )
+    );
   }
 
   return (
     <Stack gap={4}>
-      {activity.length === 0 ? (
+      {activity.data?.length === 0 ? (
         <Card.Root>
           <Card.Header>
             <Heading size="md">Helm Release Activity</Heading>
@@ -101,7 +89,7 @@ export function HelmReleaseActivitySummary() {
           </Card.Body>
         </Card.Root>
       ) : (
-        activity.map((release) => (
+        activity.data?.map((release) => (
           <Card.Root key={release.release_name}>
             <Card.Header>
               <HStack justify="space-between" align="center">
@@ -119,7 +107,7 @@ export function HelmReleaseActivitySummary() {
                     setExpanded(
                       expanded === release.release_name
                         ? null
-                        : release.release_name,
+                        : release.release_name
                     )
                   }
                 >
@@ -172,7 +160,6 @@ export function HelmReleaseActivitySummary() {
                         <Box
                           mt={2}
                           p={3}
-                          bg="gray.50"
                           borderRadius="md"
                           fontFamily="mono"
                           fontSize="sm"
@@ -191,7 +178,7 @@ export function HelmReleaseActivitySummary() {
         ))
       )}
     </Stack>
-  )
+  );
 }
 
-export default HelmReleaseActivitySummary
+export default HelmReleaseActivitySummary;

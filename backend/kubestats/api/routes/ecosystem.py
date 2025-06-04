@@ -18,6 +18,9 @@ from kubestats.models import (
     EcosystemTrendPublic,
     EcosystemTrendsPublic,
     KubernetesResourceEvent,
+    HelmReleaseActivityListPublic,
+    HelmReleaseActivityPublic,
+    HelmReleaseChangePublic,
 )
 
 router = APIRouter()
@@ -241,11 +244,11 @@ def trigger_ecosystem_aggregation(
         )
 
 
-@router.get("/helm-release-activity", response_model=dict[str, Any])
+@router.get("/helm-release-activity", response_model=HelmReleaseActivityListPublic)
 def get_helm_release_activity(
     session: SessionDep,
     limit: int = Query(default=10, ge=1, le=50),
-) -> Any:
+) -> HelmReleaseActivityListPublic:
     """
     Get the most recent HelmRelease changes (created/modified/deleted), grouped by release name.
     Returns the latest N releases with their change events and YAML.
@@ -260,7 +263,7 @@ def get_helm_release_activity(
     events = session.exec(stmt).all()
 
     # Group by release name
-    grouped: dict[str, Any] = {}
+    grouped: dict[str, list] = {}
     for event in events:
         name = event.resource_name
         if name not in grouped:
@@ -273,20 +276,18 @@ def get_helm_release_activity(
     result = []
     for name, changes in list(grouped.items())[:limit]:
         result.append(
-            {
-                "release_name": name,
-                "changes": [
-                    {
-                        "change_type": e.event_type,
-                        "timestamp": e.event_timestamp.isoformat(),
-                        "yaml": yaml.safe_dump(e.resource_data)
-                        if e.resource_data
-                        else None,
-                        "user": None,  # Add user if available in your model
-                    }
+            HelmReleaseActivityPublic(
+                release_name=name,
+                changes=[
+                    HelmReleaseChangePublic(
+                        change_type=e.event_type,
+                        timestamp=e.event_timestamp,
+                        yaml=yaml.safe_dump(e.resource_data) if e.resource_data else None,
+                        user=None,  # Add user if available in your model
+                    )
                     for e in changes
                 ],
-            }
+            )
         )
 
-    return JSONResponse(content=result)
+    return HelmReleaseActivityListPublic(data=result)

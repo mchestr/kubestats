@@ -227,6 +227,52 @@ export type HttpValidationError = {
 };
 
 /**
+ * HelmReleaseActivityListPublic
+ */
+export type HelmReleaseActivityListPublic = {
+    /**
+     * Data
+     */
+    data: Array<HelmReleaseActivityPublic>;
+};
+
+/**
+ * HelmReleaseActivityPublic
+ */
+export type HelmReleaseActivityPublic = {
+    /**
+     * Release Name
+     */
+    release_name: string;
+    /**
+     * Changes
+     */
+    changes: Array<HelmReleaseChangePublic>;
+};
+
+/**
+ * HelmReleaseChangePublic
+ */
+export type HelmReleaseChangePublic = {
+    /**
+     * Change Type
+     */
+    change_type: string;
+    /**
+     * Timestamp
+     */
+    timestamp: string;
+    /**
+     * Yaml
+     */
+    yaml: string | null;
+    /**
+     * User
+     */
+    user?: string | null;
+};
+
+/**
  * KubernetesResourceEventPublic
  */
 export type KubernetesResourceEventPublic = {
@@ -1486,12 +1532,9 @@ export type EcosystemGetHelmReleaseActivityError = EcosystemGetHelmReleaseActivi
 
 export type EcosystemGetHelmReleaseActivityResponses = {
     /**
-     * Response Ecosystem-Get Helm Release Activity
      * Successful Response
      */
-    200: {
-        [key: string]: unknown;
-    };
+    200: HelmReleaseActivityListPublic;
 };
 
 export type EcosystemGetHelmReleaseActivityResponse = EcosystemGetHelmReleaseActivityResponses[keyof EcosystemGetHelmReleaseActivityResponses];

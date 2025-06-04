@@ -492,3 +492,17 @@ class CeleryTaskMeta(SQLModel, table=True):
     kwargs: str | None = Field(default=None, sa_column=Column(Text))
     worker: str | None = Field(default=None, max_length=255)
     retries: int | None = Field(default=None)
+
+
+class HelmReleaseChangePublic(SQLModel):
+    change_type: str
+    timestamp: datetime
+    yaml: str | None
+    user: str | None = None
+
+class HelmReleaseActivityPublic(SQLModel):
+    release_name: str
+    changes: list[HelmReleaseChangePublic]
+
+class HelmReleaseActivityListPublic(SQLModel):
+    data: list[HelmReleaseActivityPublic]
