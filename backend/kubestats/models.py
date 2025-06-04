@@ -500,9 +500,11 @@ class HelmReleaseChangePublic(SQLModel):
     yaml: str | None
     user: str | None = None
 
+
 class HelmReleaseActivityPublic(SQLModel):
     release_name: str
     changes: list[HelmReleaseChangePublic]
+
 
 class HelmReleaseActivityListPublic(SQLModel):
     data: list[HelmReleaseActivityPublic]

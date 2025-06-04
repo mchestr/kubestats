@@ -7,7 +7,6 @@ from typing import Any
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import JSONResponse
 from sqlmodel import asc, desc, func, select
 
 from kubestats.api.deps import SessionDep, get_current_active_superuser
@@ -17,10 +16,10 @@ from kubestats.models import (
     EcosystemStatsPublic,
     EcosystemTrendPublic,
     EcosystemTrendsPublic,
-    KubernetesResourceEvent,
     HelmReleaseActivityListPublic,
     HelmReleaseActivityPublic,
     HelmReleaseChangePublic,
+    KubernetesResourceEvent,
 )
 
 router = APIRouter()
@@ -263,7 +262,7 @@ def get_helm_release_activity(
     events = session.exec(stmt).all()
 
     # Group by release name
-    grouped: dict[str, list] = {}
+    grouped: dict[str, list[KubernetesResourceEvent]] = {}
     for event in events:
         name = event.resource_name
         if name not in grouped:
@@ -282,7 +281,9 @@ def get_helm_release_activity(
                     HelmReleaseChangePublic(
                         change_type=e.event_type,
                         timestamp=e.event_timestamp,
-                        yaml=yaml.safe_dump(e.resource_data) if e.resource_data else None,
+                        yaml=yaml.safe_dump(e.resource_data)
+                        if e.resource_data
+                        else None,
                         user=None,  # Add user if available in your model
                     )
                     for e in changes
