@@ -87,8 +87,15 @@ depends = ["lint-backend", "lint-frontend"]
 description = "Lint both backend and frontend code"
 
 [tasks.ci]
-depends = ["generate-client", "lint", "test-backend", "build-frontend"]
 description = "Run CI tasks: generate client, lint, and test backend"
+run = [
+    "mise clean",
+    "mise setup",
+    "mise generate-client",
+    "mise lint",
+    "mise test-backend",
+    "mise build-frontend"
+]
 
 [tasks.generate-client]
 description = "Generate API client from OpenAPI schema"

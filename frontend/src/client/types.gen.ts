@@ -599,7 +599,7 @@ export type TaskMetaResponse = {
     /**
      * Date Done
      */
-    date_done: string;
+    date_done?: string | null;
     /**
      * Traceback
      */

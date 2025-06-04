@@ -81,7 +81,7 @@ class TaskMetaResponse(BaseModel):
     task_id: str
     status: str
     result: str | None = None
-    date_done: datetime
+    date_done: str | None = None
     traceback: str | None = None
     name: str | None = None
     args: str | None = None
@@ -292,7 +292,7 @@ def list_tasks(
             task_id=task.task_id,
             status=task.status,
             result=decode_if_memoryview(task.result),
-            date_done=task.date_done,
+            date_done=ensure_utc_isoformat(task.date_done),
             traceback=decode_if_memoryview(task.traceback),
             name=task.name,
             args=decode_if_memoryview(task.args),
