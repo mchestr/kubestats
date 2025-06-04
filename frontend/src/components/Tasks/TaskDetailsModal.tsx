@@ -18,7 +18,7 @@ import {
   VStack,
 } from "@chakra-ui/react"
 import { Badge } from "@chakra-ui/react"
-import type { TaskDetailsModalProps } from "./types"
+import type { TaskDetailsModalProps, TaskMeta } from "./types"
 
 export function TaskDetailsModal({
   isOpen,
@@ -28,7 +28,10 @@ export function TaskDetailsModal({
   statusLoading,
   getStatusColor,
   renderTaskResult,
-}: TaskDetailsModalProps) {
+  taskMeta,
+}: TaskDetailsModalProps & { taskMeta?: TaskMeta }) {
+  const details = taskMeta || taskStatus
+
   return (
     <DialogRoot open={isOpen} onOpenChange={(_e) => onClose()}>
       <DialogContent maxW="4xl">
@@ -44,7 +47,7 @@ export function TaskDetailsModal({
             <Flex justify="center" py={8}>
               <Spinner />
             </Flex>
-          ) : taskStatus ? (
+          ) : details ? (
             <VStack gap={4} align="stretch">
               <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
                 <VStack gap={3} align="stretch">
@@ -57,8 +60,8 @@ export function TaskDetailsModal({
                         <Text fontWeight="medium" minW="100px">
                           Status:
                         </Text>
-                        <Badge colorPalette={getStatusColor(taskStatus.status)}>
-                          {taskStatus.status}
+                        <Badge colorPalette={getStatusColor(details.status)}>
+                          {details.status}
                         </Badge>
                       </HStack>
                       <HStack>
@@ -69,20 +72,20 @@ export function TaskDetailsModal({
                           {selectedTaskId}
                         </Text>
                       </HStack>
-                      {taskStatus.name && (
+                      {details.name && (
                         <HStack>
                           <Text fontWeight="medium" minW="100px">
                             Name:
                           </Text>
-                          <Text>{taskStatus.name}</Text>
+                          <Text>{details.name}</Text>
                         </HStack>
                       )}
-                      {taskStatus.worker && (
+                      {details.worker && (
                         <HStack>
                           <Text fontWeight="medium" minW="100px">
                             Worker:
                           </Text>
-                          <Text>{taskStatus.worker}</Text>
+                          <Text>{details.worker}</Text>
                         </HStack>
                       )}
                     </VStack>
@@ -90,7 +93,7 @@ export function TaskDetailsModal({
                 </VStack>
 
                 <VStack gap={3} align="stretch">
-                  {taskStatus.date_done && (
+                  {details.date_done && (
                     <Box>
                       <Text fontWeight="bold" mb={2}>
                         Timing
@@ -101,7 +104,7 @@ export function TaskDetailsModal({
                             Completed:
                           </Text>
                           <Text fontSize="sm">
-                            {new Date(taskStatus.date_done).toLocaleString()}
+                            {new Date(details.date_done).toLocaleString()}
                           </Text>
                         </HStack>
                       </VStack>
@@ -110,14 +113,13 @@ export function TaskDetailsModal({
                 </VStack>
               </SimpleGrid>
 
-              {taskStatus.result != null && (
+              {details.result != null && (
                 <Box>
                   <Text fontWeight="bold" mb={2}>
                     Result
                   </Text>
                   <Box
                     p={3}
-                    bg="gray.50"
                     borderRadius="md"
                     fontFamily="mono"
                     fontSize="sm"
@@ -125,19 +127,18 @@ export function TaskDetailsModal({
                     maxH="300px"
                     overflowY="auto"
                   >
-                    <pre>{renderTaskResult(taskStatus.result)}</pre>
+                    <pre>{renderTaskResult(details.result)}</pre>
                   </Box>
                 </Box>
               )}
 
-              {taskStatus.traceback && (
+              {details.traceback && (
                 <Box>
                   <Text fontWeight="bold" mb={2} color="red.500">
                     Error Details
                   </Text>
                   <Box
                     p={3}
-                    bg="red.50"
                     borderRadius="md"
                     fontFamily="mono"
                     fontSize="sm"
@@ -145,7 +146,7 @@ export function TaskDetailsModal({
                     maxH="300px"
                     overflowY="auto"
                   >
-                    <pre>{taskStatus.traceback}</pre>
+                    <pre>{details.traceback}</pre>
                   </Box>
                 </Box>
               )}

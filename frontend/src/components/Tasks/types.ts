@@ -50,3 +50,16 @@ export interface WorkerStatsModalProps {
   onClose: () => void
   selectedWorkerData: WorkerData | null
 }
+
+export interface TaskMeta {
+  task_id: string
+  status: string
+  result?: string | null
+  date_done: string
+  traceback?: string | null
+  name?: string | null
+  args?: string | null
+  kwargs?: string | null
+  worker?: string | null
+  retries?: number | null
+}

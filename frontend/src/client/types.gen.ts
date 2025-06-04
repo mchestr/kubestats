@@ -581,6 +581,52 @@ export type RepositoryStatsPublic = {
 export type SyncStatus = 'pending' | 'syncing' | 'success' | 'error' | 'blocked' | 'pending_approval';
 
 /**
+ * TaskMetaResponse
+ */
+export type TaskMetaResponse = {
+    /**
+     * Task Id
+     */
+    task_id: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Result
+     */
+    result?: string | null;
+    /**
+     * Date Done
+     */
+    date_done: string;
+    /**
+     * Traceback
+     */
+    traceback?: string | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Args
+     */
+    args?: string | null;
+    /**
+     * Kwargs
+     */
+    kwargs?: string | null;
+    /**
+     * Worker
+     */
+    worker?: string | null;
+    /**
+     * Retries
+     */
+    retries?: number | null;
+};
+
+/**
  * TaskResponse
  */
 export type TaskResponse = {
@@ -1247,6 +1293,58 @@ export type TasksGetWorkerStatusResponses = {
 };
 
 export type TasksGetWorkerStatusResponse = TasksGetWorkerStatusResponses[keyof TasksGetWorkerStatusResponses];
+
+export type TasksListTasksData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Status
+         * Filter by task status (e.g., PENDING, FAILURE, SUCCESS)
+         */
+        status?: string | null;
+        /**
+         * Since
+         * Only tasks after this datetime (ISO8601)
+         */
+        since?: string | null;
+        /**
+         * Until
+         * Only tasks before this datetime (ISO8601)
+         */
+        until?: string | null;
+        /**
+         * Limit
+         * Max number of results
+         */
+        limit?: number;
+        /**
+         * Offset
+         * Offset for pagination
+         */
+        offset?: number;
+    };
+    url: '/api/v1/tasks/tasks/';
+};
+
+export type TasksListTasksErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TasksListTasksError = TasksListTasksErrors[keyof TasksListTasksErrors];
+
+export type TasksListTasksResponses = {
+    /**
+     * Response Tasks-List Tasks
+     * Successful Response
+     */
+    200: Array<TaskMetaResponse>;
+};
+
+export type TasksListTasksResponse = TasksListTasksResponses[keyof TasksListTasksResponses];
 
 export type EcosystemGetEcosystemStatsData = {
     body?: never;

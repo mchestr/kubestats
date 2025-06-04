@@ -4,7 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from pydantic import EmailStr
-from sqlalchemy import JSON, Column, UniqueConstraint
+from sqlalchemy import JSON, Column, Text, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
@@ -475,3 +475,20 @@ class EcosystemTrendsPublic(SQLModel):
     repository_trends: list[EcosystemTrendPublic]
     resource_trends: list[EcosystemTrendPublic]
     activity_trends: list[EcosystemTrendPublic]
+
+
+# Celery Task Meta Model for querying task results from the database backend
+class CeleryTaskMeta(SQLModel, table=True):
+    __tablename__ = "celery_taskmeta"
+
+    id: int = Field(primary_key=True)
+    task_id: str = Field(sa_column=Column(Text, unique=True, index=True))
+    status: str = Field(max_length=50, index=True)
+    result: str | None = Field(default=None, sa_column=Column(Text))
+    date_done: datetime = Field(index=True)
+    traceback: str | None = Field(default=None, sa_column=Column(Text))
+    name: str | None = Field(default=None, max_length=255)
+    args: str | None = Field(default=None, sa_column=Column(Text))
+    kwargs: str | None = Field(default=None, sa_column=Column(Text))
+    worker: str | None = Field(default=None, max_length=255)
+    retries: int | None = Field(default=None)

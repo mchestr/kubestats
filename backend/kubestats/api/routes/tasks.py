@@ -1,12 +1,14 @@
 import logging
+from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, field_validator
+from sqlmodel import Session, desc, select
 
-from kubestats.api.deps import get_current_active_superuser
+from kubestats.api.deps import get_current_active_superuser, get_db
 from kubestats.celery_app import celery_app
-from kubestats.models import User
+from kubestats.models import CeleryTaskMeta, User
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -73,6 +75,28 @@ class WorkerStatusResponse(BaseModel):
     reserved: dict[str, Any]
     stats: dict[str, Any]
     periodic_tasks: list[PeriodicTaskResponse]
+
+
+class TaskMetaResponse(BaseModel):
+    task_id: str
+    status: str
+    result: str | None = None
+    date_done: datetime
+    traceback: str | None = None
+    name: str | None = None
+    args: str | None = None
+    kwargs: str | None = None
+    worker: str | None = None
+    retries: int | None = None
+
+
+def decode_if_memoryview(val: Any) -> Any:
+    if isinstance(val, memoryview):
+        try:
+            return val.tobytes().decode("utf-8", errors="replace")
+        except Exception:
+            return str(val.tobytes())
+    return val
 
 
 @router.post("/trigger-periodic/{task_name}", response_model=TaskResponse)
@@ -216,3 +240,51 @@ def get_worker_status() -> WorkerStatusResponse:
         raise HTTPException(
             status_code=500, detail=f"Failed to get worker status: {str(e)}"
         )
+
+
+@router.get(
+    "/tasks/",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=list[TaskMetaResponse],
+)
+def list_tasks(
+    status: str | None = Query(
+        None, description="Filter by task status (e.g., PENDING, FAILURE, SUCCESS)"
+    ),
+    since: datetime | None = Query(
+        None, description="Only tasks after this datetime (ISO8601)"
+    ),
+    until: datetime | None = Query(
+        None, description="Only tasks before this datetime (ISO8601)"
+    ),
+    limit: int = Query(100, ge=1, le=1000, description="Max number of results"),
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
+    session: Session = Depends(get_db),
+) -> list[TaskMetaResponse]:
+    """
+    List Celery task metadata with optional filtering by status and time period (superuser only).
+    """
+    query = select(CeleryTaskMeta)
+    if status:
+        query = query.where(CeleryTaskMeta.status == status)
+    if since:
+        query = query.where(CeleryTaskMeta.date_done >= since)
+    if until:
+        query = query.where(CeleryTaskMeta.date_done <= until)
+    query = query.order_by(desc(CeleryTaskMeta.date_done)).offset(offset).limit(limit)
+    results = session.exec(query).all()
+    return [
+        TaskMetaResponse(
+            task_id=task.task_id,
+            status=task.status,
+            result=decode_if_memoryview(task.result),
+            date_done=task.date_done,
+            traceback=decode_if_memoryview(task.traceback),
+            name=task.name,
+            args=decode_if_memoryview(task.args),
+            kwargs=decode_if_memoryview(task.kwargs),
+            worker=task.worker,
+            retries=task.retries,
+        )
+        for task in results
+    ]
