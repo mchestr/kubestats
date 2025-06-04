@@ -1,0 +1,16 @@
+rules:
+  - All Python functions, including tests and fixtures, must have explicit type annotations for all arguments and return types. Use '-> None' for functions that do not return a value.
+  - All variables, especially in tests and mocks, must have type annotations if the type is not immediately clear from assignment.
+  - Do not subclass SQLModel, Pydantic, or other ORM models for test doubles. Use dataclasses or MagicMock with a spec instead, and type them as the expected model type using typing.cast or MagicMock(spec=...).
+  - When using Optional types (e.g., str | None), always check for None before calling methods on the value.
+  - All test fixtures and test functions must have type annotations.
+  - Use dataclasses for simple test stand-ins for models in tests, and annotate all fields.
+  - When using MagicMock, provide a spec or spec_set for type safety when possible, and type the mock as the expected type.
+  - All dictionary keys and values must match the expected types in function signatures and type hints. Do not use DummyResource or plain classes where a model type is expected.
+  - When a function or class expects a specific type (e.g., KubernetesResource), use a real instance or a properly typed mock, not a plain class.
+  - Do not use non-overlapping types in equality checks (e.g., DummyResource == KubernetesResource). Use only compatible types in comparisons.
+  - Do not pass str where datetime is expected, or vice versa. Always match the expected type in function arguments and dataclass/model fields.
+  - Annotate all local variables with complex types (e.g., dicts, mocks, etc.).
+  - Configure and run mypy with --strict and ruff/flake8 before every commit; do not merge code with type or lint errors.
+  - Add a mypy.ini or pyproject.toml with strict type checking (disallow_untyped_defs = True, disallow_incomplete_defs = True, check_untyped_defs = True, warn_unused_ignores = True).
+  - Avoid shadowing built-in names and use explicit relative imports if needed.

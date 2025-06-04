@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,7 +12,7 @@ from kubestats.core.yaml_scanner.resource_db_service import (
 from kubestats.models import utc_now
 
 
-class DummyResource(KubernetesResource):
+class DummyResource:
     def __init__(
         self, key: str, file_hash: str = "h", status: str = "ACTIVE", **kwargs: Any
     ) -> None:
@@ -63,8 +63,8 @@ def make_resource_data(key: str, file_hash: str = "h", **kwargs: Any) -> Resourc
 def test_get_existing_resources(
     service: ResourceDatabaseService, session: MagicMock
 ) -> None:
-    r1 = DummyResource("k1")
-    r2 = DummyResource("k2")
+    r1 = cast(KubernetesResource, DummyResource("k1"))
+    r2 = cast(KubernetesResource, DummyResource("k2"))
     session.exec.return_value.all.return_value = [r1, r2]
     result = service.get_existing_resources(session, uuid.uuid4())
     assert result["k1"] == r1
@@ -77,14 +77,14 @@ def test_get_deleted_resource(
     rd = make_resource_data(
         "k1", api_version="v1", kind="Pod", name="foo", namespace="default"
     )
-    dummy = DummyResource(
+    dummy = cast(KubernetesResource, DummyResource(
         "k1",
         status="DELETED",
         api_version="v1",
         kind="Pod",
         name="foo",
         namespace="default",
-    )
+    ))
     session.exec.return_value.first.return_value = dummy
     result = service.get_deleted_resource(session, uuid.uuid4(), rd)
     assert result == dummy
@@ -95,8 +95,8 @@ def test_compare_resources_create_modify_delete(
 ) -> None:
     # One existing, one scanned (modified), one new, one deleted
     existing: dict[str, KubernetesResource] = {
-        "k1": DummyResource("k1", file_hash="h1"),
-        "k2": DummyResource("k2", file_hash="h2"),
+        "k1": cast(KubernetesResource, DummyResource("k1", file_hash="h1")),
+        "k2": cast(KubernetesResource, DummyResource("k2", file_hash="h2")),
     }
     scanned = [
         make_resource_data("k1", file_hash="h2"),
@@ -118,7 +118,7 @@ def test_compare_resources_resurrected(
     # Not in active, but in deleted
     existing: dict[str, KubernetesResource] = {}
     scanned = [make_resource_data("k1", file_hash="h1")]
-    dummy = DummyResource("k1", status="DELETED", file_hash="old")
+    dummy = cast(KubernetesResource, DummyResource("k1", status="DELETED", file_hash="old"))
     session.exec.return_value.first.return_value = dummy
     changeset = service.compare_resources(existing, scanned, session, uuid.uuid4())
     assert len(changeset.modified) == 1
@@ -218,14 +218,14 @@ def test_create_update_delete_resource_methods(
     assert hasattr(kr, "repository_id")
     assert hasattr(ev, "event_type")
     # _resurrect_resource
-    kr2, ev2 = service._resurrect_resource(session, DummyKR(), DummyRD(), uuid.uuid4())
+    kr2, ev2 = service._resurrect_resource(session, cast(KubernetesResource, DummyKR()), DummyRD(), uuid.uuid4())
     assert hasattr(kr2, "status")
     assert ev2.event_type == "RESURRECTED"
     # _update_resource
-    kr3, ev3 = service._update_resource(session, DummyKR(), DummyRD(), uuid.uuid4())
+    kr3, ev3 = service._update_resource(session, cast(KubernetesResource, DummyKR()), DummyRD(), uuid.uuid4())
     assert hasattr(kr3, "file_hash")
     assert ev3.event_type == "MODIFIED"
     # _delete_resource
-    kr4, ev4 = service._delete_resource(session, DummyKR(), uuid.uuid4())
+    kr4, ev4 = service._delete_resource(session, cast(KubernetesResource, DummyKR()), uuid.uuid4())
     assert kr4.status == "DELETED"
     assert ev4.event_type == "DELETED"

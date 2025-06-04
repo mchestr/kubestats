@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -99,6 +99,20 @@ def decode_if_memoryview(val: Any) -> Any:
     return val
 
 
+def ensure_utc_isoformat(dt: datetime | None) -> str | None:
+    """
+    Ensure the datetime is returned as an ISO8601 string with UTC timezone info.
+    If dt is naive, assume UTC. If None, return None.
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    else:
+        dt = dt.astimezone(timezone.utc)
+    return dt.isoformat()
+
+
 @router.post("/trigger-periodic/{task_name}", response_model=TaskResponse)
 def trigger_periodic_task(
     task_name: str,
@@ -170,7 +184,7 @@ def get_task_status(
             status=result.status,
             result=result.result,
             traceback=result.traceback,
-            date_done=result.date_done.isoformat() if result.date_done else None,
+            date_done=ensure_utc_isoformat(result.date_done),
             name=getattr(result, "name", None),
             worker=getattr(result, "worker", None),
             retries=getattr(result, "retries", None),

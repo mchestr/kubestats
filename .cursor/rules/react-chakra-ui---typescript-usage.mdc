@@ -1,0 +1,6 @@
+---
+description: Utilize Typescript for type safety when using React components with Chakra UI.
+globs: frontend/src/**/*.tsx
+alwaysApply: false
+---
+- Use TypeScript for type safety with Chakra UI components

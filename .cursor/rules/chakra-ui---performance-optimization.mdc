@@ -1,0 +1,6 @@
+---
+description: Following Chakra UI best practices for optimizing React components for performance.
+globs: frontend/src/**/*.*
+alwaysApply: false
+---
+- Follow Chakra UI best practices for performance optimization

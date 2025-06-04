@@ -1,0 +1,6 @@
+---
+description: Ensuring that React components are built composably using Chakra UI components.
+globs: frontend/src/components/**/*.*
+alwaysApply: false
+---
+- Implement proper component composition using Chakra UI

@@ -1,7 +1,7 @@
 import uuid
+from typing import cast
 
 from kubestats.core.yaml_scanner import models
-from kubestats.core.yaml_scanner.resource_db_service import KubernetesResource
 
 
 def test_resource_data_to_dict_and_key() -> None:
@@ -56,16 +56,15 @@ def test_resource_change_properties() -> None:
     assert rc.file_path == "foo/bar.yaml"
 
     # existing_resource only (mock)
-    rd2 = models.ResourceData(
-        api_version="v2",
-        kind="Pod",
-        file_path="foo/bar.yaml",
-        file_hash="abc123",
-        name="mypod",
-        namespace="default",
-    )
-
-    rc2 = models.ResourceChange(type="DELETED", existing_resource=rd2)
+    class DummyKR:
+        api_version = "v2"
+        kind = "Pod"
+        file_path = "foo/bar.yaml"
+        file_hash = "abc123"
+        name = "mypod"
+        namespace = "default"
+    rd2 = DummyKR()
+    rc2 = models.ResourceChange(type="DELETED", existing_resource=cast(models.KubernetesResource, rd2))
     assert rc2.resource_name == "mypod"
     assert rc2.resource_namespace == "default"
     assert rc2.resource_kind == "Pod"
