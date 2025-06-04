@@ -5,7 +5,9 @@ API endpoints for ecosystem statistics and trends.
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import yaml
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sqlmodel import asc, desc, func, select
 
 from kubestats.api.deps import SessionDep, get_current_active_superuser
@@ -15,6 +17,7 @@ from kubestats.models import (
     EcosystemStatsPublic,
     EcosystemTrendPublic,
     EcosystemTrendsPublic,
+    KubernetesResourceEvent,
 )
 
 router = APIRouter()
@@ -236,3 +239,54 @@ def trigger_ecosystem_aggregation(
             status_code=500,
             detail=f"Failed to trigger ecosystem aggregation: {str(e)}",
         )
+
+
+@router.get("/helm-release-activity", response_model=dict[str, Any])
+def get_helm_release_activity(
+    session: SessionDep,
+    limit: int = Query(default=10, ge=1, le=50),
+) -> Any:
+    """
+    Get the most recent HelmRelease changes (created/modified/deleted), grouped by release name.
+    Returns the latest N releases with their change events and YAML.
+    """
+    # Query the most recent HelmRelease events
+    stmt = (
+        select(KubernetesResourceEvent)
+        .where(KubernetesResourceEvent.resource_kind == "HelmRelease")
+        .order_by(desc(KubernetesResourceEvent.event_timestamp))
+        .limit(200)  # Fetch more to allow grouping
+    )
+    events = session.exec(stmt).all()
+
+    # Group by release name
+    grouped: dict[str, Any] = {}
+    for event in events:
+        name = event.resource_name
+        if name not in grouped:
+            grouped[name] = []
+        grouped[name].append(event)
+        if len(grouped) >= limit:
+            break
+
+    # Prepare response
+    result = []
+    for name, changes in list(grouped.items())[:limit]:
+        result.append(
+            {
+                "release_name": name,
+                "changes": [
+                    {
+                        "change_type": e.event_type,
+                        "timestamp": e.event_timestamp.isoformat(),
+                        "yaml": yaml.safe_dump(e.resource_data)
+                        if e.resource_data
+                        else None,
+                        "user": None,  # Add user if available in your model
+                    }
+                    for e in changes
+                ],
+            }
+        )
+
+    return JSONResponse(content=result)

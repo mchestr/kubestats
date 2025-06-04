@@ -19,6 +19,7 @@ import { EcosystemService } from "@/client"
 import { DailyActivity } from "./DailyActivity"
 import { EcosystemOverview } from "./EcosystemOverview"
 import { EcosystemTrendsChart } from "./EcosystemTrendsChart"
+import { HelmReleaseActivitySummary } from "./HelmReleaseActivitySummary"
 import { ResourceBreakdownCharts } from "./ResourceBreakdownCharts"
 
 type TimePeriod = "7d" | "30d" | "90d"
@@ -131,6 +132,9 @@ function EcosystemDashboard() {
 
       {/* Daily Activity */}
       <DailyActivity stats={latestStats} isLoading={isLoadingStats} />
+
+      {/* Helm Release Activity Summary */}
+      <HelmReleaseActivitySummary />
 
       {/* Main Dashboard Content */}
       <Grid templateColumns={{ base: "1fr", xl: "2fr 1fr" }} gap={8}>

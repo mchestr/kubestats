@@ -1463,6 +1463,39 @@ export type EcosystemTriggerEcosystemAggregationResponses = {
 
 export type EcosystemTriggerEcosystemAggregationResponse = EcosystemTriggerEcosystemAggregationResponses[keyof EcosystemTriggerEcosystemAggregationResponses];
 
+export type EcosystemGetHelmReleaseActivityData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/ecosystem/helm-release-activity';
+};
+
+export type EcosystemGetHelmReleaseActivityErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type EcosystemGetHelmReleaseActivityError = EcosystemGetHelmReleaseActivityErrors[keyof EcosystemGetHelmReleaseActivityErrors];
+
+export type EcosystemGetHelmReleaseActivityResponses = {
+    /**
+     * Response Ecosystem-Get Helm Release Activity
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type EcosystemGetHelmReleaseActivityResponse = EcosystemGetHelmReleaseActivityResponses[keyof EcosystemGetHelmReleaseActivityResponses];
+
 export type KubernetesListKubernetesResourcesData = {
     body?: never;
     path?: never;
