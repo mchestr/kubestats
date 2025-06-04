@@ -56,22 +56,21 @@ def test_resource_change_properties() -> None:
     assert rc.file_path == "foo/bar.yaml"
 
     # existing_resource only (mock)
-    class Dummy(KubernetesResource):
-        name = "ex"
-        namespace = "ns"
-        kind = "Kind"
-        api_version = "apiv"
-        file_path = "fpath"
+    rd2 = models.ResourceData(
+        api_version="v2",
+        kind="Pod",
+        file_path="foo/bar.yaml",
+        file_hash="abc123",
+        name="mypod",
+        namespace="default",
+    )
 
-        def resource_key(self) -> str:
-            return "dummykey"
-
-    rc2 = models.ResourceChange(type="DELETED", existing_resource=Dummy())
-    assert rc2.resource_name == "ex"
-    assert rc2.resource_namespace == "ns"
-    assert rc2.resource_kind == "Kind"
-    assert rc2.resource_api_version == "apiv"
-    assert rc2.file_path == "fpath"
+    rc2 = models.ResourceChange(type="DELETED", existing_resource=rd2)
+    assert rc2.resource_name == "mypod"
+    assert rc2.resource_namespace == "default"
+    assert rc2.resource_kind == "Pod"
+    assert rc2.resource_api_version == "v2"
+    assert rc2.file_path == "foo/bar.yaml"
 
     # neither
     rc3 = models.ResourceChange(type="DELETED")
