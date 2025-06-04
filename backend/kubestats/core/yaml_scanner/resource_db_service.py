@@ -2,6 +2,8 @@
 Database service for managing Flux resources and change tracking.
 """
 
+__all__ = ["KubernetesResource", "ResourceDatabaseService"]
+
 import logging
 import uuid
 from datetime import datetime, timezone

@@ -1,6 +1,14 @@
 from pathlib import Path
 from typing import Any
 
+__all__ = [
+    "FluxResourceScanner",
+    "GitRepositoryResourceScanner",
+    "HelmReleaseResourceScanner",
+    "KustomizationResourceScanner",
+    "OciRepositoryResourceScanner",
+]
+
 from kubestats.core.yaml_scanner.models import ResourceData
 from kubestats.core.yaml_scanner.resource_scanners import ResourceScanner
 
