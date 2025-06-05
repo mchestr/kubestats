@@ -396,7 +396,7 @@ export class EcosystemService {
     /**
      * Get Helm Release Activity
      * Get the most recent HelmRelease changes (created/modified/deleted), grouped by release name.
-     * Returns the latest N releases with their change events and YAML.
+     * Returns the latest N releases with their change events and YAML, sorted by highest count.
      */
     public static ecosystemGetHelmReleaseActivity<ThrowOnError extends boolean = false>(options?: Options<EcosystemGetHelmReleaseActivityData, ThrowOnError>) {
         return (options?.client ?? _heyApiClient).get<EcosystemGetHelmReleaseActivityResponses, EcosystemGetHelmReleaseActivityErrors, ThrowOnError>({

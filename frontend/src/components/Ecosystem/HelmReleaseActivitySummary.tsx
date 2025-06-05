@@ -1,4 +1,5 @@
-import { EcosystemService, type HelmReleaseActivityListPublic } from "@/client"
+import { EcosystemService } from "@/client"
+import type { HelmReleaseActivityPublic } from "@/client/types.gen"
 import {
   DialogBody,
   DialogCloseTrigger,
@@ -8,6 +9,7 @@ import {
   DialogRoot,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Pagination } from "@/components/ui/pagination"
 import {
   Badge,
   Box,
@@ -35,17 +37,21 @@ export function HelmReleaseActivitySummary() {
   const [selectedTitle, setSelectedTitle] = useState<string>("")
   const [isOpen, setIsOpen] = useState(false)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ["helm-release-activity"],
+    queryKey: ["helm-release-activity", page, pageSize],
     queryFn: () =>
       EcosystemService.ecosystemGetHelmReleaseActivity({
-        query: { limit: 10 },
+        query: { page, page_size: pageSize } as any,
       }),
     refetchOnWindowFocus: false,
   })
 
-  // Type assertion for OpenAPI response
-  const activity = data?.data as HelmReleaseActivityListPublic | undefined
+  // Temporary workaround for OpenAPI mismatch: treat data as any
+  const releases: HelmReleaseActivityPublic[] = (data as any)?.data.data || []
+  const totalCount: number = (data as any)?.count || 0
 
   const handleViewYaml = (yaml: string, title: string) => {
     setSelectedYaml(yaml)
@@ -75,7 +81,7 @@ export function HelmReleaseActivitySummary() {
     )
   }
 
-  if (isError || !activity) {
+  if (isError) {
     return (
       <Card.Root>
         <Card.Header>
@@ -116,11 +122,11 @@ export function HelmReleaseActivitySummary() {
         </HStack>
       </Card.Header>
       <Card.Body>
-        {(activity.data || []).length === 0 ? (
+        {releases.length === 0 ? (
           <Text color="fg.muted">No recent Helm release activity found.</Text>
         ) : (
           <div>
-            {(activity.data || []).map((release) => (
+            {releases.map((release: HelmReleaseActivityPublic) => (
               <Box
                 key={release.release_name}
                 borderWidth="1px"
@@ -165,7 +171,7 @@ export function HelmReleaseActivitySummary() {
                         </Table.Row>
                       </Table.Header>
                       <Table.Body>
-                        {release.changes.map((change, idx) => (
+                        {release.changes.map((change: any, idx: number) => (
                           <Table.Row key={idx}>
                             <Table.Cell>
                               <Badge
@@ -225,6 +231,17 @@ export function HelmReleaseActivitySummary() {
                 )}
               </Box>
             ))}
+            <Pagination
+              currentPage={page}
+              totalItems={totalCount}
+              itemsPerPage={pageSize}
+              onPageChange={setPage}
+              onItemsPerPageChange={(size) => {
+                setPageSize(size)
+                setPage(1)
+              }}
+              pageSizeOptions={[5, 10, 20, 50]}
+            />
           </div>
         )}
         <DialogRoot open={isOpen} onOpenChange={() => setIsOpen(false)}>

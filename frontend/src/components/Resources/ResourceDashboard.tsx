@@ -71,6 +71,13 @@ export const ResourceDashboard: React.FC = () => {
     }
   }, [groupedData])
 
+  // Prepare sorted resources by total_count descending
+  const sortedResources = useMemo(() => {
+    return (groupedData?.data?.data ?? [])
+      .slice()
+      .sort((a, b) => (b.total_count ?? 0) - (a.total_count ?? 0))
+  }, [groupedData])
+
   // Handlers for filters
   const handleRepositoryChange = (id: string | null) => {
     setRepositoryId(id)
@@ -128,11 +135,11 @@ export const ResourceDashboard: React.FC = () => {
         onSearchChange={() => {}}
       />
       <ResourceSummary
-        resources={groupedData?.data?.data ?? []}
+        resources={sortedResources}
         total={groupedData?.data?.count ?? 0}
       />
       <ResourceTable
-        resources={groupedData?.data?.data ?? []}
+        resources={sortedResources}
         count={groupedData?.data?.count ?? 0}
         page={page}
         pageSize={PAGE_SIZE}

@@ -1568,9 +1568,15 @@ export type EcosystemGetHelmReleaseActivityData = {
     path?: never;
     query?: {
         /**
-         * Limit
+         * Page
+         * Page number for pagination
          */
-        limit?: number;
+        page?: number;
+        /**
+         * Page Size
+         * Number of releases per page
+         */
+        page_size?: number;
     };
     url: '/api/v1/ecosystem/helm-release-activity';
 };

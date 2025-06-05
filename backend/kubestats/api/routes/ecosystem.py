@@ -246,18 +246,21 @@ def trigger_ecosystem_aggregation(
 @router.get("/helm-release-activity", response_model=HelmReleaseActivityListPublic)
 def get_helm_release_activity(
     session: SessionDep,
-    limit: int = Query(default=10, ge=1, le=50),
-) -> HelmReleaseActivityListPublic:
+    page: int = Query(default=1, ge=1, description="Page number for pagination"),
+    page_size: int = Query(
+        default=10, ge=1, le=50, description="Number of releases per page"
+    ),
+) -> dict[str, Any]:
     """
     Get the most recent HelmRelease changes (created/modified/deleted), grouped by release name.
-    Returns the latest N releases with their change events and YAML.
+    Returns the latest N releases with their change events and YAML, sorted by highest count.
     """
     # Query the most recent HelmRelease events
     stmt = (
         select(KubernetesResourceEvent)
         .where(KubernetesResourceEvent.resource_kind == "HelmRelease")
         .order_by(desc(KubernetesResourceEvent.event_timestamp))
-        .limit(200)  # Fetch more to allow grouping
+        .limit(2000)  # Fetch more to allow grouping and sorting
     )
     events = session.exec(stmt).all()
 
@@ -274,9 +277,15 @@ def get_helm_release_activity(
         grouped.items(), key=lambda item: len(item[1]), reverse=True
     )
 
+    # Pagination
+    total_releases = len(sorted_grouped)
+    start = (page - 1) * page_size
+    end = start + page_size
+    paginated_grouped = sorted_grouped[start:end]
+
     # Prepare response
     result = []
-    for name, changes in sorted_grouped[:limit]:
+    for name, changes in paginated_grouped:
         result.append(
             HelmReleaseActivityPublic(
                 release_name=name,
@@ -294,4 +303,4 @@ def get_helm_release_activity(
             )
         )
 
-    return HelmReleaseActivityListPublic(data=result)
+    return {"data": result, "count": total_releases}
