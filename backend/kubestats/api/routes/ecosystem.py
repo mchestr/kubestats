@@ -268,12 +268,15 @@ def get_helm_release_activity(
         if name not in grouped:
             grouped[name] = []
         grouped[name].append(event)
-        if len(grouped) >= limit:
-            break
+
+    # Sort grouped items by number of events (descending)
+    sorted_grouped = sorted(
+        grouped.items(), key=lambda item: len(item[1]), reverse=True
+    )
 
     # Prepare response
     result = []
-    for name, changes in list(grouped.items())[:limit]:
+    for name, changes in sorted_grouped[:limit]:
         result.append(
             HelmReleaseActivityPublic(
                 release_name=name,
@@ -284,7 +287,7 @@ def get_helm_release_activity(
                         yaml=yaml.safe_dump(e.resource_data)
                         if e.resource_data
                         else None,
-                        user=None,  # Add user if available in your model
+                        user=event.repository.full_name,  # Add user if available in your model
                     )
                     for e in changes
                 ],

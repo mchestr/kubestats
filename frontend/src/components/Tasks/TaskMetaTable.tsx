@@ -1,4 +1,4 @@
-import { TasksService } from "@/client";
+import { TasksService } from "@/client"
 import {
   Box,
   Button,
@@ -7,24 +7,24 @@ import {
   Select,
   Spinner,
   Table,
-} from "@chakra-ui/react";
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
-import type { TaskMeta } from "./types";
+} from "@chakra-ui/react"
+import { type UseQueryOptions, useQuery } from "@tanstack/react-query"
+import type { TaskMeta } from "./types"
 
 export function useTaskMeta(
   { status, limit, since }: { status?: string; limit?: number; since?: string },
-  options?: Partial<UseQueryOptions<TaskMeta[], Error>>
+  options?: Partial<UseQueryOptions<TaskMeta[], Error>>,
 ) {
   return useQuery({
     queryKey: ["taskMeta", status, limit, since],
     queryFn: async () => {
       const response = await TasksService.tasksListTasks({
         query: { status, limit, since },
-      });
-      return response.data as TaskMeta[];
+      })
+      return response.data as TaskMeta[]
     },
     ...(options || {}),
-  });
+  })
 }
 
 export function TaskMetaTable({
@@ -35,26 +35,26 @@ export function TaskMetaTable({
   setSearch,
   statusCollection,
 }: {
-  onViewTask: (task: TaskMeta) => void;
-  status: string;
-  setStatus: (s: string) => void;
-  search: string;
-  setSearch: (s: string) => void;
-  statusCollection: any;
+  onViewTask: (task: TaskMeta) => void
+  status: string
+  setStatus: (s: string) => void
+  search: string
+  setSearch: (s: string) => void
+  statusCollection: any
 }) {
   const { data, isLoading, refetch } = useTaskMeta({
     status: status || undefined,
     limit: 50,
-  });
+  })
 
   const filtered: TaskMeta[] = Array.isArray(data)
     ? data.filter((t: TaskMeta) =>
         search
           ? t.task_id.toLowerCase().includes(search.toLowerCase()) ||
             t.name?.toLowerCase().includes(search.toLowerCase())
-          : true
+          : true,
       )
-    : [];
+    : []
 
   return (
     <Box>
@@ -142,5 +142,5 @@ export function TaskMetaTable({
         </Table.Root>
       </Box>
     </Box>
-  );
+  )
 }

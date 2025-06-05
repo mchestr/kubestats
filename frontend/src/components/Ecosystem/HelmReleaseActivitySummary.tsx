@@ -1,28 +1,40 @@
 import { EcosystemService, type HelmReleaseActivityListPublic } from "@/client"
 import {
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Badge,
   Box,
+  Button,
   Card,
   Flex,
   HStack,
   Heading,
   IconButton,
   Spinner,
-  Stack,
+  Table,
   Text,
 } from "@chakra-ui/react"
-import { Collapse } from "@chakra-ui/transition"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import {
   FiChevronDown,
-  FiChevronUp,
-  FiFileText,
+  FiChevronRight,
+  FiEye,
   FiRefreshCw,
 } from "react-icons/fi"
 
 export function HelmReleaseActivitySummary() {
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [selectedYaml, setSelectedYaml] = useState<string | null>(null)
+  const [selectedTitle, setSelectedTitle] = useState<string>("")
+  const [isOpen, setIsOpen] = useState(false)
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["helm-release-activity"],
     queryFn: () =>
@@ -34,6 +46,16 @@ export function HelmReleaseActivitySummary() {
 
   // Type assertion for OpenAPI response
   const activity = data?.data as HelmReleaseActivityListPublic | undefined
+
+  const handleViewYaml = (yaml: string, title: string) => {
+    setSelectedYaml(yaml)
+    setSelectedTitle(title)
+    setIsOpen(true)
+  }
+
+  const toggleExpand = (releaseName: string) => {
+    setExpanded((prev) => ({ ...prev, [releaseName]: !prev[releaseName] }))
+  }
 
   if (isLoading) {
     return (
@@ -78,106 +100,160 @@ export function HelmReleaseActivitySummary() {
   }
 
   return (
-    <Stack gap={4}>
-      {activity.data?.length === 0 ? (
-        <Card.Root>
-          <Card.Header>
-            <Heading size="md">Helm Release Activity</Heading>
-          </Card.Header>
-          <Card.Body>
-            <Text color="fg.muted">No recent Helm release activity found.</Text>
-          </Card.Body>
-        </Card.Root>
-      ) : (
-        activity.data?.map((release) => (
-          <Card.Root key={release.release_name}>
-            <Card.Header>
-              <HStack justify="space-between" align="center">
-                <HStack>
-                  <FiFileText />
-                  <Text fontWeight="bold">{release.release_name}</Text>
-                </HStack>
-                <IconButton
-                  aria-label={
-                    expanded === release.release_name ? "Collapse" : "Expand"
-                  }
-                  size="sm"
-                  variant="ghost"
-                  onClick={() =>
-                    setExpanded(
-                      expanded === release.release_name
-                        ? null
-                        : release.release_name,
-                    )
-                  }
+    <Card.Root>
+      <Card.Header>
+        <HStack justify="space-between" align="center">
+          <Heading size="md">Helm Release Activity</Heading>
+          <IconButton
+            aria-label="Refresh"
+            loading={isFetching}
+            size="sm"
+            onClick={() => refetch()}
+            variant="outline"
+          >
+            <FiRefreshCw />
+          </IconButton>
+        </HStack>
+      </Card.Header>
+      <Card.Body>
+        {(activity.data || []).length === 0 ? (
+          <Text color="fg.muted">No recent Helm release activity found.</Text>
+        ) : (
+          <div>
+            {(activity.data || []).map((release) => (
+              <Box
+                key={release.release_name}
+                borderWidth="1px"
+                borderRadius="md"
+                p={3}
+              >
+                <HStack
+                  as="button"
+                  w="100%"
+                  justify="space-between"
+                  onClick={() => toggleExpand(release.release_name)}
+                  cursor="pointer"
                 >
-                  {expanded === release.release_name ? (
-                    <FiChevronUp />
-                  ) : (
-                    <FiChevronDown />
-                  )}
-                </IconButton>
-              </HStack>
-            </Card.Header>
-            <Card.Body>
-              <Stack gap={2}>
-                {release.changes.map((change, idx) => (
-                  <Box
-                    key={idx}
-                    borderBottom="1px solid"
-                    borderColor="gray.100"
-                    pb={2}
-                    mb={2}
-                  >
-                    <HStack gap={2} align="center">
-                      <Badge
-                        colorScheme={
-                          change.change_type === "CREATED"
-                            ? "green"
-                            : change.change_type === "MODIFIED"
-                              ? "blue"
-                              : change.change_type === "DELETED"
-                                ? "red"
-                                : "gray"
-                        }
-                      >
-                        {change.change_type}
-                      </Badge>
-                      <Text fontSize="sm" color="gray.500">
-                        {new Date(change.timestamp).toLocaleString()}
-                      </Text>
-                      {change.user && (
-                        <Text fontSize="sm" color="gray.600">
-                          by {change.user}
-                        </Text>
-                      )}
-                    </HStack>
-                    <Collapse
-                      in={expanded === release.release_name}
-                      animateOpacity
-                    >
-                      {change.yaml && (
-                        <Box
-                          mt={2}
-                          p={3}
-                          borderRadius="md"
-                          fontFamily="mono"
-                          fontSize="sm"
-                          whiteSpace="pre-wrap"
-                          overflowX="auto"
-                        >
-                          {change.yaml}
-                        </Box>
-                      )}
-                    </Collapse>
+                  <HStack>
+                    {expanded[release.release_name] ? (
+                      <FiChevronDown />
+                    ) : (
+                      <FiChevronRight />
+                    )}
+                    <Heading size="sm">{release.release_name}</Heading>
+                    <Badge colorScheme="purple" fontSize="0.8em">
+                      {release.changes.length} change
+                      {release.changes.length !== 1 ? "s" : ""}
+                    </Badge>
+                  </HStack>
+                  <Text fontSize="sm" color="gray.500">
+                    Most recent:{" "}
+                    {release.changes[0]?.timestamp
+                      ? new Date(release.changes[0].timestamp).toLocaleString()
+                      : "-"}
+                  </Text>
+                </HStack>
+                {expanded[release.release_name] && (
+                  <Box mt={3}>
+                    <Table.Root size="sm" minW="600px">
+                      <Table.Header>
+                        <Table.Row>
+                          <Table.ColumnHeader>Type</Table.ColumnHeader>
+                          <Table.ColumnHeader>Timestamp</Table.ColumnHeader>
+                          <Table.ColumnHeader>User</Table.ColumnHeader>
+                          <Table.ColumnHeader>YAML</Table.ColumnHeader>
+                        </Table.Row>
+                      </Table.Header>
+                      <Table.Body>
+                        {release.changes.map((change, idx) => (
+                          <Table.Row key={idx}>
+                            <Table.Cell>
+                              <Badge
+                                colorScheme={
+                                  change.change_type === "CREATED"
+                                    ? "green"
+                                    : change.change_type === "MODIFIED"
+                                      ? "blue"
+                                      : change.change_type === "DELETED"
+                                        ? "red"
+                                        : "gray"
+                                }
+                                fontSize="0.8em"
+                                px={2}
+                                py={1}
+                                borderRadius="md"
+                              >
+                                {change.change_type}
+                              </Badge>
+                            </Table.Cell>
+                            <Table.Cell>
+                              <Text fontSize="sm" color="gray.600">
+                                {new Date(change.timestamp).toLocaleString()}
+                              </Text>
+                            </Table.Cell>
+                            <Table.Cell>
+                              <Text fontSize="sm" color="gray.600">
+                                {change.user || "-"}
+                              </Text>
+                            </Table.Cell>
+                            <Table.Cell>
+                              {change.yaml ? (
+                                <IconButton
+                                  aria-label="View YAML"
+                                  size="xs"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    handleViewYaml(
+                                      change.yaml || "",
+                                      `${release.release_name} (${change.change_type})`,
+                                    )
+                                  }
+                                >
+                                  <FiEye />
+                                </IconButton>
+                              ) : (
+                                <Text color="gray.400" fontSize="sm">
+                                  -
+                                </Text>
+                              )}
+                            </Table.Cell>
+                          </Table.Row>
+                        ))}
+                      </Table.Body>
+                    </Table.Root>
                   </Box>
-                ))}
-              </Stack>
-            </Card.Body>
-          </Card.Root>
-        ))
-      )}
-    </Stack>
+                )}
+              </Box>
+            ))}
+          </div>
+        )}
+        <DialogRoot open={isOpen} onOpenChange={() => setIsOpen(false)}>
+          <DialogContent maxW="4xl">
+            <DialogHeader>
+              <DialogTitle>{selectedTitle} YAML</DialogTitle>
+            </DialogHeader>
+            <DialogCloseTrigger />
+            <DialogBody>
+              <Box
+                as="pre"
+                fontSize="sm"
+                fontFamily="mono"
+                whiteSpace="pre-wrap"
+                overflowX="auto"
+                p={3}
+                borderRadius="md"
+                maxH="60vh"
+              >
+                {selectedYaml}
+              </Box>
+            </DialogBody>
+            <DialogFooter>
+              <Button onClick={() => setIsOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </DialogRoot>
+      </Card.Body>
+    </Card.Root>
   )
 }
 
