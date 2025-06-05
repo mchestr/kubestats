@@ -287,7 +287,7 @@ def get_helm_release_activity(
                         yaml=yaml.safe_dump(e.resource_data)
                         if e.resource_data
                         else None,
-                        user=event.repository.full_name,  # Add user if available in your model
+                        user=e.repository.full_name,  # Add user if available in your model
                     )
                     for e in changes
                 ],
