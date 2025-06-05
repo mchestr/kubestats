@@ -508,3 +508,21 @@ class HelmReleaseActivityPublic(SQLModel):
 
 class HelmReleaseActivityListPublic(SQLModel):
     data: list[HelmReleaseActivityPublic]
+
+
+class GroupedRepositoryBreakdown(SQLModel):
+    repository_id: uuid.UUID
+    repository_name: str
+    count: int
+
+
+class GroupedKubernetesResource(SQLModel):
+    kind: str
+    name: str
+    total_count: int
+    repositories: list[GroupedRepositoryBreakdown]
+
+
+class GroupedKubernetesResourcesPublic(SQLModel):
+    data: list[GroupedKubernetesResource]
+    count: int

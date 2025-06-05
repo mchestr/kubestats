@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import type React from "react"
 import { useMemo, useState } from "react"
 import { KubernetesService, RepositoriesService } from "../../client/sdk.gen"
-import { ResourceDetailsDrawer } from "./ResourceDetailsDrawer"
+import { RepositoryDrilldownDrawer } from "./RepositoryDrilldownDrawer"
 import { ResourceFilters } from "./ResourceFilters"
 import { ResourceSummary } from "./ResourceSummary"
 import { ResourceTable } from "./ResourceTable"
@@ -13,12 +13,9 @@ export const ResourceDashboard: React.FC = () => {
   // Filter and pagination state
   const [repositoryId, setRepositoryId] = useState<string | null>(null)
   const [kind, setKind] = useState<string | null>(null)
-  const [namespace, setNamespace] = useState<string | null>(null)
-  const [status, setStatus] = useState<string[]>([])
   const [apiVersion, setApiVersion] = useState<string | null>(null)
-  const [search, setSearch] = useState<string>("")
   const [page, setPage] = useState(1)
-  const [selectedResource, setSelectedResource] = useState<any | null>(null)
+  const [selectedGroup, setSelectedGroup] = useState<any | null>(null)
 
   // Fetch repositories for filter dropdown
   const {
@@ -33,30 +30,25 @@ export const ResourceDashboard: React.FC = () => {
       }),
   })
 
-  // Fetch resources with filters and pagination
+  // Fetch grouped resources with filters and pagination
   const {
-    data: resourcesData,
+    data: groupedData,
     isLoading: isLoadingResources,
     isError: isErrorResources,
   } = useQuery({
     queryKey: [
-      "kubernetes-resources",
+      "kubernetes-grouped-resources",
       repositoryId,
       kind,
-      namespace,
-      status.join(","),
       apiVersion,
-      search,
       page,
       PAGE_SIZE,
     ],
     queryFn: () =>
-      KubernetesService.kubernetesListKubernetesResources({
+      KubernetesService.kubernetesListGroupedKubernetesResources({
         query: {
           repository_id: repositoryId || undefined,
           kind: kind || undefined,
-          namespace: namespace || undefined,
-          status: status.length ? status.join(",") : undefined,
           api_version: apiVersion || undefined,
           skip: (page - 1) * PAGE_SIZE,
           limit: PAGE_SIZE,
@@ -64,25 +56,20 @@ export const ResourceDashboard: React.FC = () => {
       }),
   })
 
-  // Extract unique kinds, namespaces, apiVersions, statuses from resources for filter dropdowns
+  // Extract unique kinds and apiVersions for filter dropdowns
   const filterOptions = useMemo(() => {
     const kinds = new Set<string>()
-    const namespaces = new Set<string>()
     const apiVersions = new Set<string>()
-    const statuses = new Set<string>()
-    for (const r of resourcesData?.data?.data || []) {
-      if (r.kind) kinds.add(r.kind)
-      if (r.namespace) namespaces.add(r.namespace)
-      if (r.api_version) apiVersions.add(r.api_version)
-      if (r.status) statuses.add(r.status)
+    for (const g of groupedData?.data?.data || []) {
+      if (g.kind) kinds.add(g.kind)
     }
     return {
       kinds: Array.from(kinds),
-      namespaces: Array.from(namespaces),
+      namespaces: [], // placeholder for prop shape
       apiVersions: Array.from(apiVersions),
-      statuses: Array.from(statuses),
+      statuses: [], // placeholder for prop shape
     }
-  }, [resourcesData])
+  }, [groupedData])
 
   // Handlers for filters
   const handleRepositoryChange = (id: string | null) => {
@@ -93,27 +80,15 @@ export const ResourceDashboard: React.FC = () => {
     setKind(k)
     setPage(1)
   }
-  const handleNamespaceChange = (ns: string | null) => {
-    setNamespace(ns)
-    setPage(1)
-  }
-  const handleStatusChange = (s: string[]) => {
-    setStatus(s)
-    setPage(1)
-  }
   const handleApiVersionChange = (v: string | null) => {
     setApiVersion(v)
     setPage(1)
   }
-  const handleSearchChange = (s: string) => {
-    setSearch(s)
-    setPage(1)
-  }
   const handlePageChange = (p: number) => setPage(p)
 
-  // Table row click handler
-  const handleRowClick = (resource: any) => setSelectedResource(resource)
-  const handleDrawerClose = () => setSelectedResource(null)
+  // Table row click handler (for drill-down)
+  const handleRowClick = (group: any) => setSelectedGroup(group)
+  const handleDrawerClose = () => setSelectedGroup(null)
 
   // Loading and error states
   if (isLoadingRepos || isLoadingResources) {
@@ -141,30 +116,33 @@ export const ResourceDashboard: React.FC = () => {
         filterOptions={filterOptions}
         repositoryId={repositoryId}
         kind={kind}
-        namespace={namespace}
-        status={status}
+        namespace={null}
+        status={[]}
         apiVersion={apiVersion}
-        search={search}
+        search={""}
         onRepositoryChange={handleRepositoryChange}
         onKindChange={handleKindChange}
-        onNamespaceChange={handleNamespaceChange}
-        onStatusChange={handleStatusChange}
+        onNamespaceChange={() => {}}
+        onStatusChange={() => {}}
         onApiVersionChange={handleApiVersionChange}
-        onSearchChange={handleSearchChange}
+        onSearchChange={() => {}}
       />
-      <ResourceSummary resources={resourcesData?.data?.data ?? []} />
+      <ResourceSummary
+        resources={groupedData?.data?.data ?? []}
+        total={groupedData?.data?.count ?? 0}
+      />
       <ResourceTable
-        resources={resourcesData?.data?.data ?? []}
-        count={resourcesData?.data?.count ?? 0}
+        resources={groupedData?.data?.data ?? []}
+        count={groupedData?.data?.count ?? 0}
         page={page}
         pageSize={PAGE_SIZE}
         onPageChange={handlePageChange}
         onRowClick={handleRowClick}
       />
-      <ResourceDetailsDrawer
-        open={!!selectedResource}
+      <RepositoryDrilldownDrawer
+        open={!!selectedGroup}
         onClose={handleDrawerClose}
-        resource={selectedResource}
+        group={selectedGroup}
       />
     </div>
   )

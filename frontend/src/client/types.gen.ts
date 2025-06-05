@@ -217,6 +217,60 @@ export type EventDailyCountsPublic = {
 };
 
 /**
+ * GroupedKubernetesResource
+ */
+export type GroupedKubernetesResource = {
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Total Count
+     */
+    total_count: number;
+    /**
+     * Repositories
+     */
+    repositories: Array<GroupedRepositoryBreakdown>;
+};
+
+/**
+ * GroupedKubernetesResourcesPublic
+ */
+export type GroupedKubernetesResourcesPublic = {
+    /**
+     * Data
+     */
+    data: Array<GroupedKubernetesResource>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * GroupedRepositoryBreakdown
+ */
+export type GroupedRepositoryBreakdown = {
+    /**
+     * Repository Id
+     */
+    repository_id: string;
+    /**
+     * Repository Name
+     */
+    repository_name: string;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -1592,6 +1646,60 @@ export type KubernetesListKubernetesResourcesResponses = {
 };
 
 export type KubernetesListKubernetesResourcesResponse = KubernetesListKubernetesResourcesResponses[keyof KubernetesListKubernetesResourcesResponses];
+
+export type KubernetesListGroupedKubernetesResourcesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Repository Id
+         */
+        repository_id?: string | null;
+        /**
+         * Kind
+         */
+        kind?: string | null;
+        /**
+         * Api Version
+         */
+        api_version?: string | null;
+        /**
+         * Namespace
+         */
+        namespace?: string | null;
+        /**
+         * Status
+         */
+        status?: string | null;
+    };
+    url: '/api/v1/kubernetes/resources/grouped';
+};
+
+export type KubernetesListGroupedKubernetesResourcesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type KubernetesListGroupedKubernetesResourcesError = KubernetesListGroupedKubernetesResourcesErrors[keyof KubernetesListGroupedKubernetesResourcesErrors];
+
+export type KubernetesListGroupedKubernetesResourcesResponses = {
+    /**
+     * Successful Response
+     */
+    200: GroupedKubernetesResourcesPublic;
+};
+
+export type KubernetesListGroupedKubernetesResourcesResponse = KubernetesListGroupedKubernetesResourcesResponses[keyof KubernetesListGroupedKubernetesResourcesResponses];
 
 export type HealthSystemHealthCheckData = {
     body?: never;
