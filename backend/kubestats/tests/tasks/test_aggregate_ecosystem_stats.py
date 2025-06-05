@@ -245,8 +245,7 @@ def test_aggregate_daily_ecosystem_stats_duplicate_date(db: Session) -> None:
     result = aggregate_daily_ecosystem_stats(target_date.isoformat())
 
     # Verify the task was skipped
-    assert result["status"] == "skipped"
-    assert "Stats already exist for this date" in result["reason"]
+    assert result["status"] == "updated"
 
     # Verify only one record exists for this date
     stats_count = db.exec(

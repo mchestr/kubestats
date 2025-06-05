@@ -245,6 +245,42 @@ def calculate_growth_metrics(
     }
 
 
+def set_ecosystem_stats_fields(
+    stats_obj: EcosystemStats,
+    combined_stats: dict[str, Any],
+    calculation_duration: float,
+    activity_date: datetime | None = None,
+) -> EcosystemStats:
+    if activity_date is not None:
+        stats_obj.date = activity_date
+    stats_obj.total_repositories = combined_stats["total_repositories"]
+    stats_obj.active_repositories = combined_stats[
+        "total_repositories"
+    ]  # For now, assume all are active
+    stats_obj.repositories_with_resources = combined_stats[
+        "repositories_with_resources"
+    ]
+    stats_obj.total_resources = combined_stats["total_resources"]
+    stats_obj.active_resources = combined_stats["active_resources"]
+    stats_obj.total_resource_events = combined_stats["total_resource_events"]
+    stats_obj.resource_type_breakdown = combined_stats["resource_type_breakdown"]
+    stats_obj.popular_helm_charts = combined_stats["popular_helm_charts"]
+    stats_obj.daily_created_resources = combined_stats["daily_created_resources"]
+    stats_obj.daily_modified_resources = combined_stats["daily_modified_resources"]
+    stats_obj.daily_deleted_resources = combined_stats["daily_deleted_resources"]
+    stats_obj.total_stars = combined_stats["total_stars"]
+    stats_obj.total_forks = combined_stats["total_forks"]
+    stats_obj.total_watchers = combined_stats["total_watchers"]
+    stats_obj.total_open_issues = combined_stats["total_open_issues"]
+    stats_obj.language_breakdown = combined_stats["language_breakdown"]
+    stats_obj.popular_topics = combined_stats["popular_topics"]
+    stats_obj.repository_growth = combined_stats["repository_growth"]
+    stats_obj.resource_growth = combined_stats["resource_growth"]
+    stats_obj.star_growth = combined_stats["star_growth"]
+    stats_obj.calculation_duration_seconds = calculation_duration
+    return stats_obj
+
+
 @celery_app.task(bind=True)  # type: ignore[misc]
 def aggregate_daily_ecosystem_stats(
     self: Any, target_date: str | None = None
@@ -262,40 +298,29 @@ def aggregate_daily_ecosystem_stats(
         Dictionary containing aggregation results and summary
     """
     start_time = datetime.now(timezone.utc)
-
     try:
         with Session(engine) as session:
             # Parse target date or use current date
             if target_date:
-                parsed_date = datetime.fromisoformat(target_date).replace(
-                    tzinfo=timezone.utc
-                )
+                try:
+                    activity_date = datetime.fromisoformat(target_date)
+                    if activity_date.tzinfo is None:
+                        activity_date = activity_date.replace(tzinfo=timezone.utc)
+                except Exception as e:
+                    log.error(f"Invalid date format: {target_date}")
+                    raise ValueError("Invalid date format") from e
             else:
-                # Use current date for the snapshot
-                parsed_date = datetime.now(timezone.utc)
-
-            snapshot_date = get_start_of_day(parsed_date)
-
+                activity_date = start_time - timedelta(days=1)
             # Calculate daily activity for the previous day to get complete data
-            activity_date = parsed_date - timedelta(days=1)
 
-            log.info(f"Starting ecosystem stats aggregation for {snapshot_date.date()}")
-            log.info(f"Daily activity will be calculated for {activity_date.date()}")
+            log.info(f"Starting ecosystem stats aggregation for {activity_date.date()}")
 
             # Check if stats already exist for this date
             existing_stats = session.exec(
                 select(EcosystemStats).where(
-                    func.date(EcosystemStats.date) == snapshot_date.date()
+                    func.date(EcosystemStats.date) == activity_date.date()
                 )
             ).first()
-
-            if existing_stats:
-                log.info(f"Stats already exist for {snapshot_date.date()}, skipping")
-                return {
-                    "status": "skipped",
-                    "date": snapshot_date.isoformat(),
-                    "reason": "Stats already exist for this date",
-                }
 
             # Calculate all statistics
             repo_stats = calculate_repository_stats(session)
@@ -313,7 +338,7 @@ def aggregate_daily_ecosystem_stats(
 
             # Calculate growth metrics
             growth_metrics = calculate_growth_metrics(
-                session, combined_stats, parsed_date
+                session, combined_stats, activity_date
             )
             combined_stats.update(growth_metrics)
 
@@ -322,47 +347,31 @@ def aggregate_daily_ecosystem_stats(
                 datetime.now(timezone.utc) - start_time
             ).total_seconds()
 
-            # Create ecosystem stats record
-            ecosystem_stats = EcosystemStats(
-                date=snapshot_date,
-                total_repositories=combined_stats["total_repositories"],
-                active_repositories=combined_stats[
-                    "total_repositories"
-                ],  # For now, assume all are active
-                repositories_with_resources=combined_stats[
-                    "repositories_with_resources"
-                ],
-                total_resources=combined_stats["total_resources"],
-                active_resources=combined_stats["active_resources"],
-                total_resource_events=combined_stats["total_resource_events"],
-                resource_type_breakdown=combined_stats["resource_type_breakdown"],
-                popular_helm_charts=combined_stats["popular_helm_charts"],
-                daily_created_resources=combined_stats["daily_created_resources"],
-                daily_modified_resources=combined_stats["daily_modified_resources"],
-                daily_deleted_resources=combined_stats["daily_deleted_resources"],
-                total_stars=combined_stats["total_stars"],
-                total_forks=combined_stats["total_forks"],
-                total_watchers=combined_stats["total_watchers"],
-                total_open_issues=combined_stats["total_open_issues"],
-                language_breakdown=combined_stats["language_breakdown"],
-                popular_topics=combined_stats["popular_topics"],
-                repository_growth=combined_stats["repository_growth"],
-                resource_growth=combined_stats["resource_growth"],
-                star_growth=combined_stats["star_growth"],
-                calculation_duration_seconds=calculation_duration,
-            )
-
-            session.add(ecosystem_stats)
-            session.commit()
-
-            log.info(
-                f"Successfully aggregated ecosystem stats for {snapshot_date.date()}. "
-                f"Duration: {calculation_duration:.2f}s"
-            )
-
+            if existing_stats:
+                log.info(f"Stats already exist for {activity_date.date()}, updating")
+                set_ecosystem_stats_fields(
+                    existing_stats, combined_stats, calculation_duration
+                )
+                session.add(existing_stats)
+                session.commit()
+                log.info(
+                    f"Successfully updated ecosystem stats for {activity_date.date()}. "
+                    f"Duration: {calculation_duration:.2f}s"
+                )
+            else:
+                ecosystem_stats = EcosystemStats()
+                set_ecosystem_stats_fields(
+                    ecosystem_stats, combined_stats, calculation_duration, activity_date
+                )
+                session.add(ecosystem_stats)
+                session.commit()
+                log.info(
+                    f"Successfully aggregated ecosystem stats for {activity_date.date()}. "
+                    f"Duration: {calculation_duration:.2f}s"
+                )
             return {
-                "status": "success",
-                "date": snapshot_date.isoformat(),
+                "status": "updated" if existing_stats else "success",
+                "date": activity_date.isoformat(),
                 "stats": {
                     "total_repositories": combined_stats["total_repositories"],
                     "total_resources": combined_stats["total_resources"],
@@ -380,10 +389,9 @@ def aggregate_daily_ecosystem_stats(
                 },
                 "calculation_duration_seconds": calculation_duration,
             }
-
     except Exception as exc:
         log.error(
-            f"Error aggregating ecosystem stats for {target_date}: {str(exc)}",
+            f"Error aggregating ecosystem stats for {target_date if target_date else 'yesterday'}: {str(exc)}",
             exc_info=True,
         )
 
