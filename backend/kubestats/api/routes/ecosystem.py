@@ -293,9 +293,9 @@ def get_helm_release_activity(
                     HelmReleaseChangePublic(
                         change_type=e.event_type,
                         timestamp=e.event_timestamp,
-                        yaml=yaml.safe_dump(e.resource_data)
-                        if e.resource_data
-                        else None,
+                        yaml=(
+                            yaml.safe_dump(e.resource_data) if e.resource_data else None
+                        ),
                         user=e.repository.full_name,  # Add user if available in your model
                     )
                     for e in changes

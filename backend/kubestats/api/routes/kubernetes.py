@@ -15,7 +15,7 @@ from kubestats.models import (
     Repository,
 )
 
-router = APIRouter(prefix="/kubernetes", tags=["kubernetes"])
+router = APIRouter()
 
 
 @router.get("/resources", response_model=KubernetesResourcesPublic)

@@ -12,7 +12,7 @@ from kubestats.models import (
     RepositoryMetrics,
 )
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter()
 
 
 class DatabaseStatsPublic:
@@ -133,9 +133,9 @@ def get_database_stats(session: SessionDep) -> Any:
                     "repository_full_name": run[5],  # repository_full_name
                     "event_count": run[1],  # event_count
                     "started_at": run[2].isoformat() if run[2] else None,  # started_at
-                    "completed_at": run[3].isoformat()
-                    if run[3]
-                    else None,  # completed_at
+                    "completed_at": (
+                        run[3].isoformat() if run[3] else None
+                    ),  # completed_at
                     "duration_milliseconds": (
                         (run[3] - run[2]).total_seconds() * 1000
                         if run[2] and run[3]
@@ -150,87 +150,4 @@ def get_database_stats(session: SessionDep) -> Any:
             },
         },
         "total_records": total_records,
-    }
-
-
-@router.get(
-    "/recent-active-repositories",
-    dependencies=[Depends(get_current_active_superuser)],
-    response_model=dict[str, Any],
-)
-def get_recent_active_repositories(session: SessionDep) -> Any:
-    """
-    Get top 10 repositories with the most resource changes in the last 3 days.
-    Only accessible by superusers.
-    """
-    # Calculate the cutoff date (3 days ago)
-    three_days_ago = datetime.now(timezone.utc) - timedelta(days=3)
-
-    # Query to get repositories with the most resource events in the last 3 days
-    recent_activity_query = (
-        select(  # type: ignore[call-overload]
-            KubernetesResourceEvent.repository_id,
-            func.count().label("event_count"),
-            func.max(KubernetesResourceEvent.event_timestamp).label("last_activity"),
-            Repository.name,
-            Repository.full_name,
-            Repository.owner,
-            Repository.description,
-        )
-        .join(Repository, KubernetesResourceEvent.repository_id == Repository.id)
-        .where(KubernetesResourceEvent.event_timestamp >= three_days_ago)
-        .group_by(
-            KubernetesResourceEvent.repository_id,
-            Repository.name,
-            Repository.full_name,
-            Repository.owner,
-            Repository.description,
-        )
-        .order_by(
-            func.count().desc(),
-            func.max(KubernetesResourceEvent.event_timestamp).desc(),
-        )
-        .limit(10)
-    )
-
-    active_repos_data = session.exec(recent_activity_query).all()
-
-    # Get event type breakdown for each repository
-    repo_details = []
-    for repo_data in active_repos_data:
-        repository_id = repo_data[0]
-
-        # Get event type breakdown for this repository in the last 3 days
-        event_breakdown_query = (
-            select(
-                KubernetesResourceEvent.event_type,
-                func.count().label("count"),
-            )
-            .where(
-                KubernetesResourceEvent.repository_id == repository_id,
-                KubernetesResourceEvent.event_timestamp >= three_days_ago,
-            )
-            .group_by(KubernetesResourceEvent.event_type)
-        )
-
-        event_breakdown = dict(session.exec(event_breakdown_query).all())
-        repo_details.append(
-            {
-                "repository_id": str(repository_id),
-                "name": repo_data[3],  # name
-                "full_name": repo_data[4],  # full_name
-                "owner": repo_data[5],  # owner
-                "description": repo_data[6],  # description
-                "total_events": repo_data[1],  # event_count
-                "last_activity": repo_data[2].isoformat()
-                if repo_data[2]
-                else None,  # last_activity
-                "event_breakdown": event_breakdown,
-            }
-        )
-
-    return {
-        "recent_active_repositories": repo_details,
-        "period_days": 3,
-        "cutoff_date": three_days_ago.isoformat(),
     }

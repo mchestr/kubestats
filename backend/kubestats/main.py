@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 
-from kubestats.api.health import health_router
-from kubestats.api.main import api_router
+from kubestats.api import api_router
+from kubestats.api.routes.health import router as health_router
 from kubestats.core.config import settings
 
 

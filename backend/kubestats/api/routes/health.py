@@ -11,10 +11,10 @@ from kubestats.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-health_router = APIRouter()
+router = APIRouter()
 
 
-@health_router.get("/health", summary="Check system health")
+@router.get("/health", summary="Check system health")
 def system_health_check(session: SessionDep) -> dict[str, Any]:
     """
     Periodic task to check system health and log status.

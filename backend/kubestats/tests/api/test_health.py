@@ -4,12 +4,14 @@ from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from kubestats.api.health import system_health_check
+from kubestats.api.routes.health import system_health_check
 
 
 def test_system_health_check_healthy(db: Session) -> None:
     """Test system health check returns healthy status when all services are up."""
-    with patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url:
+    with patch(
+        "kubestats.api.routes.health.redis.Redis.from_url"
+    ) as mock_redis_from_url:
         # Setup
         mock_redis = Mock()
         mock_redis.ping.return_value = True
@@ -34,7 +36,9 @@ def test_system_health_check_healthy(db: Session) -> None:
 
 def test_system_health_check_redis_unhealthy(db: Session) -> None:
     """Test system health check returns unhealthy status when Redis is down."""
-    with patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url:
+    with patch(
+        "kubestats.api.routes.health.redis.Redis.from_url"
+    ) as mock_redis_from_url:
         # Setup
         mock_redis = Mock()
         mock_redis.ping.return_value = False
@@ -52,7 +56,9 @@ def test_system_health_check_redis_unhealthy(db: Session) -> None:
 
 def test_system_health_check_redis_exception(db: Session) -> None:
     """Test system health check handles Redis connection exceptions."""
-    with patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url:
+    with patch(
+        "kubestats.api.routes.health.redis.Redis.from_url"
+    ) as mock_redis_from_url:
         # Setup
         mock_redis_from_url.side_effect = Exception("Redis connection failed")
 
@@ -68,7 +74,9 @@ def test_system_health_check_redis_exception(db: Session) -> None:
 
 def test_system_health_check_database_exception() -> None:
     """Test system health check handles database connection exceptions."""
-    with patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url:
+    with patch(
+        "kubestats.api.routes.health.redis.Redis.from_url"
+    ) as mock_redis_from_url:
         # Setup Redis to work
         mock_redis = Mock()
         mock_redis.ping.return_value = True
@@ -90,7 +98,9 @@ def test_system_health_check_database_exception() -> None:
 
 def test_system_health_check_redis_ping_exception(db: Session) -> None:
     """Test system health check handles Redis ping exceptions."""
-    with patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url:
+    with patch(
+        "kubestats.api.routes.health.redis.Redis.from_url"
+    ) as mock_redis_from_url:
         # Setup
         mock_redis = Mock()
         mock_redis.ping.side_effect = Exception("Redis ping failed")
@@ -108,7 +118,9 @@ def test_system_health_check_redis_ping_exception(db: Session) -> None:
 
 def test_health_endpoint_returns_200(client: TestClient) -> None:
     """Test health endpoint returns 200 status code."""
-    with patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url:
+    with patch(
+        "kubestats.api.routes.health.redis.Redis.from_url"
+    ) as mock_redis_from_url:
         # Setup
         mock_redis = Mock()
         mock_redis.ping.return_value = True
@@ -127,7 +139,9 @@ def test_health_endpoint_returns_200(client: TestClient) -> None:
 
 def test_health_endpoint_returns_unhealthy_status(client: TestClient) -> None:
     """Test health endpoint returns unhealthy status when services fail."""
-    with patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url:
+    with patch(
+        "kubestats.api.routes.health.redis.Redis.from_url"
+    ) as mock_redis_from_url:
         # Setup
         mock_redis_from_url.side_effect = Exception("Service unavailable")
 
@@ -144,7 +158,9 @@ def test_health_endpoint_returns_unhealthy_status(client: TestClient) -> None:
 
 def test_health_endpoint_response_format(client: TestClient) -> None:
     """Test health endpoint returns expected response format."""
-    with patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url:
+    with patch(
+        "kubestats.api.routes.health.redis.Redis.from_url"
+    ) as mock_redis_from_url:
         # Setup
         mock_redis = Mock()
         mock_redis.ping.return_value = True
@@ -173,7 +189,9 @@ def test_health_endpoint_response_format(client: TestClient) -> None:
 
 def test_health_check_timestamp_format(db: Session) -> None:
     """Test that health check timestamp is in correct ISO format."""
-    with patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url:
+    with patch(
+        "kubestats.api.routes.health.redis.Redis.from_url"
+    ) as mock_redis_from_url:
         # Setup
         mock_redis = Mock()
         mock_redis.ping.return_value = True
@@ -197,8 +215,10 @@ def test_health_check_timestamp_format(db: Session) -> None:
 def test_health_check_uses_settings_redis_url(db: Session) -> None:
     """Test that health check uses Redis URL from settings."""
     with (
-        patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url,
-        patch("kubestats.api.health.settings") as mock_settings,
+        patch(
+            "kubestats.api.routes.health.redis.Redis.from_url"
+        ) as mock_redis_from_url,
+        patch("kubestats.api.routes.health.settings") as mock_settings,
     ):
         # Setup
         mock_settings.REDIS_URL = "redis://test:6379/0"
@@ -216,8 +236,10 @@ def test_health_check_uses_settings_redis_url(db: Session) -> None:
 def test_health_check_logs_error_on_failure(db: Session) -> None:
     """Test that health check logs errors when services fail."""
     with (
-        patch("kubestats.api.health.redis.Redis.from_url") as mock_redis_from_url,
-        patch("kubestats.api.health.logger") as mock_logger,
+        patch(
+            "kubestats.api.routes.health.redis.Redis.from_url"
+        ) as mock_redis_from_url,
+        patch("kubestats.api.routes.health.logger") as mock_logger,
     ):
         # Setup
         error_message = "Redis connection timeout"

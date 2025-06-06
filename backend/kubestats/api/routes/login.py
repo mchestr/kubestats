@@ -10,7 +10,7 @@ from kubestats.core import security
 from kubestats.core.config import settings
 from kubestats.models import Token, UserPublic
 
-router = APIRouter(tags=["login"])
+router = APIRouter()
 
 
 @router.post("/login/access-token")

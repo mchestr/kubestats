@@ -3,19 +3,22 @@ API routes for repository operations.
 """
 
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Session
+from sqlmodel import Session, func, select
 
 from kubestats import crud
-from kubestats.api.deps import get_current_active_superuser, get_db
+from kubestats.api.deps import SessionDep, get_current_active_superuser, get_db
 from kubestats.models import (
     EventDailyCountsPublic,
+    KubernetesResourceEvent,
     KubernetesResourceEventPublic,
     KubernetesResourceEventsPublic,
     Message,
     RepositoriesPublic,
+    Repository,
     RepositoryPublic,
     RepositoryStatsPublic,
     SyncStatus,
@@ -66,6 +69,89 @@ def read_repository_stats(
         languages=stats["languages"],
         top_repositories=top_repos[:5],  # Top 5 repositories
     )
+
+
+@router.get(
+    "/recent",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=dict[str, Any],
+)
+def get_recent_active_repositories(session: SessionDep) -> Any:
+    """
+    Get top 10 repositories with the most resource changes in the last 3 days.
+    Only accessible by superusers.
+    """
+    # Calculate the cutoff date (3 days ago)
+    three_days_ago = datetime.now(timezone.utc) - timedelta(days=3)
+
+    # Query to get repositories with the most resource events in the last 3 days
+    recent_activity_query = (
+        select(  # type: ignore[call-overload]
+            KubernetesResourceEvent.repository_id,
+            func.count().label("event_count"),
+            func.max(KubernetesResourceEvent.event_timestamp).label("last_activity"),
+            Repository.name,
+            Repository.full_name,
+            Repository.owner,
+            Repository.description,
+        )
+        .join(Repository, KubernetesResourceEvent.repository_id == Repository.id)
+        .where(KubernetesResourceEvent.event_timestamp >= three_days_ago)
+        .group_by(
+            KubernetesResourceEvent.repository_id,
+            Repository.name,
+            Repository.full_name,
+            Repository.owner,
+            Repository.description,
+        )
+        .order_by(
+            func.count().desc(),
+            func.max(KubernetesResourceEvent.event_timestamp).desc(),
+        )
+        .limit(10)
+    )
+
+    active_repos_data = session.exec(recent_activity_query).all()
+
+    # Get event type breakdown for each repository
+    repo_details = []
+    for repo_data in active_repos_data:
+        repository_id = repo_data[0]
+
+        # Get event type breakdown for this repository in the last 3 days
+        event_breakdown_query = (
+            select(
+                KubernetesResourceEvent.event_type,
+                func.count().label("count"),
+            )
+            .where(
+                KubernetesResourceEvent.repository_id == repository_id,
+                KubernetesResourceEvent.event_timestamp >= three_days_ago,
+            )
+            .group_by(KubernetesResourceEvent.event_type)
+        )
+
+        event_breakdown = dict(session.exec(event_breakdown_query).all())
+        repo_details.append(
+            {
+                "repository_id": str(repository_id),
+                "name": repo_data[3],  # name
+                "full_name": repo_data[4],  # full_name
+                "owner": repo_data[5],  # owner
+                "description": repo_data[6],  # description
+                "total_events": repo_data[1],  # event_count
+                "last_activity": (
+                    repo_data[2].isoformat() if repo_data[2] else None
+                ),  # last_activity
+                "event_breakdown": event_breakdown,
+            }
+        )
+
+    return {
+        "recent_active_repositories": repo_details,
+        "period_days": 3,
+        "cutoff_date": three_days_ago.isoformat(),
+    }
 
 
 @router.get("/search", response_model=RepositoriesPublic)
