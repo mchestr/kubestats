@@ -2,7 +2,7 @@ import datetime
 import logging
 from typing import Any
 
-import redis  # type: ignore[import-untyped]
+import redis
 from fastapi import APIRouter
 from sqlmodel import select
 
