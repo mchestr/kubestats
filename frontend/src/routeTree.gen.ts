@@ -8,146 +8,199 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-// Import Routes
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as LayoutRouteImport } from './routes/_layout'
+import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as LayoutTasksRouteImport } from './routes/_layout/tasks'
+import { Route as LayoutResourcesRouteImport } from './routes/_layout/resources'
+import { Route as LayoutRepositoriesRouteImport } from './routes/_layout/repositories'
+import { Route as LayoutEcosystemRouteImport } from './routes/_layout/ecosystem'
+import { Route as LayoutRepositoriesIndexRouteImport } from './routes/_layout/repositories/index'
+import { Route as LayoutRepositoriesRepositoryIdRouteImport } from './routes/_layout/repositories/$repositoryId'
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as LoginImport } from './routes/login'
-import { Route as LayoutImport } from './routes/_layout'
-import { Route as LayoutIndexImport } from './routes/_layout/index'
-import { Route as LayoutTasksImport } from './routes/_layout/tasks'
-import { Route as LayoutResourcesImport } from './routes/_layout/resources'
-import { Route as LayoutRepositoriesImport } from './routes/_layout/repositories'
-import { Route as LayoutEcosystemImport } from './routes/_layout/ecosystem'
-import { Route as LayoutRepositoriesIndexImport } from './routes/_layout/repositories/index'
-import { Route as LayoutRepositoriesRepositoryIdImport } from './routes/_layout/repositories/$repositoryId'
-
-// Create/Update Routes
-
-const LoginRoute = LoginImport.update({
+const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const LayoutRoute = LayoutImport.update({
+const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const LayoutIndexRoute = LayoutIndexImport.update({
+const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LayoutRoute,
 } as any)
-
-const LayoutTasksRoute = LayoutTasksImport.update({
+const LayoutTasksRoute = LayoutTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
   getParentRoute: () => LayoutRoute,
 } as any)
-
-const LayoutResourcesRoute = LayoutResourcesImport.update({
+const LayoutResourcesRoute = LayoutResourcesRouteImport.update({
   id: '/resources',
   path: '/resources',
   getParentRoute: () => LayoutRoute,
 } as any)
-
-const LayoutRepositoriesRoute = LayoutRepositoriesImport.update({
+const LayoutRepositoriesRoute = LayoutRepositoriesRouteImport.update({
   id: '/repositories',
   path: '/repositories',
   getParentRoute: () => LayoutRoute,
 } as any)
-
-const LayoutEcosystemRoute = LayoutEcosystemImport.update({
+const LayoutEcosystemRoute = LayoutEcosystemRouteImport.update({
   id: '/ecosystem',
   path: '/ecosystem',
   getParentRoute: () => LayoutRoute,
 } as any)
-
-const LayoutRepositoriesIndexRoute = LayoutRepositoriesIndexImport.update({
+const LayoutRepositoriesIndexRoute = LayoutRepositoriesIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LayoutRepositoriesRoute,
 } as any)
-
 const LayoutRepositoriesRepositoryIdRoute =
-  LayoutRepositoriesRepositoryIdImport.update({
+  LayoutRepositoriesRepositoryIdRouteImport.update({
     id: '/$repositoryId',
     path: '/$repositoryId',
     getParentRoute: () => LayoutRepositoriesRoute,
   } as any)
 
-// Populate the FileRoutesByPath interface
+export interface FileRoutesByFullPath {
+  '/login': typeof LoginRoute
+  '/ecosystem': typeof LayoutEcosystemRoute
+  '/repositories': typeof LayoutRepositoriesRouteWithChildren
+  '/resources': typeof LayoutResourcesRoute
+  '/tasks': typeof LayoutTasksRoute
+  '/': typeof LayoutIndexRoute
+  '/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
+  '/repositories/': typeof LayoutRepositoriesIndexRoute
+}
+export interface FileRoutesByTo {
+  '/login': typeof LoginRoute
+  '/ecosystem': typeof LayoutEcosystemRoute
+  '/resources': typeof LayoutResourcesRoute
+  '/tasks': typeof LayoutTasksRoute
+  '/': typeof LayoutIndexRoute
+  '/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
+  '/repositories': typeof LayoutRepositoriesIndexRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/_layout': typeof LayoutRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_layout/ecosystem': typeof LayoutEcosystemRoute
+  '/_layout/repositories': typeof LayoutRepositoriesRouteWithChildren
+  '/_layout/resources': typeof LayoutResourcesRoute
+  '/_layout/tasks': typeof LayoutTasksRoute
+  '/_layout/': typeof LayoutIndexRoute
+  '/_layout/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
+  '/_layout/repositories/': typeof LayoutRepositoriesIndexRoute
+}
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/login'
+    | '/ecosystem'
+    | '/repositories'
+    | '/resources'
+    | '/tasks'
+    | '/'
+    | '/repositories/$repositoryId'
+    | '/repositories/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/login'
+    | '/ecosystem'
+    | '/resources'
+    | '/tasks'
+    | '/'
+    | '/repositories/$repositoryId'
+    | '/repositories'
+  id:
+    | '__root__'
+    | '/_layout'
+    | '/login'
+    | '/_layout/ecosystem'
+    | '/_layout/repositories'
+    | '/_layout/resources'
+    | '/_layout/tasks'
+    | '/_layout/'
+    | '/_layout/repositories/$repositoryId'
+    | '/_layout/repositories/'
+  fileRoutesById: FileRoutesById
+}
+export interface RootRouteChildren {
+  LayoutRoute: typeof LayoutRouteWithChildren
+  LoginRoute: typeof LoginRoute
+}
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_layout': {
-      id: '/_layout'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof LayoutImport
-      parentRoute: typeof rootRoute
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
-      preLoaderRoute: typeof LoginImport
-      parentRoute: typeof rootRoute
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_layout/ecosystem': {
-      id: '/_layout/ecosystem'
-      path: '/ecosystem'
-      fullPath: '/ecosystem'
-      preLoaderRoute: typeof LayoutEcosystemImport
-      parentRoute: typeof LayoutImport
-    }
-    '/_layout/repositories': {
-      id: '/_layout/repositories'
-      path: '/repositories'
-      fullPath: '/repositories'
-      preLoaderRoute: typeof LayoutRepositoriesImport
-      parentRoute: typeof LayoutImport
-    }
-    '/_layout/resources': {
-      id: '/_layout/resources'
-      path: '/resources'
-      fullPath: '/resources'
-      preLoaderRoute: typeof LayoutResourcesImport
-      parentRoute: typeof LayoutImport
-    }
-    '/_layout/tasks': {
-      id: '/_layout/tasks'
-      path: '/tasks'
-      fullPath: '/tasks'
-      preLoaderRoute: typeof LayoutTasksImport
-      parentRoute: typeof LayoutImport
+    '/_layout': {
+      id: '/_layout'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof LayoutRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_layout/': {
       id: '/_layout/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof LayoutIndexImport
-      parentRoute: typeof LayoutImport
+      preLoaderRoute: typeof LayoutIndexRouteImport
+      parentRoute: typeof LayoutRoute
     }
-    '/_layout/repositories/$repositoryId': {
-      id: '/_layout/repositories/$repositoryId'
-      path: '/$repositoryId'
-      fullPath: '/repositories/$repositoryId'
-      preLoaderRoute: typeof LayoutRepositoriesRepositoryIdImport
-      parentRoute: typeof LayoutRepositoriesImport
+    '/_layout/tasks': {
+      id: '/_layout/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof LayoutTasksRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/resources': {
+      id: '/_layout/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof LayoutResourcesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/repositories': {
+      id: '/_layout/repositories'
+      path: '/repositories'
+      fullPath: '/repositories'
+      preLoaderRoute: typeof LayoutRepositoriesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/ecosystem': {
+      id: '/_layout/ecosystem'
+      path: '/ecosystem'
+      fullPath: '/ecosystem'
+      preLoaderRoute: typeof LayoutEcosystemRouteImport
+      parentRoute: typeof LayoutRoute
     }
     '/_layout/repositories/': {
       id: '/_layout/repositories/'
       path: '/'
       fullPath: '/repositories/'
-      preLoaderRoute: typeof LayoutRepositoriesIndexImport
-      parentRoute: typeof LayoutRepositoriesImport
+      preLoaderRoute: typeof LayoutRepositoriesIndexRouteImport
+      parentRoute: typeof LayoutRepositoriesRoute
+    }
+    '/_layout/repositories/$repositoryId': {
+      id: '/_layout/repositories/$repositoryId'
+      path: '/$repositoryId'
+      fullPath: '/repositories/$repositoryId'
+      preLoaderRoute: typeof LayoutRepositoriesRepositoryIdRouteImport
+      parentRoute: typeof LayoutRepositoriesRoute
     }
   }
 }
-
-// Create and export the route tree
 
 interface LayoutRepositoriesRouteChildren {
   LayoutRepositoriesRepositoryIdRoute: typeof LayoutRepositoriesRepositoryIdRoute
@@ -181,145 +234,10 @@ const LayoutRouteChildren: LayoutRouteChildren = {
 const LayoutRouteWithChildren =
   LayoutRoute._addFileChildren(LayoutRouteChildren)
 
-export interface FileRoutesByFullPath {
-  '': typeof LayoutRouteWithChildren
-  '/login': typeof LoginRoute
-  '/ecosystem': typeof LayoutEcosystemRoute
-  '/repositories': typeof LayoutRepositoriesRouteWithChildren
-  '/resources': typeof LayoutResourcesRoute
-  '/tasks': typeof LayoutTasksRoute
-  '/': typeof LayoutIndexRoute
-  '/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
-  '/repositories/': typeof LayoutRepositoriesIndexRoute
-}
-
-export interface FileRoutesByTo {
-  '/login': typeof LoginRoute
-  '/ecosystem': typeof LayoutEcosystemRoute
-  '/resources': typeof LayoutResourcesRoute
-  '/tasks': typeof LayoutTasksRoute
-  '/': typeof LayoutIndexRoute
-  '/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
-  '/repositories': typeof LayoutRepositoriesIndexRoute
-}
-
-export interface FileRoutesById {
-  __root__: typeof rootRoute
-  '/_layout': typeof LayoutRouteWithChildren
-  '/login': typeof LoginRoute
-  '/_layout/ecosystem': typeof LayoutEcosystemRoute
-  '/_layout/repositories': typeof LayoutRepositoriesRouteWithChildren
-  '/_layout/resources': typeof LayoutResourcesRoute
-  '/_layout/tasks': typeof LayoutTasksRoute
-  '/_layout/': typeof LayoutIndexRoute
-  '/_layout/repositories/$repositoryId': typeof LayoutRepositoriesRepositoryIdRoute
-  '/_layout/repositories/': typeof LayoutRepositoriesIndexRoute
-}
-
-export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | ''
-    | '/login'
-    | '/ecosystem'
-    | '/repositories'
-    | '/resources'
-    | '/tasks'
-    | '/'
-    | '/repositories/$repositoryId'
-    | '/repositories/'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/login'
-    | '/ecosystem'
-    | '/resources'
-    | '/tasks'
-    | '/'
-    | '/repositories/$repositoryId'
-    | '/repositories'
-  id:
-    | '__root__'
-    | '/_layout'
-    | '/login'
-    | '/_layout/ecosystem'
-    | '/_layout/repositories'
-    | '/_layout/resources'
-    | '/_layout/tasks'
-    | '/_layout/'
-    | '/_layout/repositories/$repositoryId'
-    | '/_layout/repositories/'
-  fileRoutesById: FileRoutesById
-}
-
-export interface RootRouteChildren {
-  LayoutRoute: typeof LayoutRouteWithChildren
-  LoginRoute: typeof LoginRoute
-}
-
 const rootRouteChildren: RootRouteChildren = {
   LayoutRoute: LayoutRouteWithChildren,
   LoginRoute: LoginRoute,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/_layout",
-        "/login"
-      ]
-    },
-    "/_layout": {
-      "filePath": "_layout.tsx",
-      "children": [
-        "/_layout/ecosystem",
-        "/_layout/repositories",
-        "/_layout/resources",
-        "/_layout/tasks",
-        "/_layout/"
-      ]
-    },
-    "/login": {
-      "filePath": "login.tsx"
-    },
-    "/_layout/ecosystem": {
-      "filePath": "_layout/ecosystem.tsx",
-      "parent": "/_layout"
-    },
-    "/_layout/repositories": {
-      "filePath": "_layout/repositories.tsx",
-      "parent": "/_layout",
-      "children": [
-        "/_layout/repositories/$repositoryId",
-        "/_layout/repositories/"
-      ]
-    },
-    "/_layout/resources": {
-      "filePath": "_layout/resources.tsx",
-      "parent": "/_layout"
-    },
-    "/_layout/tasks": {
-      "filePath": "_layout/tasks.tsx",
-      "parent": "/_layout"
-    },
-    "/_layout/": {
-      "filePath": "_layout/index.tsx",
-      "parent": "/_layout"
-    },
-    "/_layout/repositories/$repositoryId": {
-      "filePath": "_layout/repositories/$repositoryId.tsx",
-      "parent": "/_layout/repositories"
-    },
-    "/_layout/repositories/": {
-      "filePath": "_layout/repositories/index.tsx",
-      "parent": "/_layout/repositories"
-    }
-  }
-}
-ROUTE_MANIFEST_END */

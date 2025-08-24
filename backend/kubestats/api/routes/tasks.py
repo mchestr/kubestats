@@ -1,5 +1,6 @@
 import json
 import logging
+import pickle
 from datetime import datetime, timezone
 from typing import Any
 
@@ -39,10 +40,10 @@ class TaskStatusResponse(BaseModel):
     @field_validator("result", mode="before")
     @classmethod
     def serialize_exception_result(cls, v: Any) -> Any:
-        """Convert exception objects to string representation and parse JSON strings."""
+        """Convert exception objects to string representation and decode all result formats."""
         if isinstance(v, Exception):
             return f"{type(v).__name__}: {str(v)}"
-        return parse_json_if_string(v)
+        return decode_and_parse_result(v)
 
 
 class WorkerStatsResponse(BaseModel):
@@ -92,39 +93,102 @@ class TaskMetaResponse(BaseModel):
     @field_validator("result", mode="before")
     @classmethod
     def parse_json_result(cls, v: Any) -> Any:
-        """Parse JSON strings back to their original data structures."""
-        return parse_json_if_string(v)
+        """Decode and parse all result formats including pickled data and JSON."""
+        return decode_and_parse_result(v)
+
+    @field_validator("args", "kwargs", "traceback", mode="before")
+    @classmethod
+    def decode_string_fields(cls, v: Any) -> str | None:
+        """Decode string fields that might contain pickled data or memoryview objects."""
+        return decode_string_field(v)
+
+
+def decode_and_parse_result(val: Any) -> Any:
+    """
+    Comprehensive decoder for Celery task results that handles:
+    - Memoryview objects (convert to bytes)
+    - Pickled binary data (unpickle safely)
+    - JSON strings (parse to objects)
+    - Regular strings and other types (return as-is)
+    """
+    # Handle memoryview objects first
+    if isinstance(val, memoryview):
+        try:
+            val = val.tobytes()
+        except Exception:
+            return str(val)
+
+    # Try unpickling if it's bytes (likely legacy pickled data)
+    if isinstance(val, bytes):
+        try:
+            # Attempt to unpickle - this handles legacy Celery data
+            return pickle.loads(val)
+        except Exception:
+            # If unpickling fails, try decoding as UTF-8
+            try:
+                val = val.decode("utf-8", errors="replace")
+            except Exception:
+                return str(val)
+
+    # Try JSON parsing if it's a string that looks like JSON
+    if isinstance(val, str):
+        # Skip empty or whitespace-only strings
+        if not val.strip():
+            return val
+
+        # Try to parse as JSON if it looks like structured data
+        stripped = val.strip()
+        if stripped.startswith(("{", "[", '"')) or stripped in ("true", "false", "null"):
+            try:
+                return json.loads(val)
+            except (json.JSONDecodeError, ValueError):
+                # If parsing fails, return the string as-is
+                pass
+
+    return val
+
+
+def decode_string_field(val: Any) -> str | None:
+    """
+    Decode string fields that might contain pickled data or memoryview objects.
+    Always returns a string or None to maintain type compatibility.
+    """
+    if val is None:
+        return None
+
+    # Handle memoryview objects first
+    if isinstance(val, memoryview):
+        try:
+            val = val.tobytes()
+        except Exception:
+            return str(val)
+
+    # Try unpickling if it's bytes, but convert result to string
+    if isinstance(val, bytes):
+        try:
+            # Attempt to unpickle
+            unpickled = pickle.loads(val)
+            # Convert the result to a string representation
+            return str(unpickled) if unpickled is not None else None
+        except Exception:
+            # If unpickling fails, try decoding as UTF-8
+            try:
+                return val.decode("utf-8", errors="replace")
+            except Exception:
+                return str(val)
+
+    # Return as string
+    return str(val) if val is not None else None
 
 
 def decode_if_memoryview(val: Any) -> Any:
-    """Decode memoryview objects to strings."""
-    if isinstance(val, memoryview):
-        try:
-            return val.tobytes().decode("utf-8", errors="replace")
-        except Exception:
-            return str(val.tobytes())
-    return val
+    """Legacy function - use decode_and_parse_result for result fields."""
+    return decode_and_parse_result(val)
 
 
 def parse_json_if_string(val: Any) -> Any:
-    """Parse JSON strings back to their original data structures."""
-    if not isinstance(val, str):
-        return val
-
-    # Skip empty or whitespace-only strings
-    if not val.strip():
-        return val
-
-    # Try to parse as JSON if it looks like structured data
-    stripped = val.strip()
-    if stripped.startswith(("{", "[", '"')) or stripped in ("true", "false", "null"):
-        try:
-            return json.loads(val)
-        except (json.JSONDecodeError, ValueError):
-            # If parsing fails, return the string as-is
-            pass
-
-    return val
+    """Legacy function - use decode_and_parse_result instead."""
+    return decode_and_parse_result(val)
 
 
 def ensure_utc_isoformat(dt: datetime | None) -> str | None:
@@ -319,12 +383,12 @@ def list_tasks(
         TaskMetaResponse(
             task_id=task.task_id,
             status=task.status,
-            result=decode_if_memoryview(task.result),
+            result=task.result,
             date_done=ensure_utc_isoformat(task.date_done),
-            traceback=decode_if_memoryview(task.traceback),
+            traceback=task.traceback,
             name=task.name,
-            args=decode_if_memoryview(task.args),
-            kwargs=decode_if_memoryview(task.kwargs),
+            args=task.args,
+            kwargs=task.kwargs,
             worker=task.worker,
             retries=task.retries,
         )
