@@ -1,4 +1,4 @@
-import { TasksService } from "@/client"
+import { Tasks } from "@/client"
 import {
   Box,
   Button,
@@ -18,7 +18,7 @@ export function useTaskMeta(
   return useQuery({
     queryKey: ["taskMeta", status, limit, since],
     queryFn: async () => {
-      const response = await TasksService.tasksListTasks({
+      const response = await Tasks.tasksListTasks({
         query: { status, limit, since },
       })
       return response.data as TaskMeta[]

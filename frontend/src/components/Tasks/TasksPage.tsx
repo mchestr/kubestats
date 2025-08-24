@@ -1,4 +1,5 @@
-import { TasksService } from "@/client"
+import { Tasks } from "@/client"
+import type { TaskMeta } from "@/components/Tasks"
 import {
   ActiveTasksMonitor,
   PeriodicTasks,
@@ -10,7 +11,6 @@ import {
   WorkerStatsModal,
   WorkerStatus,
 } from "@/components/Tasks"
-import type { TaskMeta } from "@/components/Tasks"
 import useCustomToast from "@/hooks/useCustomToast"
 import {
   Box,
@@ -51,7 +51,7 @@ export function TasksPage() {
   // Trigger periodic task mutation
   const triggerPeriodicTaskMutation = useMutation({
     mutationFn: (taskName: string) =>
-      TasksService.tasksTriggerPeriodicTask({ path: { task_name: taskName } }),
+      Tasks.tasksTriggerPeriodicTask({ path: { task_name: taskName } }),
     onSuccess: ({ data }: any) => {
       showSuccessToast(`Task ${data.task_id} triggered successfully`)
       setSelectedTaskId(data.task_id)
@@ -68,7 +68,7 @@ export function TasksPage() {
   const { data: workerStatus, isLoading: workersLoading } = useQuery({
     queryKey: ["workers"],
     queryFn: async () => {
-      const response = await TasksService.tasksGetWorkerStatus()
+      const response = await Tasks.tasksGetWorkerStatus()
       return response.data as any
     },
     refetchInterval: 5000, // Refetch every 5 seconds
@@ -139,7 +139,7 @@ export function TasksPage() {
   const { data: failedTasks } = useQuery({
     queryKey: ["failedTasks24h", failedSince],
     queryFn: async () => {
-      const response = await TasksService.tasksListTasks({
+      const response = await Tasks.tasksListTasks({
         query: { status: "FAILURE", since: failedSince, limit: 1000 },
       })
       return response.data
@@ -150,7 +150,7 @@ export function TasksPage() {
   const { data: pendingTasks } = useQuery({
     queryKey: ["pendingTasksQueueDepth"],
     queryFn: async () => {
-      const response = await TasksService.tasksListTasks({
+      const response = await Tasks.tasksListTasks({
         query: { status: "PENDING", limit: 1000 },
       })
       return response.data

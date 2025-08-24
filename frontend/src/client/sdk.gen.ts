@@ -18,7 +18,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: Record<string, unknown>;
 };
 
-export class LoginService {
+export class Login {
     /**
      * Login Access Token
      * OAuth2 compatible token login, get an access token for future requests
@@ -51,10 +51,9 @@ export class LoginService {
             ...options
         });
     }
-    
 }
 
-export class AdminService {
+export class Admin {
     /**
      * Get Database Stats
      * Get database table counts and sync run statistics.
@@ -72,10 +71,9 @@ export class AdminService {
             ...options
         });
     }
-    
 }
 
-export class RepositoriesService {
+export class Repositories {
     /**
      * Read Repositories
      * Retrieve repositories with pagination.
@@ -257,10 +255,9 @@ export class RepositoriesService {
             ...options
         });
     }
-    
 }
 
-export class TasksService {
+export class Tasks {
     /**
      * Trigger Periodic Task
      * Trigger a periodic task by name (superuser only).
@@ -328,10 +325,9 @@ export class TasksService {
             ...options
         });
     }
-    
 }
 
-export class EcosystemService {
+export class Ecosystem {
     /**
      * Get Ecosystem Stats
      * Get historical ecosystem statistics.
@@ -404,10 +400,9 @@ export class EcosystemService {
             ...options
         });
     }
-    
 }
 
-export class KubernetesService {
+export class Kubernetes {
     /**
      * List Kubernetes Resources
      * List Kubernetes resources with optional filtering.
@@ -437,10 +432,9 @@ export class KubernetesService {
             ...options
         });
     }
-    
 }
 
-export class HealthService {
+export class Health {
     /**
      * Check system health
      * Periodic task to check system health and log status.
@@ -453,5 +447,4 @@ export class HealthService {
             ...options
         });
     }
-    
 }

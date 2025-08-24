@@ -26,7 +26,7 @@ import {
 } from "react-icons/fi"
 
 import type { RepositoryPublic } from "../../client"
-import { RepositoriesService } from "../../client"
+import { Repositories } from "../../client"
 import useAuth from "../../hooks/useAuth"
 import useCustomToast from "../../hooks/useCustomToast"
 import { SyncButton } from "../ui/sync-button"
@@ -54,7 +54,7 @@ function RepositoryDetail() {
   } = useQuery({
     queryKey: ["repository", repositoryId],
     queryFn: () =>
-      RepositoriesService.repositoriesReadRepository({
+      Repositories.repositoriesReadRepository({
         path: { repository_id: repositoryId },
       }),
   })
@@ -66,7 +66,7 @@ function RepositoryDetail() {
   } = useQuery({
     queryKey: ["repository-metrics", repositoryId],
     queryFn: () =>
-      RepositoriesService.repositoriesReadRepositoryMetrics({
+      Repositories.repositoriesReadRepositoryMetrics({
         path: { repository_id: repositoryId },
       }),
     enabled: !!repositoryId,
@@ -88,7 +88,7 @@ function RepositoryDetail() {
     if (!repositoryId) return
 
     try {
-      await RepositoriesService.repositoriesTriggerRepositorySyncSingle({
+      await Repositories.repositoriesTriggerRepositorySyncSingle({
         path: { repository_id: repositoryId },
       })
       showSuccessToast("Sync triggered for repository")
@@ -105,7 +105,7 @@ function RepositoryDetail() {
     if (!repositoryId) return
 
     try {
-      await RepositoriesService.repositoriesBlockRepository({
+      await Repositories.repositoriesBlockRepository({
         path: { repository_id: repositoryId },
       })
       showSuccessToast("Repository blocked successfully")
@@ -122,7 +122,7 @@ function RepositoryDetail() {
     if (!repositoryId) return
 
     try {
-      await RepositoriesService.repositoriesApproveRepository({
+      await Repositories.repositoriesApproveRepository({
         path: { repository_id: repositoryId },
       })
       showSuccessToast("Repository approved successfully")

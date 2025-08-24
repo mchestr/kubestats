@@ -5,11 +5,12 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, field_validator
+from sqlmodel import Session, desc, select
+
 from kubestats.api.deps import get_current_active_superuser, get_db
 from kubestats.celery_app import celery_app
 from kubestats.models import CeleryTaskMeta, User
-from pydantic import BaseModel, field_validator
-from sqlmodel import Session, desc, select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -138,7 +139,11 @@ def decode_and_parse_result(val: Any) -> Any:
 
         # Try to parse as JSON if it looks like structured data
         stripped = val.strip()
-        if stripped.startswith(("{", "[", '"')) or stripped in ("true", "false", "null"):
+        if stripped.startswith(("{", "[", '"')) or stripped in (
+            "true",
+            "false",
+            "null",
+        ):
             try:
                 return json.loads(val)
             except (json.JSONDecodeError, ValueError):

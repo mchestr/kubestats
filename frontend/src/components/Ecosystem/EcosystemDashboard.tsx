@@ -15,7 +15,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { FiActivity, FiDatabase, FiTrendingUp } from "react-icons/fi"
 
-import { EcosystemService } from "@/client"
+import { Ecosystem } from "@/client"
 import { DailyActivity } from "./DailyActivity"
 import { EcosystemOverview } from "./EcosystemOverview"
 import { EcosystemTrendsChart } from "./EcosystemTrendsChart"
@@ -34,7 +34,7 @@ function EcosystemDashboard() {
     isError: isStatsError,
   } = useQuery({
     queryKey: ["ecosystem-latest-stats"],
-    queryFn: () => EcosystemService.ecosystemGetLatestEcosystemStats(),
+    queryFn: () => Ecosystem.ecosystemGetLatestEcosystemStats(),
   })
 
   // Get ecosystem trends
@@ -45,7 +45,7 @@ function EcosystemDashboard() {
   } = useQuery({
     queryKey: ["ecosystem-trends", selectedPeriod],
     queryFn: () =>
-      EcosystemService.ecosystemGetEcosystemTrends({
+      Ecosystem.ecosystemGetEcosystemTrends({
         query: { days: getDaysFromPeriod(selectedPeriod) },
       }),
   })

@@ -4,7 +4,7 @@ import { useState } from "react"
 
 import {
   type BodyLoginLoginAccessToken as AccessToken,
-  LoginService,
+  Login,
   type Token,
   type UserPublic,
 } from "@/client"
@@ -20,14 +20,14 @@ const useAuth = () => {
   const { data: user } = useQuery<UserPublic | null, Error>({
     queryKey: ["currentUser"],
     queryFn: async () => {
-      const response = await LoginService.loginWhoami()
+      const response = await Login.loginWhoami()
       return response.data as unknown as UserPublic
     },
     enabled: isLoggedIn(),
   })
 
   const login = async (data: AccessToken) => {
-    const response = await LoginService.loginLoginAccessToken({
+    const response = await Login.loginLoginAccessToken({
       body: data,
     })
     const tokenData = response.data as unknown as Token

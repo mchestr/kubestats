@@ -22,7 +22,7 @@ import {
 } from "recharts"
 
 import type { EventDailyCountsPublic } from "../../client"
-import { RepositoriesService } from "../../client"
+import { Repositories } from "../../client"
 
 interface RepositoryEventsChartProps {
   repositoryId: string
@@ -53,7 +53,7 @@ function RepositoryEventsChart({ repositoryId }: RepositoryEventsChartProps) {
   } = useQuery({
     queryKey: ["repository-events-daily-counts", repositoryId, timeFilter],
     queryFn: () =>
-      RepositoriesService.repositoriesReadRepositoryEventsDailyCounts({
+      Repositories.repositoriesReadRepositoryEventsDailyCounts({
         path: { repository_id: repositoryId },
         query: {
           days: getDaysFromFilter(timeFilter),

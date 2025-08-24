@@ -695,7 +695,7 @@ export type TaskMetaResponse = {
     /**
      * Result
      */
-    result?: string | null;
+    result?: unknown | null;
     /**
      * Date Done
      */

@@ -1,4 +1,4 @@
-import { EcosystemService } from "@/client"
+import { Ecosystem } from "@/client"
 import type { HelmReleaseActivityPublic } from "@/client/types.gen"
 import {
   DialogBody,
@@ -43,7 +43,7 @@ export function HelmReleaseActivitySummary() {
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["helm-release-activity", page, pageSize],
     queryFn: () =>
-      EcosystemService.ecosystemGetHelmReleaseActivity({
+      Ecosystem.ecosystemGetHelmReleaseActivity({
         query: { page, page_size: pageSize } as any,
       }),
     refetchOnWindowFocus: false,

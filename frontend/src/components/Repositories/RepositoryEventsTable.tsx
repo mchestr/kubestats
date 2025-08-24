@@ -22,7 +22,7 @@ import type {
   KubernetesResourceEventsPublic,
   RepositoryPublic,
 } from "../../client"
-import { RepositoriesService } from "../../client"
+import { Repositories } from "../../client"
 import { Pagination } from "../ui/pagination"
 
 interface RepositoryEventsTableProps {
@@ -52,7 +52,7 @@ function RepositoryEventsTable({ repository }: RepositoryEventsTableProps) {
       resourceNamespaceFilter,
     ],
     queryFn: () =>
-      RepositoriesService.repositoriesReadRepositoryEvents({
+      Repositories.repositoriesReadRepositoryEvents({
         path: { repository_id: repository.id },
         query: {
           skip: (currentPage - 1) * itemsPerPage,

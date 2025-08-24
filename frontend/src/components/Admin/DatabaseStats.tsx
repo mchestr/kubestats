@@ -14,7 +14,7 @@ import {
 import { useQuery } from "@tanstack/react-query"
 import { Link as TanstackLink } from "@tanstack/react-router"
 
-import { AdminService, RepositoriesService } from "@/client"
+import { Admin, Repositories } from "@/client"
 
 interface DatabaseStats {
   table_counts: {
@@ -62,7 +62,7 @@ interface RecentActiveRepositories {
 function getDatabaseStatsQueryOptions() {
   return {
     queryFn: async () => {
-      const response = await AdminService.adminGetDatabaseStats()
+      const response = await Admin.adminGetDatabaseStats()
       return response.data as unknown as DatabaseStats
     },
     queryKey: ["admin", "database-stats"],
@@ -74,7 +74,7 @@ function getRecentActiveRepositoriesQueryOptions() {
   return {
     queryFn: async () => {
       const response =
-        await RepositoriesService.repositoriesGetRecentActiveRepositories()
+        await Repositories.repositoriesGetRecentActiveRepositories()
       return response.data as unknown as RecentActiveRepositories
     },
     queryKey: ["repositories", "recent-active-repositories"],

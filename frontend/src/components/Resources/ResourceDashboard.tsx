@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import type React from "react"
 import { useMemo, useState } from "react"
-import { KubernetesService, RepositoriesService } from "../../client/sdk.gen"
+import { Kubernetes, Repositories } from "../../client/sdk.gen"
 import { RepositoryDrilldownDrawer } from "./RepositoryDrilldownDrawer"
 import { ResourceFilters } from "./ResourceFilters"
 import { ResourceSummary } from "./ResourceSummary"
@@ -25,7 +25,7 @@ export const ResourceDashboard: React.FC = () => {
   } = useQuery({
     queryKey: ["repositories"],
     queryFn: () =>
-      RepositoriesService.repositoriesReadRepositories({
+      Repositories.repositoriesReadRepositories({
         query: { limit: 1000 },
       }),
   })
@@ -45,7 +45,7 @@ export const ResourceDashboard: React.FC = () => {
       PAGE_SIZE,
     ],
     queryFn: () =>
-      KubernetesService.kubernetesListGroupedKubernetesResources({
+      Kubernetes.kubernetesListGroupedKubernetesResources({
         query: {
           repository_id: repositoryId || undefined,
           kind: kind || undefined,

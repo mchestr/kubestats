@@ -28,8 +28,8 @@ import {
   FiStar,
 } from "react-icons/fi"
 
-import { RepositoriesService } from "../../client"
 import type { RepositoriesPublic } from "../../client"
+import { Repositories } from "../../client"
 import useAuth from "../../hooks/useAuth"
 import useCustomToast from "../../hooks/useCustomToast"
 import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "../ui/menu"
@@ -57,7 +57,7 @@ interface SortState {
   direction: SortDirection
 }
 
-function Repositories() {
+function RepositoriesPage() {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { user } = useAuth()
@@ -81,7 +81,7 @@ function Repositories() {
   } = useQuery({
     queryKey: ["repositories"],
     queryFn: () =>
-      RepositoriesService.repositoriesReadRepositories({
+      Repositories.repositoriesReadRepositories({
         query: { limit: 1000 },
       }),
   })
@@ -273,7 +273,7 @@ function Repositories() {
 
   const handleTriggerSync = async (repositoryId: string) => {
     try {
-      await RepositoriesService.repositoriesTriggerRepositorySyncSingle({
+      await Repositories.repositoriesTriggerRepositorySyncSingle({
         path: { repository_id: repositoryId },
       })
       showSuccessToast("Sync triggered for repository")
@@ -286,7 +286,7 @@ function Repositories() {
 
   const handleTriggerAllSync = async () => {
     try {
-      await RepositoriesService.repositoriesTriggerRepositorySyncAll({})
+      await Repositories.repositoriesTriggerRepositorySyncAll({})
       showSuccessToast("Sync triggered for all repositories")
       // Refresh the repositories list
       await queryClient.invalidateQueries({ queryKey: ["repositories"] })
@@ -297,7 +297,7 @@ function Repositories() {
 
   const handleBlockRepository = async (repositoryId: string) => {
     try {
-      await RepositoriesService.repositoriesBlockRepository({
+      await Repositories.repositoriesBlockRepository({
         path: { repository_id: repositoryId },
       })
       showSuccessToast("Repository has been blocked")
@@ -310,7 +310,7 @@ function Repositories() {
 
   const handleApproveRepository = async (repositoryId: string) => {
     try {
-      await RepositoriesService.repositoriesApproveRepository({
+      await Repositories.repositoriesApproveRepository({
         path: { repository_id: repositoryId },
       })
       showSuccessToast("Repository has been approved")
@@ -610,4 +610,4 @@ function Repositories() {
   )
 }
 
-export default Repositories
+export default RepositoriesPage
