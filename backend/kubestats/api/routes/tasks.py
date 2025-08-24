@@ -1,14 +1,14 @@
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, field_validator
-from sqlmodel import Session, desc, select
-
 from kubestats.api.deps import get_current_active_superuser, get_db
 from kubestats.celery_app import celery_app
 from kubestats.models import CeleryTaskMeta, User
+from pydantic import BaseModel, field_validator
+from sqlmodel import Session, desc, select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -39,10 +39,10 @@ class TaskStatusResponse(BaseModel):
     @field_validator("result", mode="before")
     @classmethod
     def serialize_exception_result(cls, v: Any) -> Any:
-        """Convert exception objects to string representation before validation."""
+        """Convert exception objects to string representation and parse JSON strings."""
         if isinstance(v, Exception):
             return f"{type(v).__name__}: {str(v)}"
-        return v
+        return parse_json_if_string(v)
 
 
 class WorkerStatsResponse(BaseModel):
@@ -80,7 +80,7 @@ class WorkerStatusResponse(BaseModel):
 class TaskMetaResponse(BaseModel):
     task_id: str
     status: str
-    result: str | None = None
+    result: Any | None = None
     date_done: str | None = None
     traceback: str | None = None
     name: str | None = None
@@ -89,13 +89,41 @@ class TaskMetaResponse(BaseModel):
     worker: str | None = None
     retries: int | None = None
 
+    @field_validator("result", mode="before")
+    @classmethod
+    def parse_json_result(cls, v: Any) -> Any:
+        """Parse JSON strings back to their original data structures."""
+        return parse_json_if_string(v)
+
 
 def decode_if_memoryview(val: Any) -> Any:
+    """Decode memoryview objects to strings."""
     if isinstance(val, memoryview):
         try:
             return val.tobytes().decode("utf-8", errors="replace")
         except Exception:
             return str(val.tobytes())
+    return val
+
+
+def parse_json_if_string(val: Any) -> Any:
+    """Parse JSON strings back to their original data structures."""
+    if not isinstance(val, str):
+        return val
+
+    # Skip empty or whitespace-only strings
+    if not val.strip():
+        return val
+
+    # Try to parse as JSON if it looks like structured data
+    stripped = val.strip()
+    if stripped.startswith(("{", "[", '"')) or stripped in ("true", "false", "null"):
+        try:
+            return json.loads(val)
+        except (json.JSONDecodeError, ValueError):
+            # If parsing fails, return the string as-is
+            pass
+
     return val
 
 
