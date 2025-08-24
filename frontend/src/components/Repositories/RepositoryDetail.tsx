@@ -15,7 +15,12 @@ import {
   Text,
 } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Link as RouterLink, useParams } from "@tanstack/react-router"
+import {
+  Link as RouterLink,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router"
+import { useState } from "react"
 import {
   FiArrowLeft,
   FiCalendar,
@@ -23,12 +28,14 @@ import {
   FiGitBranch,
   FiShield,
   FiTag,
+  FiTrash2,
 } from "react-icons/fi"
 
 import type { RepositoryPublic } from "../../client"
 import { Repositories } from "../../client"
 import useAuth from "../../hooks/useAuth"
 import useCustomToast from "../../hooks/useCustomToast"
+import { DeleteConfirmationModal } from "../ui/delete-confirmation-modal"
 import { SyncButton } from "../ui/sync-button"
 import MetricsCards from "./MetricsCards"
 import MetricsChart from "./MetricsChart"
@@ -46,6 +53,11 @@ function RepositoryDetail() {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { user } = useAuth()
+  const navigate = useNavigate()
+
+  // State for delete confirmation modal
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const {
     data: repository,
@@ -132,6 +144,36 @@ function RepositoryDetail() {
       })
     } catch (error) {
       showErrorToast("Failed to approve repository")
+    }
+  }
+
+  const handleDeleteRepositoryClick = () => {
+    setDeleteModalOpen(true)
+  }
+
+  const handleDeleteRepository = async () => {
+    if (!repositoryId) return
+
+    setIsDeleting(true)
+    try {
+      await Repositories.repositoriesDeleteRepository({
+        path: { repository_id: repositoryId },
+      })
+      showSuccessToast(
+        `Repository ${repositoryData?.full_name ?? "Unknown"} has been deleted`,
+      )
+      // Navigate back to repositories list
+      navigate({ to: "/repositories" })
+    } catch (error) {
+      showErrorToast("Failed to delete repository")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleDeleteModalClose = () => {
+    if (!isDeleting) {
+      setDeleteModalOpen(false)
     }
   }
 
@@ -311,6 +353,17 @@ function RepositoryDetail() {
                 >
                   Sync
                 </SyncButton>
+                {user?.is_superuser && (
+                  <Button
+                    onClick={handleDeleteRepositoryClick}
+                    colorPalette="red"
+                    size="sm"
+                    disabled={isDeleting}
+                  >
+                    <FiTrash2 />
+                    Delete
+                  </Button>
+                )}
               </HStack>
             </Flex>
           </Card.Body>
@@ -400,6 +453,17 @@ function RepositoryDetail() {
           </Card.Root>
         )}
       </Stack>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={handleDeleteModalClose}
+        onConfirm={handleDeleteRepository}
+        title="Delete Repository"
+        description="Are you sure you want to delete this repository? This will permanently remove all associated data."
+        itemName={repositoryData?.full_name ?? ""}
+        isLoading={isDeleting}
+      />
     </Container>
   )
 }

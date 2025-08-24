@@ -26,12 +26,14 @@ import {
   FiRefreshCw,
   FiShield,
   FiStar,
+  FiTrash2,
 } from "react-icons/fi"
 
 import type { RepositoriesPublic } from "../../client"
 import { Repositories } from "../../client"
 import useAuth from "../../hooks/useAuth"
 import useCustomToast from "../../hooks/useCustomToast"
+import { DeleteConfirmationModal } from "../ui/delete-confirmation-modal"
 import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "../ui/menu"
 import { Pagination } from "../ui/pagination"
 import {
@@ -73,6 +75,14 @@ function RepositoriesPage() {
     field: null,
     direction: "asc",
   })
+
+  // State for delete confirmation modal
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [repositoryToDelete, setRepositoryToDelete] = useState<{
+    id: string
+    name: string
+  } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const {
     data: repositories,
@@ -321,6 +331,41 @@ function RepositoriesPage() {
     }
   }
 
+  const handleDeleteRepositoryClick = (
+    repositoryId: string,
+    repositoryName: string,
+  ) => {
+    setRepositoryToDelete({ id: repositoryId, name: repositoryName })
+    setDeleteModalOpen(true)
+  }
+
+  const handleDeleteRepository = async () => {
+    if (!repositoryToDelete) return
+
+    setIsDeleting(true)
+    try {
+      await Repositories.repositoriesDeleteRepository({
+        path: { repository_id: repositoryToDelete.id },
+      })
+      showSuccessToast(`Repository ${repositoryToDelete.name} has been deleted`)
+      // Refresh the repositories list
+      await queryClient.invalidateQueries({ queryKey: ["repositories"] })
+      setDeleteModalOpen(false)
+      setRepositoryToDelete(null)
+    } catch (error) {
+      showErrorToast("Failed to delete repository")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleDeleteModalClose = () => {
+    if (!isDeleting) {
+      setDeleteModalOpen(false)
+      setRepositoryToDelete(null)
+    }
+  }
+
   if (isLoading) {
     return (
       <Container maxW="full">
@@ -556,6 +601,22 @@ function RepositoriesPage() {
                                   <Text>Approve</Text>
                                 </MenuItem>
                               )}
+                              <MenuItem
+                                value="delete"
+                                gap={2}
+                                py={2}
+                                onClick={() =>
+                                  handleDeleteRepositoryClick(
+                                    repo.id,
+                                    repo.full_name,
+                                  )
+                                }
+                                style={{ cursor: "pointer" }}
+                                colorPalette="red"
+                              >
+                                <FiTrash2 />
+                                <Text>Delete</Text>
+                              </MenuItem>
                             </>
                           )}
                         </MenuContent>
@@ -606,6 +667,17 @@ function RepositoriesPage() {
           </Box>
         </Stack>
       </Stack>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={handleDeleteModalClose}
+        onConfirm={handleDeleteRepository}
+        title="Delete Repository"
+        description="Are you sure you want to delete this repository? This will permanently remove all associated data."
+        itemName={repositoryToDelete?.name ?? ""}
+        isLoading={isDeleting}
+      />
     </Container>
   )
 }

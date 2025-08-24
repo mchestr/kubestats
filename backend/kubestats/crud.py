@@ -325,6 +325,45 @@ def cleanup_kubernetes_resources(*, session: Session, repository_id: uuid.UUID) 
     return existing_count
 
 
+def delete_repository(*, session: Session, repository_id: uuid.UUID) -> bool:
+    """Delete a repository and all its associated data."""
+    from kubestats.models import (
+        KubernetesResource,
+        KubernetesResourceEvent,
+        Repository,
+        RepositoryMetrics,
+    )
+
+    # Get the repository first to ensure it exists
+    repository = session.get(Repository, repository_id)
+    if not repository:
+        return False
+
+    # Delete all associated Kubernetes resource events
+    delete_events_stmt = delete(KubernetesResourceEvent).where(
+        col(KubernetesResourceEvent.repository_id) == repository_id
+    )
+    session.execute(delete_events_stmt)
+
+    # Delete all associated Kubernetes resources
+    delete_resources_stmt = delete(KubernetesResource).where(
+        col(KubernetesResource.repository_id) == repository_id
+    )
+    session.execute(delete_resources_stmt)
+
+    # Delete all associated repository metrics
+    delete_metrics_stmt = delete(RepositoryMetrics).where(
+        col(RepositoryMetrics.repository_id) == repository_id
+    )
+    session.execute(delete_metrics_stmt)
+
+    # Finally, delete the repository itself
+    session.delete(repository)
+    session.commit()
+
+    return True
+
+
 def get_kubernetes_resource_by_id(
     *, session: Session, resource_id: uuid.UUID
 ) -> "KubernetesResource | None":

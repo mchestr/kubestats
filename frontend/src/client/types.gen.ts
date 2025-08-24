@@ -1042,6 +1042,36 @@ export type RepositoriesSearchRepositoriesResponses = {
 
 export type RepositoriesSearchRepositoriesResponse = RepositoriesSearchRepositoriesResponses[keyof RepositoriesSearchRepositoriesResponses];
 
+export type RepositoriesDeleteRepositoryData = {
+    body?: never;
+    path: {
+        /**
+         * Repository Id
+         */
+        repository_id: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{repository_id}';
+};
+
+export type RepositoriesDeleteRepositoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RepositoriesDeleteRepositoryError = RepositoriesDeleteRepositoryErrors[keyof RepositoriesDeleteRepositoryErrors];
+
+export type RepositoriesDeleteRepositoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type RepositoriesDeleteRepositoryResponse = RepositoriesDeleteRepositoryResponses[keyof RepositoriesDeleteRepositoryResponses];
+
 export type RepositoriesReadRepositoryData = {
     body?: never;
     path: {

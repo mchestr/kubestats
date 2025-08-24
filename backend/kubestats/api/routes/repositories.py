@@ -351,6 +351,37 @@ def approve_repository(
     )
 
 
+@router.delete(
+    "/{repository_id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=Message,
+)
+def delete_repository(
+    repository_id: uuid.UUID,
+    session: Session = Depends(get_db),
+) -> Any:
+    """
+    Delete a repository and all its associated data.
+    Only superusers can delete repositories.
+    """
+    # Verify repository exists first
+    repository = crud.get_repository_by_id(session=session, repository_id=repository_id)
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
+
+    # Store repository name for response
+    repository_name = repository.full_name
+
+    # Delete the repository and all associated data
+    success = crud.delete_repository(session=session, repository_id=repository_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete repository")
+
+    return Message(
+        message=f"Repository {repository_name} and all associated data have been deleted"
+    )
+
+
 @router.get("/{repository_id}/events", response_model=KubernetesResourceEventsPublic)
 def read_repository_events(
     repository_id: uuid.UUID,
