@@ -3,14 +3,13 @@ from datetime import datetime, timezone
 from typing import Any
 
 from celery import group  # type: ignore[import-untyped]
-from sqlmodel import Session, select
-
 from kubestats.celery_app import celery_app
 from kubestats.core.config import settings
 from kubestats.core.db import engine
 from kubestats.core.github_client import search_repositories
 from kubestats.models import Repository, SyncStatus
 from kubestats.tasks.sync_repositories import sync_repository
+from sqlmodel import Session, select
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -158,8 +157,6 @@ def discover_repositories() -> dict[str, Any]:
         to_sync = []
         new_repos_count = 0
         for repo_data in all_repos.values():
-            if "mchestr" not in str(repo_data):
-                continue
             try:
                 parsed_repo_data = parse_github_repo(repo_data)
                 repository, is_new = create_or_update_repository(
