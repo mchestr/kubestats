@@ -28,7 +28,7 @@
     "react-error-boundary": "^6.0.0",
     "react-hook-form": "7.57.0",
     "react-icons": "^5.5.0",
-    "recharts": "^2.15.3"
+    "recharts": "^3.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
